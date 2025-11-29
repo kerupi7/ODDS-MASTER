@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ODDS MASTER</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -1135,7 +1135,7 @@
                                                                                     placeholder="0.0"
                                                                                     value={hasWideOdds ? wideOdds.min || '' : ''}
                                                                                     onChange={(e) => handleOddsChange(bet.key, e.target.value, 'min')}
-                                                                                    className="w-14 sm:w-16 border border-gray-300 rounded px-1 py-1 text-xs sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                                                    className="w-14 sm:w-16 border border-gray-300 rounded px-1 py-1 text-base sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
                                                                                     inputMode="decimal"
                                                                                 />
                                                                             </div>
