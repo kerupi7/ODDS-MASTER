@@ -264,6 +264,10 @@
                         raceNum: 11,
                         note: ''
                     });
+                    setBetType('tansho');
+                    setVotingMode('box');
+                    setTotalBudget(10000);
+                    setAllocationMode('profit');
                 });
             };
 
@@ -631,7 +635,7 @@
 
             const getTypeName = (type) => {
                 const types = {
-                    sanrenpuku: '三連複', sanrentan: '三連単', umaren: '馬連', umatan: '馬単',
+                    sanrenpuku: '3連複', sanrentan: '3連単', umaren: '馬連', umatan: '馬単',
                     wide: 'ワイド', tansho: '単勝', fukusho: '複勝'
                 };
                 return types[type] || type;
@@ -715,7 +719,7 @@
 
                     {/* CALCULATOR VIEW */}
                     {currentView === 'calculator' && (
-                        <main className="max-w-3xl mx-auto p-4 space-y-6">
+                        <main className="max-w-3xl mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
                             {/* Race Metadata Input */}
                             <section className="bg-white rounded-lg shadow p-3">
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -884,8 +888,8 @@
                                                 <option value="wide">ワイド</option>
                                                 <option value="umaren">馬連</option>
                                                 <option value="umatan">馬単</option>
-                                                <option value="sanrenpuku">三連複</option>
-                                                <option value="sanrentan">三連単</option>
+                                                <option value="sanrenpuku">3連複</option>
+                                                <option value="sanrentan">3連単</option>
                                             </select>
                                         </div>
 
@@ -1034,6 +1038,7 @@
                                                     onChange={(e) => setTotalBudget(parseInt(e.target.value) || 0)}
                                                     className="w-full border border-gray-300 rounded p-2 text-right font-mono text-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                                                     step="100"
+                                                    inputMode="numeric"
                                                 />
                                                 <span className="text-gray-500 text-sm">円</span>
                                             </div>
@@ -1091,11 +1096,11 @@
                                         <table className="w-full text-sm text-left relative">
                                             <thead className="bg-gray-100 text-gray-600 text-xs uppercase sticky top-0 z-10 shadow-sm">
                                                 <tr>
-                                                    <th className="p-3">式別 / 組合せ</th>
-                                                    <th className="p-3 w-20">オッズ</th>
-                                                    <th className="p-3 text-right">投資額</th>
-                                                    <th className="p-3 text-right">予想払戻</th>
-                                                    <th className="p-3 w-10"></th>
+                                                    <th className="p-2 sm:p-3">式別/組合せ</th>
+                                                    <th className="p-2 sm:p-3 text-center">オッズ</th>
+                                                    <th className="p-2 sm:p-3 text-right">投資額</th>
+                                                    <th className="p-2 sm:p-3 text-right hidden sm:table-cell">予想払戻</th>
+                                                    <th className="p-2 sm:p-3 w-8 sm:w-10"></th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
@@ -1109,39 +1114,48 @@
                                                     return (
                                                         <React.Fragment key={bet.key}>
                                                             <tr className="hover:bg-emerald-50 transition-colors">
-                                                                <td className="p-3" rowSpan={isWide && hasWideOdds ? 2 : 1}>
+                                                                <td className="p-2 sm:p-3" rowSpan={isWide && hasWideOdds ? 2 : 1}>
                                                                     <div className="flex flex-col">
-                                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                                                        <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                                                                             {getTypeName(bet.type)}
                                                                         </span>
-                                                                        <span className="font-mono font-bold text-gray-700 text-lg">
+                                                                        <span className="font-mono font-bold text-gray-700 text-base sm:text-lg">
                                                                             {bet.label}
                                                                         </span>
                                                                     </div>
                                                                 </td>
                                                                 {isWide ? (
                                                                     <>
-                                                                        <td className="p-3">
-                                                                            <div className="flex items-center gap-1">
-                                                                                <span className="text-xs text-gray-500 whitespace-nowrap">下限:</span>
+                                                                        <td className="p-2 sm:p-3">
+                                                                            <div className="flex flex-col sm:flex-row items-center gap-1">
+                                                                                <span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">下限</span>
                                                                                 <input
                                                                                     type="number"
                                                                                     step="0.1"
                                                                                     placeholder="0.0"
                                                                                     value={hasWideOdds ? wideOdds.min || '' : ''}
                                                                                     onChange={(e) => handleOddsChange(bet.key, e.target.value, 'min')}
-                                                                                    className="w-16 border border-gray-300 rounded px-1 py-1 text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                                                    className="w-14 sm:w-16 border border-gray-300 rounded px-1 py-1 text-xs sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                                                    inputMode="decimal"
                                                                                 />
                                                                             </div>
                                                                         </td>
-                                                                        <td className="p-3 text-right font-mono" rowSpan={2}>
+                                                                        <td className="p-2 sm:p-3 text-right font-mono" rowSpan={2}>
                                                                             {betData?.stake > 0 ? (
-                                                                                <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
-                                                                                    {betData.stake.toLocaleString()}
-                                                                                </span>
+                                                                                <div className="flex flex-col items-end gap-1">
+                                                                                    <span className="bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm">
+                                                                                        {betData.stake.toLocaleString()}
+                                                                                    </span>
+                                                                                    <div className="sm:hidden flex flex-col items-end text-[10px]">
+                                                                                        <span className="font-bold">{Math.floor(betData.stake * wideOdds.min).toLocaleString()}</span>
+                                                                                        <span className={Math.floor(betData.stake * wideOdds.min) - stats.totalStake >= 0 ? 'text-emerald-600' : 'text-red-500'}>
+                                                                                            {Math.floor(betData.stake * wideOdds.min) - stats.totalStake >= 0 ? '+' : ''}{(Math.floor(betData.stake * wideOdds.min) - stats.totalStake).toLocaleString()}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
                                                                             ) : '-'}
                                                                         </td>
-                                                                        <td className="p-3 text-right">
+                                                                        <td className="p-2 sm:p-3 text-right hidden sm:table-cell">
                                                                             {betData?.stake > 0 && wideOdds.min ? (
                                                                                 <div className="flex flex-col items-end">
                                                                                     <span className="font-bold">{Math.floor(betData.stake * wideOdds.min).toLocaleString()}</span>
@@ -1154,24 +1168,33 @@
                                                                     </>
                                                                 ) : (
                                                                     <>
-                                                                        <td className="p-3">
+                                                                        <td className="p-2 sm:p-3 text-center">
                                                                             <input
                                                                                 type="number"
                                                                                 step="0.1"
                                                                                 placeholder="0.0"
                                                                                 value={oddsData[bet.key] || ''}
                                                                                 onChange={(e) => handleOddsChange(bet.key, e.target.value)}
-                                                                                className="w-16 border border-gray-300 rounded px-1 py-1 text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                                                className="w-14 sm:w-16 border border-gray-300 rounded px-1 py-1 text-xs sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                                                inputMode="decimal"
                                                                             />
                                                                         </td>
-                                                                        <td className="p-3 text-right font-mono">
+                                                                        <td className="p-2 sm:p-3 text-right font-mono">
                                                                             {betData?.stake > 0 ? (
-                                                                                <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
-                                                                                    {betData.stake.toLocaleString()}
-                                                                                </span>
+                                                                                <div className="flex flex-col items-end gap-1">
+                                                                                    <span className="bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm">
+                                                                                        {betData.stake.toLocaleString()}
+                                                                                    </span>
+                                                                                    <div className="sm:hidden flex flex-col items-end text-[10px]">
+                                                                                        <span className="font-bold">{betData.return.toLocaleString()}</span>
+                                                                                        <span className={betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}>
+                                                                                            {betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
                                                                             ) : '-'}
                                                                         </td>
-                                                                        <td className="p-3 text-right">
+                                                                        <td className="p-2 sm:p-3 text-right hidden sm:table-cell">
                                                                             {betData?.stake > 0 ? (
                                                                                 <div className="flex flex-col items-end">
                                                                                     <span className="font-bold">{betData.return.toLocaleString()}</span>
@@ -1183,35 +1206,47 @@
                                                                         </td>
                                                                     </>
                                                                 )}
-                                                                <td className="p-3 text-right" rowSpan={isWide && hasWideOdds ? 2 : 1}>
+                                                                <td className="p-2 sm:p-3 text-right" rowSpan={isWide && hasWideOdds ? 2 : 1}>
                                                                     <button 
                                                                         onClick={() => removeBet(bet.key)}
                                                                         className="text-gray-400 hover:text-red-500 transition-colors"
                                                                     >
-                                                                        <Trash2 size={16} />
+                                                                        <Trash2 size={14} className="sm:hidden" />
+                                                                        <Trash2 size={16} className="hidden sm:block" />
                                                                     </button>
                                                                 </td>
                                                             </tr>
                                                             {isWide && hasWideOdds && (
                                                                 <tr className="hover:bg-emerald-50 transition-colors border-l-4 border-l-blue-200">
-                                                                    <td className="p-3">
-                                                                        <div className="flex items-center gap-1">
-                                                                            <span className="text-xs text-gray-500 whitespace-nowrap">上限:</span>
+                                                                    <td className="p-2 sm:p-3">
+                                                                        <div className="flex flex-col sm:flex-row items-center gap-1">
+                                                                            <span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">上限</span>
                                                                             <input
                                                                                 type="number"
                                                                                 step="0.1"
                                                                                 placeholder="0.0"
                                                                                 value={wideOdds.max || ''}
                                                                                 onChange={(e) => handleOddsChange(bet.key, e.target.value, 'max')}
-                                                                                className="w-16 border border-gray-300 rounded px-1 py-1 text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                                                className="w-14 sm:w-16 border border-gray-300 rounded px-1 py-1 text-xs sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                                                inputMode="decimal"
                                                                             />
                                                                         </div>
                                                                     </td>
-                                                                    <td className="p-3 text-right">
+                                                                    <td className="p-2 sm:p-3 text-right hidden sm:table-cell">
                                                                         {betData?.stake > 0 && wideOdds.max ? (
                                                                             <div className="flex flex-col items-end">
                                                                                 <span className="font-bold">{Math.floor(betData.stake * wideOdds.max).toLocaleString()}</span>
                                                                                 <span className={`text-xs ${Math.floor(betData.stake * wideOdds.max) - stats.totalStake >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                                                    {Math.floor(betData.stake * wideOdds.max) - stats.totalStake >= 0 ? '+' : ''}{(Math.floor(betData.stake * wideOdds.max) - stats.totalStake).toLocaleString()}
+                                                                                </span>
+                                                                            </div>
+                                                                        ) : '-'}
+                                                                    </td>
+                                                                    <td className="p-2 sm:p-3 text-right sm:hidden">
+                                                                        {betData?.stake > 0 && wideOdds.max ? (
+                                                                            <div className="flex flex-col items-end text-[10px]">
+                                                                                <span className="font-bold">{Math.floor(betData.stake * wideOdds.max).toLocaleString()}</span>
+                                                                                <span className={Math.floor(betData.stake * wideOdds.max) - stats.totalStake >= 0 ? 'text-emerald-600' : 'text-red-500'}>
                                                                                     {Math.floor(betData.stake * wideOdds.max) - stats.totalStake >= 0 ? '+' : ''}{(Math.floor(betData.stake * wideOdds.max) - stats.totalStake).toLocaleString()}
                                                                                 </span>
                                                                             </div>
