@@ -8,7 +8,6 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         @keyframes slideIn {
             from {
@@ -60,35 +59,143 @@
 
     <script type="text/babel">
         const { useState, useMemo, useEffect } = React;
-        const { createElement: iconCreate } = React;
         
-        // Lucide icon wrapper
-        const Icon = ({ name, ...props }) => {
-            useEffect(() => {
-                if (window.lucide) {
-                    window.lucide.createIcons();
-                }
-            }, []);
-            return iconCreate('i', { 'data-lucide': name, ...props });
+        // Direct SVG Icons (no Lucide dependency)
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        const Icons = {
+            Settings: (props) => <IconBase {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.35a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></IconBase>,
+            Calculator: (props) => <IconBase {...props}><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></IconBase>,
+            Trash2: (props) => <IconBase {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></IconBase>,
+            Save: (props) => <IconBase {...props}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconBase>,
+            Info: (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></IconBase>,
+            RefreshCw: (props) => <IconBase {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></IconBase>,
+            Layers: (props) => <IconBase {...props}><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></IconBase>,
+            GitMerge: (props) => <IconBase {...props}><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></IconBase>,
+            PlusCircle: (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></IconBase>,
+            X: (props) => <IconBase {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconBase>,
+            CheckSquare: (props) => <IconBase {...props}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></IconBase>,
+            Calendar: (props) => <IconBase {...props}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></IconBase>,
+            MapPin: (props) => <IconBase {...props}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></IconBase>,
+            Flag: (props) => <IconBase {...props}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></IconBase>,
+            FileText: (props) => <IconBase {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></IconBase>,
+            History: (props) => <IconBase {...props}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></IconBase>,
+            ArrowLeft: (props) => <IconBase {...props}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></IconBase>,
+            CheckCircle: (props) => <IconBase {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconBase>,
+            AlertCircle: (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></IconBase>,
+            BookOpen: (props) => <IconBase {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconBase>,
+            BarChart: (props) => <IconBase {...props}><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></IconBase>,
+            TrendingUp: (props) => <IconBase {...props}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></IconBase>,
+            ChevronDown: (props) => <IconBase {...props}><path d="m6 9 6 6 6-6"/></IconBase>,
+            ChevronUp: (props) => <IconBase {...props}><path d="m18 15-6-6-6 6"/></IconBase>,
+            Award: (props) => <IconBase {...props}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></IconBase>,
         };
-        
-        const Settings = (props) => <Icon name="settings" {...props} />;
-        const Calculator = (props) => <Icon name="calculator" {...props} />;
-        const Trash2 = (props) => <Icon name="trash-2" {...props} />;
-        const Save = (props) => <Icon name="save" {...props} />;
-        const Info = (props) => <Icon name="info" {...props} />;
-        const RefreshCw = (props) => <Icon name="refresh-cw" {...props} />;
-        const Layers = (props) => <Icon name="layers" {...props} />;
-        const GitMerge = (props) => <Icon name="git-merge" {...props} />;
-        const PlusCircle = (props) => <Icon name="plus-circle" {...props} />;
-        const X = (props) => <Icon name="x" {...props} />;
-        const CheckSquare = (props) => <Icon name="check-square" {...props} />;
-        const Calendar = (props) => <Icon name="calendar" {...props} />;
-        const MapPin = (props) => <Icon name="map-pin" {...props} />;
-        const Flag = (props) => <Icon name="flag" {...props} />;
-        const FileText = (props) => <Icon name="file-text" {...props} />;
-        const History = (props) => <Icon name="history" {...props} />;
-        const ArrowLeft = (props) => <Icon name="arrow-left" {...props} />;
+
+        // Course Accordion Component
+        const CourseAccordion = ({ courseName, data }) => {
+            const [isOpen, setIsOpen] = React.useState(false);
+            
+            return (
+                <div className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full ${isOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                <Icons.Flag size={18} />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-800">{courseName}</h4>
+                                <p className="text-xs text-gray-500 truncate max-w-[200px]">{data.overview}</p>
+                            </div>
+                        </div>
+                        <div>
+                            {isOpen ? <Icons.ChevronUp size={20} className="text-gray-400" /> : <Icons.ChevronDown size={20} className="text-gray-400" />}
+                        </div>
+                    </button>
+
+                    {isOpen && (
+                        <div className="p-4 pt-0 border-t border-gray-100 bg-gray-50/50">
+                            <div className="space-y-4 mt-3">
+                                
+                                <div className="bg-white p-3 rounded border border-gray-200">
+                                    <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase flex items-center gap-1">
+                                        <Icons.Info size={12} /> コース特徴
+                                    </h5>
+                                    <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                                        {data.features.map((f, i) => <li key={i}>{f}</li>)}
+                                    </ul>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="bg-white p-3 rounded border border-gray-200">
+                                        <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase">脚質傾向</h5>
+                                        <div className="space-y-2 text-sm">
+                                            {Object.entries(data.style).map(([key, val]) => {
+                                                const label = { escape: '逃げ', lead: '先行', chase: '差し', late: '追込' }[key];
+                                                return (
+                                                    <div key={key} className="flex justify-between border-b border-gray-100 pb-1 last:border-0">
+                                                        <span className="font-semibold text-gray-600">{label}</span>
+                                                        <div className="text-right">
+                                                            {val.return && <span className="text-emerald-600 font-bold mr-2">回{val.return}</span>}
+                                                            {val.note && <span className="text-xs text-gray-400">{val.note}</span>}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white p-3 rounded border border-gray-200">
+                                        <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase">枠順傾向</h5>
+                                        <div className="space-y-2 text-sm">
+                                            <div className="text-emerald-700"><span className="font-bold">◎</span> {data.frame.good}</div>
+                                            <div className="text-orange-600"><span className="font-bold">▲</span> {data.frame.bad}</div>
+                                            <div className="text-red-600"><span className="font-bold">✕</span> {data.frame.worst}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white p-3 rounded border border-gray-200">
+                                    <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase">血統傾向</h5>
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">好走:</span>
+                                        {data.blood.good.map((b, i) => <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">{b}</span>)}
+                                    </div>
+                                    {data.blood.bad.length > 0 && (
+                                        <div className="flex flex-wrap gap-2">
+                                            <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded">不振:</span>
+                                            {data.blood.bad.map((b, i) => <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">{b}</span>)}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="bg-blue-50 p-3 rounded border border-blue-100">
+                                        <h5 className="text-xs font-bold text-blue-700 mb-1 flex items-center gap-1"><Icons.CheckCircle size={12}/> 軸のポイント</h5>
+                                        <ul className="text-xs text-blue-900 space-y-1">
+                                            {data.axis.map((t, i) => <li key={i}>・{t}</li>)}
+                                        </ul>
+                                    </div>
+                                    <div className="bg-yellow-50 p-3 rounded border border-yellow-100">
+                                        <h5 className="text-xs font-bold text-yellow-700 mb-1 flex items-center gap-1"><Icons.AlertCircle size={12}/> 穴のポイント</h5>
+                                        <ul className="text-xs text-yellow-900 space-y-1">
+                                            {data.hole.map((t, i) => <li key={i}>・{t}</li>)}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
 
         const HorseRacingOddsManager = () => {
             // State Definitions
@@ -111,10 +218,29 @@
 
             const [betList, setBetList] = useState([]); 
             const [oddsData, setOddsData] = useState({}); 
+            const [customStakes, setCustomStakes] = useState({}); // ユーザーが手動で設定した投資額
             const [totalBudget, setTotalBudget] = useState(10000); 
             const [allocationMode, setAllocationMode] = useState('profit'); 
+            const [budgetInputMode, setBudgetInputMode] = useState('budget'); // 'budget' or 'target'
+            const [targetProfit, setTargetProfit] = useState(10000);
+            const [targetError, setTargetError] = useState(null); 
 
             const [savedHistory, setSavedHistory] = useState([]);
+            
+            // Bankroll Management State
+            const [bankrollStart, setBankrollStart] = useState(() => {
+                const saved = localStorage.getItem('bankroll_start');
+                return saved ? parseInt(saved) : 30000;
+            });
+            const [bankrollGoal, setBankrollGoal] = useState(() => {
+                const saved = localStorage.getItem('bankroll_goal');
+                return saved ? parseInt(saved) : 10000;
+            });
+            const [bankrollCurrent, setBankrollCurrent] = useState(() => {
+                const saved = localStorage.getItem('bankroll_current');
+                return saved ? parseInt(saved) : 30000;
+            });
+            const [showBankroll, setShowBankroll] = useState(true);
             
             // Toast notification state
             const [toast, setToast] = useState(null);
@@ -125,6 +251,455 @@
             // Calendar picker state
             const [showCalendar, setShowCalendar] = useState(false);
             const [calendarDate, setCalendarDate] = useState(new Date());
+            const [raceResult, setRaceResult] = useState({ first: '', second: '', third: '' });
+            const [showResultInput, setShowResultInput] = useState(false);
+            const [resultHistory, setResultHistory] = useState([]);
+            const [showCourseData, setShowCourseData] = useState(false);
+            const [selectedCourse, setSelectedCourse] = useState(null);
+            
+            // Course data database
+
+            
+            // Course data database
+            const courseData = {
+                '東京': {
+                    'ダート1300m': {
+                        course: 'ダート1300m',
+                        overview: 'スタート〜3角340m、JRAダート最長直線501.6m＋坂2.4m。持続力＋パワー重視',
+                        features: [
+                            'スタート〜3角まで約340mと短く、内枠の先行争いが熾烈',
+                            'JRAダート最長の501.6m直線＋高低差2.4mの坂',
+                            '持続力＋パワーが求められる'
+                        ],
+                        style: {
+                            escape: { win: '15.7%', place: '38.8%', return: '151%', trend: '最も有利' },
+                            lead: { win: '12.8%', place: '34.5%', return: '138%' },
+                            chase: { return: '114%', note: '勝率は低め' },
+                            late: { note: '基本的に不利' }
+                        },
+                        frame: {
+                            good: '良馬場：1枠が高回収（特に牡馬）',
+                            bad: '道悪：2枠（牡馬）の複勝率35.6%で断トツ',
+                            worst: '7枠：単回60%台と不振（中途半端で不利）'
+                        },
+                        blood: {
+                            good: ['ダノンレジェンド', 'トゥザワールド', 'コパノリッキー', 'リーチザクラウン'],
+                            bad: ['父ロベルト系', '芝血統系（ディープ等）']
+                        },
+                        axis: [
+                            '騎手がC.ルメール／戸崎圭太／松山弘平',
+                            '逃げ or 先行脚質（過去5走中3走以上4角5番手以内）',
+                            '良馬場なら1枠、道悪なら2枠',
+                            '血統がダノンレジェンド／トゥザワールド系'
+                        ],
+                        hole: [
+                            '6番人気＋距離短縮（300m以上）＋6歳以上',
+                            '騎手：木幡巧也／内田博幸／菅原明良（特に道悪）',
+                            '血統：リーチザクラウン／コパノリッキー産駒',
+                            '調教師：中川公成／牧光二',
+                            '馬体重500kg以上＋先行策（パワー型）',
+                            '道悪＝2枠×母父キンカメ系×ストームC系父'
+                        ],
+                        avoid: [
+                            '5歳馬',
+                            '7枠（回収値が中途半端）',
+                            '前走芝（芝→ダは単回48%と低回収）',
+                            '人気3・4番人気',
+                            '母父：芝血統（ステイゴールドなど）'
+                        ],
+                        tips: [
+                            '「騎手」×「先行脚質」×「血統」×「距離短縮」の組み合わせ',
+                            'C.ルメール（複勝率50%以上）、戸崎圭太（複40%超）、松山弘平（単回203〜359%）は軸に最適',
+                            '短縮ローテ（300m以上）は大きな武器（最大197%回収）',
+                            '馬場による回収率の偏りが顕著、コンディションに応じた券種変更がカギ'
+                        ]
+                    },
+                    'ダート1400m': {
+                        course: 'ダート1400m',
+                        overview: '唯一の純粋ダート1400m。ミドル〜ハイペース、前半速→後半失速型',
+                        features: [
+                            'スタート〜最初のコーナーまで約441.9mと長い',
+                            'ミドル〜ハイペースが大半、スローほぼなし',
+                            '前半速め→後半失速型、末脚と持続力重要',
+                            'OPEN1:22.9、未勝利1:25.6と2.7秒差'
+                        ],
+                        style: {
+                            escape: { return: '199.6%', trend: '◎最優秀' },
+                            lead: { trend: '○' },
+                            chase: { note: 'クラス上昇で台頭' },
+                            late: { note: '×不利' }
+                        },
+                        frame: {
+                            good: '6〜8枠が有利、特に7枠◎（単回90%）',
+                            bad: '良馬場：1枠が高回収（牡馬）',
+                            worst: '内枠1〜2枠×（道悪時以外）'
+                        },
+                        blood: {
+                            good: ['シニスターミニスター', 'ドゥラメンテ', 'ロードカナロア', 'ボールドルーラー系'],
+                            bad: ['芝寄り血統（ディープ、ハービンジャー等）', 'Storm Cat', 'グラスワンダー']
+                        },
+                        axis: [
+                            '騎手がルメール／川田将雅／戸崎圭太（複勝率33〜60%）',
+                            '枠順が6枠・7枠・8枠（特に7枠は勝率・回収率◎）',
+                            '脚質が逃げor先行（過去3走で4角5番手以内が2回以上）',
+                            '血統がシニスターミニスター／ドゥラメンテ／ロードカナロア産駒'
+                        ],
+                        hole: [
+                            '6〜9番人気＋前走から300〜400mの距離短縮',
+                            'シニスターミニスター産駒×7枠or8枠',
+                            '騎手：北村宏司／横山和生／木幡巧也／内田博幸',
+                            '調教師：加藤士津八／安田翔伍／田中博康',
+                            '馬体重520kg以上の大型馬',
+                            '母父ボールドルーラー系（特に道悪時）',
+                            '前走人気1〜2番→今走3〜5番人気に人気落ち'
+                        ],
+                        avoid: [
+                            '年齢が6歳以上',
+                            '追い込み脚質（近3走で4角12番手以下が2回以上）',
+                            '前走芝レースからのダート替わり',
+                            '枠順が1枠・2枠',
+                            '騎手：横山武史（単回収率61%、過剰人気傾向）',
+                            '馬体重460kg未満で道悪時'
+                        ],
+                        tips: [
+                            '逃げ・先行＋外枠＋騎手（ルメール・川田）＋血統（シニスターミニスター）',
+                            '6番人気に妙味、距離短縮パターン狙い目',
+                            '道悪で大型馬・外枠・ボールドルーラー系が浮上',
+                            '4角5番手以内の安定感がある馬を狙う'
+                        ]
+                    },
+                    'ダート2100m': {
+                        course: 'ダート2100m',
+                        overview: '国内ダート最長直線501.6m。スロー79%、持続力型後傾ラップ',
+                        features: [
+                            'スタート後すぐ1角（約240m）',
+                            'スローペース率79%、持続力型後傾ラップ',
+                            '上がり最速馬は勝率35.9%、複勝率71.9%'
+                        ],
+                        style: {
+                            escape: { note: '＜先行' },
+                            lead: { place: '38.0%', return: '249.8%', trend: '有利' },
+                            chase: { note: '＞追込' },
+                            late: { place: '6.8%', note: '低迷' }
+                        },
+                        frame: {
+                            good: '中枠（3〜6枠）優秀、特に6枠（複勝24.1%）と3枠（複22.6%）',
+                            bad: '外枠（8枠）',
+                            worst: '7枠：単複ともに不振（単回64%、複勝18.9%）'
+                        },
+                        blood: {
+                            good: ['キングカメハメハ系', 'フリオーソ', 'リアルスティール', 'キタサンブラック'],
+                            bad: ['ルーラーシップ', 'ジャングルポケット', 'ゴールドアリュール']
+                        },
+                        axis: [
+                            '騎手がC.ルメール／武豊（複勝率56%超）',
+                            '先行脚質（過去5走中3走以上4角5番手以内）',
+                            '中枠（3〜6枠）',
+                            '3歳馬（複勝率33.8%）',
+                            '種牡馬がキングカメハメハ系／リアルスティール',
+                            '関西馬（栗東所属）（複勝率32%）'
+                        ],
+                        hole: [
+                            '6番人気 or 単勝オッズ15〜19.9倍／50倍以上',
+                            '騎手：木幡巧也（単回164%）／原優介／吉田豊',
+                            '調教師：相沢郁（単回261%）／田島俊明／牧光二',
+                            '種牡馬：フリオーソ（単回175%）／キタサンブラック',
+                            '馬場状態が稍重以上で馬体重440–459kg（単回270%）',
+                            '母父デピュティミニスター系（道悪時）',
+                            '3歳馬で昇級戦'
+                        ],
+                        avoid: [
+                            '牝馬（複勝率13.4%、単回49%）',
+                            '7歳以上の高齢馬（複勝率6.5%、単回42%）',
+                            '4番人気（単回64%）／9番人気（単回37%）',
+                            '7枠',
+                            '追い込み脚質（複勝6.8%、勝率2.4%）',
+                            '騎手：戸崎圭太／三浦皇成／大野拓弥（回収率低）'
+                        ],
+                        tips: [
+                            'C.ルメール騎手×先行×中枠（3〜6枠）×キングカメハメハ系',
+                            '木幡巧也：単回164%、穴騎手に最適',
+                            '道悪時は差し寄り＋軽量馬（440–459kg＝単回270%）狙い',
+                            '回収率で勝つなら6番人気＋血統・騎手妙味を組み合わせた穴馬を拾う'
+                        ]
+                    },
+                    '芝1400m': {
+                        course: '芝1400m',
+                        overview: 'スロー58〜62%から瞬発力勝負。上がり最速馬の複勝率56.1%',
+                        features: [
+                            'スタート直後に約1.5mの上り坂→下り坂→長い直線525.9m',
+                            'スローペース（58〜62%）から瞬発力勝負',
+                            '上がり最速馬の勝率29.2%、複勝率56.1%'
+                        ],
+                        style: {
+                            escape: { win: '13.5%', return: '197.9%', trend: '最上位' },
+                            lead: { place: '35%', return: '115.4%', trend: '安定' },
+                            chase: { note: 'やや劣る' },
+                            late: { win: '2.7%', place: '8.8%', note: '極めて不利' }
+                        },
+                        frame: {
+                            good: '外枠（特に8枠）有利（勝率8.9%、単回101%）',
+                            bad: '道悪時：差し・追い込み逆転、3枠・小柄馬・偶数馬番プラス',
+                            worst: '内枠（1〜2枠）不利（単回49〜61%）'
+                        },
+                        blood: {
+                            good: ['ロードカナロア', 'イスラボニータ', 'ダイワメジャー', 'Night of Thunder', 'サトノアラジン'],
+                            bad: ['モーリス', 'ドゥラメンテ', 'キズナ', 'ステイゴールド', 'メイショウサムソン']
+                        },
+                        axis: [
+                            '脚質が逃げor先行（過去5走中3回以上で4角5番手以内）',
+                            '枠順が6枠〜8枠（特に8枠は単回101%）',
+                            '血統がロードカナロア／イスラボニータ／ダイワメジャー',
+                            '騎手がルメール／戸崎圭太／田辺裕信／内田博幸',
+                            '馬齢が3歳馬（牝馬ならさらに信頼度UP）',
+                            '馬体重が牡牝ともに460kg以上'
+                        ],
+                        hole: [
+                            '6〜9番人気（特に7番99%、9番112%、10番以下228%）',
+                            'Night of Thunder（244%）／サトノアラジン（604%）産駒',
+                            '外枠（7〜8枠）かつ偶数馬番',
+                            '前走最終コーナー3番手以内（先行力あり）',
+                            '道悪時の差し脚質',
+                            '調教師：奥村武／高橋裕／加藤征弘',
+                            '6歳以上の牡馬（単回117%）',
+                            'イスラボニータ産駒×馬体重440kg以上'
+                        ],
+                        avoid: [
+                            '脚質が追い込み',
+                            '距離延長（前走1200m以下→今走1400m）',
+                            '枠順が1枠・2枠（特に良馬場時）',
+                            '4・5番人気（回収率が低迷）',
+                            '馬体重が牝馬で440kg未満／牡馬で460kg未満'
+                        ],
+                        tips: [
+                            '逃げ脚質×外枠×血統（瞬発力型）',
+                            '3歳馬（特に牝馬）圧倒的、6歳以上は妙味（単回117%）',
+                            '6〜9番人気に妙味集中（特に10番以下228%）',
+                            '道悪時は差し馬・3枠・小柄馬・偶数番が浮上'
+                        ]
+                    },
+                    '芝1600m': {
+                        course: '芝1600m',
+                        overview: 'スロー53%以上、上がり3F1位が複勝率71.8%の末脚重視',
+                        features: [
+                            '最初のコーナーまで約542m、直線525.9m＋急坂2.1m超',
+                            'スローペース53%以上、後傾ラップ',
+                            '上がり3F1位の馬が勝率35.2%、複勝率71.8%',
+                            '距離短縮（特に500m以上）×外枠が高回収'
+                        ],
+                        style: {
+                            escape: { return: '276%', note: '優秀' },
+                            lead: { note: '優秀' },
+                            chase: { note: '上級条件で有利傾向' },
+                            late: { note: '' }
+                        },
+                        frame: {
+                            good: '1枠と外枠（6〜8枠）高水準',
+                            bad: '道悪時は8枠が最も有利、母父スタミナ型血統（マンハッタンカフェ）',
+                            worst: ''
+                        },
+                        blood: {
+                            good: ['イスラボニータ', 'リアルスティール', 'ブリモル'],
+                            bad: ['ハーツクライ（単回47%）', 'キャロットファーム所属（単回59%）']
+                        },
+                        axis: [
+                            '1番人気 or 2番人気（複勝率70.6%、60.2%）',
+                            '上がり3F1位候補（過去5走で上がり1位or2位が2回以上）',
+                            '騎手がルメール／レーン／川田（複勝率63%以上）',
+                            '枠順が1枠 or 6〜8枠（複勝率24.5%付近）',
+                            '距離実績：1600m前後で好走歴 or 距離短縮（1800m→1600m）'
+                        ],
+                        hole: [
+                            '4番人気、10番人気以下が妙味ゾーン',
+                            '前走1800m以上→今走1600mの距離短縮馬',
+                            '8枠 or 馬番10・14・18番などの極端な外枠',
+                            'イスラボニータ／リアルスティール／ブリモル産駒',
+                            '騎手：津村明秀／菅原明良（単回収率100%以上）',
+                            '過去5走以内で逃げor4角先頭の実績あり',
+                            '馬体重490kg以上＋筋肉量豊富なマイラー体型'
+                        ],
+                        avoid: [
+                            '6歳以上（勝率2.5%、複勝率12.3%と低迷）',
+                            '斤量体重比が13以上（斤量÷馬体重×100）',
+                            '前走1400m以下から距離延長（1200m→1600mはNG）',
+                            '追込一辺倒（直線で前が詰まるリスク）',
+                            '人気が3・5・7・9番人気（データ的に非効率）'
+                        ],
+                        tips: [
+                            '1〜2番人気の複勝率70%超で安定',
+                            '距離短縮（特に500m以上）×外枠が高回収',
+                            '雨・重馬場時：8枠有利＋差し有利＋母父スタミナ型血統',
+                            '3歳以上混合戦：年齢差によるスピード差に注意（3歳馬が斤量面で有利）'
+                        ]
+                    },
+                    '芝1800m': {
+                        course: '芝1800m',
+                        overview: '1番人気の信頼度（勝率39.6%・複勝率72.4%）がJRA屈指',
+                        features: [
+                            '3コーナーまで約750mと長い、スローペースになりやすい',
+                            '極端な後傾ラップ（前3F＝36.23秒／後3F＝34.54秒）',
+                            '人気馬・先行馬が堅実。逃げ馬の激走もあり'
+                        ],
+                        style: {
+                            escape: { return: '118.6〜192%', trend: '激走あり' },
+                            lead: { note: '堅実' },
+                            chase: { note: '' },
+                            late: { note: '不利' }
+                        },
+                        frame: {
+                            good: '4枠（単勝回収率104%、勝率トップ）、5枠',
+                            bad: '中枠（4枠・8枠）＋逃げor先行（不利受けにくい）',
+                            worst: '1枠（単勝回収率54%）'
+                        },
+                        blood: {
+                            good: ['モーリス', 'キタサンブラック', 'キズナ'],
+                            bad: ['ロードカナロア（過剰人気傾向／回収率56%）', '母父20歳以上（単回71%）']
+                        },
+                        axis: [
+                            '人気が1〜4番人気（1番人気は複勝率72.4%、勝率39.6%）',
+                            '3〜4歳馬（若馬が好走率高、5歳以上は信頼度低下）',
+                            '騎手がルメール／川田将雅／モレイラ／レーン／戸崎圭太（複勝率60％前後）',
+                            '先行脚質（過去5走の4角通過が4番手以内が3回以上）',
+                            '枠順が4枠or5枠',
+                            '血統がモーリス／キタサンブラック／キズナ産駒'
+                        ],
+                        hole: [
+                            '逃げ脚質（単勝回収率118.6〜192%）',
+                            '前走9着以下＋今回3〜8枠（巻き返し時は回収率100%超）',
+                            '中枠（4枠・8枠）＋逃げor先行',
+                            '騎手：坂井瑠星／松山弘平／外国人騎手（モレイラ単回111%）',
+                            '栗東（関西）所属＋関東遠征（連対率・複勝率が関東馬の2倍）',
+                            '前走から休み明け（初戦）（単回91.5%と高妙味）'
+                        ],
+                        avoid: [
+                            '1枠（内でもまれやすく不利）',
+                            '5歳以上（勝率3.4%、複勝率15.7%）',
+                            '距離延長組（前走1600m以下→1800mは勝率5.6%、単回42%）',
+                            '人気4〜6番人気（中途半端人気は妙味・信頼性ともに低い）',
+                            '追込脚質（展開頼みで不発リスク高）'
+                        ],
+                        tips: [
+                            '1番人気の信頼度（勝率39.6%・複勝率72.4%）がJRA屈指',
+                            'ルメール／川田／レーン／戸崎圭太の複勝率60％前後',
+                            '逃げ×4・8枠×前走大敗×好血統が穴',
+                            '堅軸＋波乱流しの戦術が最も向く'
+                        ]
+                    },
+                    '芝2000m': {
+                        course: '芝2000m',
+                        overview: '71%スロー、上がり最速馬の複勝率74.3%。内枠有利',
+                        features: [
+                            '専用ポケットスタート、最初のコーナーまで約130mと短く内枠有利',
+                            '71%がスローペース、上がり勝負',
+                            '上がり最速馬の複勝率74.3%（勝率33.6%）',
+                            '先行脚質：複勝率35.7%'
+                        ],
+                        style: {
+                            escape: { win: '12.8%', return: '113%', note: '内枠×逃げは穴' },
+                            lead: { place: '35.7%' },
+                            chase: { place: '24.0%' },
+                            late: { note: '' }
+                        },
+                        frame: {
+                            good: '1枠（勝率11.3%、単回95%）、3枠（単回98%）内で高水準',
+                            bad: '外枠可もなく不可もなく',
+                            worst: '17・18番は壊滅'
+                        },
+                        blood: {
+                            good: ['ロベルト系（複勝率32.4%、単回98%）', 'キズナ', 'モーリス', 'キタサンブラック'],
+                            bad: ['ディープインパクト（単回52%、人気先行）']
+                        },
+                        axis: [
+                            'C.ルメール騎手（勝率34.1%、複勝率66.7%）',
+                            '1〜3番人気（複勝率70.3%）',
+                            '上がり3F1位or2位の実績（過去2走内）あり',
+                            '枠順が1枠 or 3枠',
+                            '脚質：先行or差し（先行＝複勝率35.7%、差し＝複24.0%）',
+                            '種牡馬がロベルト系',
+                            '3歳馬（複勝率45.5%）'
+                        ],
+                        hole: [
+                            '単勝オッズ15.0〜19.9倍（単回111%）',
+                            '逃げ脚質＋1〜3枠（逃げ全体で単回113%）',
+                            '前走スローで4着以下＋今走持続戦向き血統（モーリス、キズナ）',
+                            '前走でイン立ち回り（最終コーナー最内）＋今走内枠（1〜3枠）',
+                            '騎手：北村宏司（単回136%）／石橋脩／菅原明良',
+                            '種牡馬：キタサンブラック／モーリス／キズナ',
+                            'ローテ：中2週〜中4週（高回収傾向）'
+                        ],
+                        avoid: [
+                            '混合戦の牝馬（単回47%）',
+                            '馬体重500kg以上（大型馬は位置取り不利）',
+                            '枠順が17番or18番（距離ロス大）',
+                            '人気8〜9番人気（単回49%未満）',
+                            '栗東所属（美浦と比較して単回低い＝48%）',
+                            '追込脚質（複勝率13.8%）'
+                        ],
+                        tips: [
+                            'C.ルメール（勝率34.1%、複勝率66.7%）',
+                            '1〜3番人気の複勝率70.3%',
+                            '6〜7番人気が穴ゾーン（単回90〜111％）',
+                            '内枠×逃げは穴パターン'
+                        ]
+                    },
+                    '芝2400m': {
+                        course: '芝2400m',
+                        overview: '約75%スロー。C.ルメール×1番人気が複勝率82.7%',
+                        features: [
+                            'スタート〜最初のコーナーまで約350m',
+                            '約75%がスローペース、上がり勝負',
+                            '瞬発力＋持続力＋総合力重視'
+                        ],
+                        style: {
+                            escape: { win: '11.6%', place: '34.8%', return: '141.3%', trend: '穴に最適' },
+                            lead: { note: '' },
+                            chase: { win: '8.6%', place: '23.6%', return: '100%', trend: '最妙味' },
+                            late: { note: '不利' }
+                        },
+                        frame: {
+                            good: '外枠（特に8枠）複回106.4%、牝馬×5〜8枠',
+                            bad: '',
+                            worst: '2枠（複勝率19.2%、単回61%）'
+                        },
+                        blood: {
+                            good: ['ドゥラメンテ', 'ディープインパクト系', '母父クロフネ（単回229%、複回127%）'],
+                            bad: []
+                        },
+                        axis: [
+                            '騎手がC.ルメール（特に1番人気時：複勝率82.7%・勝率57.7%）',
+                            '人気が1番人気（複勝率69.8%）',
+                            'ドゥラメンテ産駒、またはディープインパクト系',
+                            '脚質が差しor先行',
+                            '年齢が3歳or4歳（複勝率40%以上）',
+                            '枠順が内すぎず（2枠以外）＋偶数枠or外枠（6〜8枠）'
+                        ],
+                        hole: [
+                            '4番人気（単回121%）／9番人気（単回128%）',
+                            '脚質が「差し」or「逃げ」（回収率100%以上）',
+                            '枠順が7枠or8枠',
+                            '牝馬×混合戦（斤量利あり）',
+                            '母父クロフネ（単回229%、複回127%）',
+                            '馬体重が前走比±0〜+8kg',
+                            '前走1〜2番人気→今走6番人気以下',
+                            '騎手：田辺裕信（複回117%、単回114%）'
+                        ],
+                        avoid: [
+                            '2番人気（単回59%、過剰人気ゾーン）',
+                            '2枠（複勝率19.2%、単回61%）',
+                            '叩き2戦目の馬',
+                            '6歳以上（特に7歳＝勝率0%、複勝12.3%）',
+                            '脚質「追込」（複勝率13.8%、不利）',
+                            '良馬場なのに馬体減or馬体重470kg未満の牡馬'
+                        ],
+                        tips: [
+                            'C.ルメール×1番人気（複勝率82.7%・勝率57.7%）＝絶対的信頼',
+                            '4番人気（単回121%）／9番人気（単回128%）が妙味',
+                            '差しor逃げ×外枠牝馬が穴',
+                            '信頼と爆発力のバランス型戦術が理にかなう'
+                        ]
+                    }
+                }
+            };
             
             // Show toast helper
             const showToast = (message, type = 'success') => {
@@ -161,8 +736,9 @@
                 const year = calendarDate.getFullYear();
                 const month = calendarDate.getMonth();
                 const selectedDate = new Date(year, month, day);
-                const dateString = selectedDate.toISOString().split('T')[0];
-                handleMetaChange('date', dateString);
+                // Use local date formatting to avoid timezone issues
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                setRaceMeta(prev => ({ ...prev, date: dateString }));
                 setShowCalendar(false);
             };
             
@@ -184,7 +760,29 @@
                         console.error("Failed to load history", e);
                     }
                 }
+                
+                const savedResults = localStorage.getItem('jra_odds_results');
+                if (savedResults) {
+                    try {
+                        setResultHistory(JSON.parse(savedResults));
+                    } catch (e) {
+                        console.error("Failed to load results", e);
+                    }
+                }
             }, []);
+            
+            // Save bankroll data to localStorage
+            useEffect(() => {
+                localStorage.setItem('bankroll_start', bankrollStart.toString());
+            }, [bankrollStart]);
+            
+            useEffect(() => {
+                localStorage.setItem('bankroll_goal', bankrollGoal.toString());
+            }, [bankrollGoal]);
+            
+            useEffect(() => {
+                localStorage.setItem('bankroll_current', bankrollCurrent.toString());
+            }, [bankrollCurrent]);
             
             // Update calendar date when raceMeta.date changes
             useEffect(() => {
@@ -509,6 +1107,64 @@
                 }
             };
 
+            const handleStakeChange = (key, value) => {
+                const numValue = parseInt(value) || 0;
+                setCustomStakes(prev => ({ ...prev, [key]: numValue }));
+            };
+
+            // Calculate total budget from target profit (reverse calculation)
+            const calculateBudgetFromTarget = () => {
+                setTargetError(null);
+                
+                if (betList.length === 0) {
+                    setTargetError('買い目を追加してください');
+                    return;
+                }
+                
+                // Calculate inverse sum
+                let inverseSum = 0;
+                let hasValidOdds = false;
+                
+                for (const bet of betList) {
+                    const odds = oddsData[bet.key];
+                    if (bet.type === 'wide') {
+                        if (odds && typeof odds === 'object' && (odds.min > 0 || odds.max > 0)) {
+                            const avgOdds = ((odds.min || 0) + (odds.max || 0)) / 2;
+                            if (avgOdds > 0) {
+                                inverseSum += 1 / avgOdds;
+                                hasValidOdds = true;
+                            }
+                        }
+                    } else {
+                        if (odds > 0) {
+                            inverseSum += 1 / odds;
+                            hasValidOdds = true;
+                        }
+                    }
+                }
+                
+                if (!hasValidOdds) {
+                    setTargetError('オッズを入力してください');
+                    return;
+                }
+                
+                // Error check: if S >= 1.0, profit is impossible
+                if (inverseSum >= 1.0) {
+                    setTargetError('⚠️ オッズが低すぎます。目標達成は不可能です。');
+                    return;
+                }
+                
+                // Calculate required total investment
+                // Total payout (R) = Target profit (T) / (1 - S)
+                // Required investment (B) = R - T
+                const totalPayout = targetProfit / (1 - inverseSum);
+                const requiredBudget = Math.ceil((totalPayout - targetProfit) / 100) * 100; // Round up to nearest 100
+                
+                setTotalBudget(requiredBudget);
+                setAllocationMode('profit'); // Force profit mode
+                setCustomStakes({}); // Clear custom stakes
+            };
+
             const fillMockOdds = () => {
                 const newOdds = { ...oddsData };
                 betList.forEach(c => {
@@ -527,6 +1183,120 @@
                     }
                 });
                 setOddsData(newOdds);
+            };
+            
+            // Check which bets won based on race result
+            const checkResults = () => {
+                const { first, second, third } = raceResult;
+                
+                if (!first || !second || !third) {
+                    showToast('着順を全て入力してください', 'error');
+                    return;
+                }
+                
+                const results = betList.map(bet => {
+                    let isWin = false;
+                    
+                    switch (bet.type) {
+                        case 'tansho':
+                            isWin = bet.ids[0] === parseInt(first);
+                            break;
+                        case 'fukusho':
+                            isWin = bet.ids[0] === parseInt(first) || 
+                                   bet.ids[0] === parseInt(second) || 
+                                   bet.ids[0] === parseInt(third);
+                            break;
+                        case 'wide':
+                            const wideHorses = [parseInt(first), parseInt(second), parseInt(third)];
+                            isWin = wideHorses.includes(bet.ids[0]) && wideHorses.includes(bet.ids[1]);
+                            break;
+                        case 'umaren':
+                            isWin = (bet.ids.includes(parseInt(first)) && bet.ids.includes(parseInt(second)));
+                            break;
+                        case 'umatan':
+                            isWin = (bet.ids[0] === parseInt(first) && bet.ids[1] === parseInt(second));
+                            break;
+                        case 'sanrenpuku':
+                            isWin = bet.ids.includes(parseInt(first)) && 
+                                   bet.ids.includes(parseInt(second)) && 
+                                   bet.ids.includes(parseInt(third));
+                            break;
+                        case 'sanrentan':
+                            isWin = (bet.ids[0] === parseInt(first) && 
+                                    bet.ids[1] === parseInt(second) && 
+                                    bet.ids[2] === parseInt(third));
+                            break;
+                    }
+                    
+                    return { ...bet, isWin };
+                });
+                
+                const winCount = results.filter(r => r.isWin).length;
+                
+                // Get calculated data for each bet
+                const totalInvested = calculatedData.reduce((sum, bet) => sum + (bet.stake || 0), 0);
+                
+                const totalReturn = results.reduce((sum, bet) => {
+                    if (!bet.isWin) return sum;
+                    const betData = calculatedData.find(row => row.key === bet.key);
+                    if (!betData) return sum;
+                    
+                    // For wide bets, use actual odds based on result
+                    if (bet.type === 'wide') {
+                        const wideOdds = oddsData[bet.key];
+                        if (!wideOdds || typeof wideOdds !== 'object') return sum;
+                        // Use average of min/max for simplicity
+                        const avgOdds = ((wideOdds.min || 0) + (wideOdds.max || 0)) / 2;
+                        return sum + Math.floor(betData.stake * avgOdds);
+                    }
+                    
+                    return sum + Math.floor(betData.stake * betData.odds);
+                }, 0);
+                
+                const profit = totalReturn - totalInvested;
+                
+                // Save result to history
+                const resultRecord = {
+                    id: Date.now(),
+                    date: raceMeta.date,
+                    place: raceMeta.place,
+                    raceNum: raceMeta.raceNum,
+                    note: raceMeta.note,
+                    result: { first: parseInt(first), second: parseInt(second), third: parseInt(third) },
+                    totalBets: betList.length,
+                    winCount: winCount,
+                    totalInvested: totalInvested,
+                    totalReturn: totalReturn,
+                    profit: profit,
+                    bets: betList.map(bet => {
+                        const betData = calculatedData.find(row => row.key === bet.key);
+                        const isWin = results.find(r => r.key === bet.key)?.isWin || false;
+                        return {
+                            type: bet.type,
+                            combination: bet.label,
+                            odds: betData?.odds || 0,
+                            stake: betData?.stake || 0,
+                            isWin: isWin
+                        };
+                    })
+                };
+                
+                const updatedResults = [...resultHistory, resultRecord];
+                setResultHistory(updatedResults);
+                localStorage.setItem('jra_odds_results', JSON.stringify(updatedResults));
+                
+                const resultMessage = `的中: ${winCount}点 / ${betList.length}点
+投資額: ${totalInvested.toLocaleString()}円
+払戻: ${totalReturn.toLocaleString()}円
+収支: ${profit >= 0 ? '+' : ''}${profit.toLocaleString()}円`;
+                
+                showConfirm(
+                    resultMessage,
+                    () => {
+                        setShowResultInput(false);
+                        setRaceResult({ first: '', second: '', third: '' });
+                    }
+                );
             };
 
             const calculatedData = useMemo(() => {
@@ -547,11 +1317,18 @@
 
                 if (allocationMode === 'flat') {
                     const stakePerBet = Math.floor((totalBudget / results.length) / 100) * 100;
-                    return results.map(r => ({
+                    const betsWithStakes = results.map(r => {
+                        const customStake = customStakes[r.key];
+                        const actualStake = (customStake !== undefined && customStake >= 0) ? customStake : stakePerBet;
+                        return { ...r, stake: actualStake };
+                    });
+                    
+                    const actualTotal = betsWithStakes.reduce((sum, item) => sum + item.stake, 0);
+                    
+                    return betsWithStakes.map(r => ({
                         ...r,
-                        stake: stakePerBet,
-                        return: Math.floor(stakePerBet * r.odds),
-                        profit: Math.floor(stakePerBet * r.odds) - (stakePerBet * results.length)
+                        return: Math.floor(r.stake * r.odds),
+                        profit: Math.floor(r.stake * r.odds) - actualTotal
                     }));
                 } else {
                     // For profit mode, use average odds for wide bets
@@ -586,13 +1363,27 @@
                     });
 
                     let currentTotal = calculatedBets.reduce((sum, item) => sum + item.stake, 0);
-                    return calculatedBets.map(r => ({
+                    const finalBets = calculatedBets.map(r => {
+                        // customStakesでオーバーライド
+                        const customStake = customStakes[r.key];
+                        const actualStake = (customStake !== undefined && customStake >= 0) ? customStake : r.stake;
+                        
+                        return {
+                            ...r,
+                            stake: actualStake
+                        };
+                    });
+                    
+                    // 実際の総投資額を再計算
+                    const actualTotal = finalBets.reduce((sum, item) => sum + item.stake, 0);
+                    
+                    return finalBets.map(r => ({
                         ...r,
-                        return: Math.floor(r.stake * r.odds),
-                        profit: Math.floor(r.stake * r.odds) - currentTotal
+                        return: Math.floor(r.stake * (r.type === 'wide' ? ((oddsData[r.key]?.min || 0) + (oddsData[r.key]?.max || 0)) / 2 : r.odds)),
+                        profit: Math.floor(r.stake * (r.type === 'wide' ? ((oddsData[r.key]?.min || 0) + (oddsData[r.key]?.max || 0)) / 2 : r.odds)) - actualTotal
                     }));
                 }
-            }, [betList, oddsData, totalBudget, allocationMode]);
+            }, [betList, oddsData, totalBudget, allocationMode, customStakes]);
 
             const stats = useMemo(() => {
                 const totalStake = calculatedData.reduce((acc, curr) => acc + curr.stake, 0);
@@ -603,17 +1394,108 @@
                     }
                     return c.odds > 0;
                 });
-                const sumInv = validCombos.reduce((acc, curr) => {
-                    if (curr.type === 'wide') {
-                        const wideOdds = oddsData[curr.key];
-                        const avgOdds = ((wideOdds.min || 0) + (wideOdds.max || 0)) / 2;
-                        return acc + (avgOdds > 0 ? 1 / avgOdds : 0);
-                    }
-                    return acc + (1 / curr.odds);
+                
+                // 実質平均オッズの計算
+                // 計算式: (各買い目の払戻期待値の総和) ÷ (総投資額 × 総投資額)
+                const numerator = calculatedData.reduce((sum, item) => {
+                    return sum + (item.stake * item.return);
                 }, 0);
-                const syntheticOdds = sumInv > 0 ? (1 / sumInv).toFixed(2) : '---';
-                return { totalStake, syntheticOdds, count: betList.length };
-            }, [calculatedData, betList, oddsData]);
+                
+                const realAverageOdds = totalStake > 0 ? (numerator / (totalStake * totalStake)).toFixed(2) : '---';
+                
+                // 戦略アドバイス判定
+                let strategy = { zone: 'unknown', color: 'gray', message: '', emoji: '' };
+                const oddsValue = parseFloat(realAverageOdds);
+                
+                if (!isNaN(oddsValue)) {
+                    if (oddsValue < 1.5) {
+                        strategy = {
+                            zone: 'danger',
+                            color: 'red',
+                            bgColor: 'bg-red-50',
+                            borderColor: 'border-red-300',
+                            textColor: 'text-red-800',
+                            emoji: '⚠️',
+                            message: '危険：安すぎます。見送るか点数を絞ってください。'
+                        };
+                    } else if (oddsValue < 3.0) {
+                        strategy = {
+                            zone: 'optimal',
+                            color: 'emerald',
+                            bgColor: 'bg-emerald-50',
+                            borderColor: 'border-emerald-300',
+                            textColor: 'text-emerald-800',
+                            emoji: '🔥',
+                            message: '推奨：バランス最適。効率よく資産を増やせるラインです。'
+                        };
+                    } else {
+                        strategy = {
+                            zone: 'aggressive',
+                            color: 'orange',
+                            bgColor: 'bg-orange-50',
+                            borderColor: 'border-orange-300',
+                            textColor: 'text-orange-800',
+                            emoji: '⚡',
+                            message: '攻撃：穴狙い専用。連敗リスクが高い領域です。'
+                        };
+                    }
+                }
+                
+                return { totalStake, realAverageOdds, count: betList.length, strategy };
+            }, [calculatedData, betList]);
+
+            // Bankroll Status Calculation
+            const bankrollStatus = useMemo(() => {
+                const targetAmount = bankrollStart + bankrollGoal;
+                const profit = bankrollCurrent - bankrollStart;
+                const profitPercentage = bankrollStart > 0 ? ((profit / bankrollStart) * 100).toFixed(1) : 0;
+                const progressPercentage = bankrollGoal > 0 ? Math.min(100, Math.max(0, (profit / bankrollGoal) * 100)) : 0;
+                
+                let status = {
+                    type: 'normal',
+                    color: 'emerald',
+                    bgColor: 'bg-emerald-500',
+                    borderColor: 'border-emerald-400',
+                    textColor: 'text-emerald-800',
+                    emoji: '🟢',
+                    message: ''
+                };
+                
+                if (bankrollCurrent >= targetAmount) {
+                    // Goal achieved
+                    status = {
+                        type: 'goal',
+                        color: 'yellow',
+                        bgColor: 'bg-gradient-to-r from-yellow-400 to-yellow-500',
+                        borderColor: 'border-yellow-400',
+                        textColor: 'text-yellow-900',
+                        emoji: '🎉',
+                        message: '目標達成！ 素晴らしい成果です。今日はここで『勝ち逃げ』しませんか？'
+                    };
+                } else if (bankrollCurrent <= bankrollStart * 0.5) {
+                    // Danger zone
+                    status = {
+                        type: 'danger',
+                        color: 'red',
+                        bgColor: 'bg-red-500',
+                        borderColor: 'border-red-400',
+                        textColor: 'text-red-900',
+                        emoji: '⚠️',
+                        message: '警告：資金の50%を失いました。一度休憩して冷静になりましょう。'
+                    };
+                } else {
+                    // Normal play
+                    status.message = `現在収支: ${profit >= 0 ? '+' : ''}${profit.toLocaleString()}円。冷静に目標を目指しましょう。`;
+                }
+                
+                return { 
+                    targetAmount, 
+                    profit, 
+                    profitPercentage, 
+                    progressPercentage,
+                    status 
+                };
+            }, [bankrollStart, bankrollGoal, bankrollCurrent]);
 
             // Render Components
             const renderHorseButton = (num, isSelected, colorClass, onClick) => (
@@ -657,7 +1539,7 @@
                             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-slide-in">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                                        <Info size={24} className="text-yellow-600" />
+                                        <Icons.Info size={24} className="text-yellow-600" />
                                     </div>
                                     <h3 className="text-lg font-bold text-gray-800">確認</h3>
                                 </div>
@@ -686,9 +1568,9 @@
                             toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-500'
                         } text-white font-bold flex items-center gap-3 animate-slide-in`}>
                             {toast.type === 'success' ? (
-                                <CheckSquare size={24} />
+                                <Icons.CheckSquare size={24} />
                             ) : (
-                                <X size={24} />
+                                <Icons.X size={24} />
                             )}
                             <span>{toast.message}</span>
                         </div>
@@ -698,15 +1580,27 @@
                     <header className="bg-emerald-700 text-white p-4 sticky top-0 z-30 shadow-md">
                         <div className="max-w-3xl mx-auto flex justify-between items-center">
                             <h1 className="text-xl font-bold flex items-center gap-2">
-                                <Calculator size={20} />
+                                <Icons.Calculator size={20} />
                                 ODDS MASTER
                             </h1>
                             <div className="flex gap-2">
                                 <button 
+                                    onClick={() => setCurrentView('courseData')}
+                                    className={`text-xs px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'courseData' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}
+                                >
+                                    <Icons.BookOpen size={14} /> コース
+                                </button>
+                                <button 
+                                    onClick={() => setCurrentView('stats')}
+                                    className={`text-xs px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'stats' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}
+                                >
+                                    <Icons.BarChart size={14} /> 統計
+                                </button>
+                                <button 
                                     onClick={() => setCurrentView('history')}
                                     className={`text-xs px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'history' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}
                                 >
-                                    <History size={14} /> 履歴
+                                    <Icons.History size={14} /> 履歴
                                 </button>
                                 {currentView === 'calculator' && (
                                     <button onClick={clearAll} className="text-xs bg-emerald-800 px-3 py-1 rounded hover:bg-emerald-600 border border-emerald-600">
@@ -720,12 +1614,116 @@
                     {/* CALCULATOR VIEW */}
                     {currentView === 'calculator' && (
                         <main className="max-w-3xl mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
+                            {/* Bankroll Management Dashboard */}
+                            <section className="bg-white rounded-lg shadow overflow-hidden">
+                                <button
+                                    onClick={() => setShowBankroll(!showBankroll)}
+                                    className="w-full p-3 flex items-center justify-between bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 transition-all"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Icons.TrendingUp size={20} />
+                                        <span className="font-bold">Today's Bankroll</span>
+                                        <span className="text-xs bg-white/20 px-2 py-0.5 rounded">
+                                            {bankrollStatus.profit >= 0 ? '+' : ''}{bankrollStatus.profit.toLocaleString()}円
+                                        </span>
+                                    </div>
+                                    {showBankroll ? <Icons.ChevronUp size={20} /> : <Icons.ChevronDown size={20} />}
+                                </button>
+
+                                {showBankroll && (
+                                    <div className="p-4 space-y-4">
+                                        {/* Input Fields */}
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 block mb-1">開始資金</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        step="1000"
+                                                        value={bankrollStart}
+                                                        onChange={(e) => setBankrollStart(parseInt(e.target.value) || 0)}
+                                                        className="w-full border border-gray-300 rounded px-2 py-1.5 pr-8 text-sm text-right font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    />
+                                                    <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 pointer-events-none">円</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 block mb-1">目標利益</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        step="1000"
+                                                        value={bankrollGoal}
+                                                        onChange={(e) => setBankrollGoal(parseInt(e.target.value) || 0)}
+                                                        className="w-full border border-gray-300 rounded px-2 py-1.5 pr-8 text-sm text-right font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    />
+                                                    <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 pointer-events-none">円</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 block mb-1">現在資金</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        step="100"
+                                                        value={bankrollCurrent}
+                                                        onChange={(e) => setBankrollCurrent(parseInt(e.target.value) || 0)}
+                                                        className="w-full border border-gray-300 rounded px-2 py-1.5 pr-8 text-sm text-right font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    />
+                                                    <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 pointer-events-none">円</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Progress Bar */}
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-xs text-gray-600">
+                                                <span>開始: {bankrollStart.toLocaleString()}円</span>
+                                                <span className="font-bold text-emerald-700">目標金額: {bankrollStatus.targetAmount.toLocaleString()}円</span>
+                                            </div>
+                                            <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                                                <div 
+                                                    className={`h-full transition-all duration-500 ${bankrollStatus.status.bgColor} flex items-center justify-end px-3`}
+                                                    style={{ width: `${bankrollStatus.progressPercentage}%` }}
+                                                >
+                                                    {bankrollStatus.progressPercentage > 20 && (
+                                                        <span className="text-xs font-bold text-white drop-shadow">
+                                                            {bankrollStatus.progressPercentage.toFixed(0)}%
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {bankrollStatus.progressPercentage <= 20 && bankrollStatus.progressPercentage > 0 && (
+                                                    <span className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs font-bold text-gray-600">
+                                                        {bankrollStatus.progressPercentage.toFixed(0)}%
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex justify-between text-xs">
+                                                <span className={`font-bold ${bankrollStatus.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                    現在: {bankrollCurrent.toLocaleString()}円 ({bankrollStatus.profit >= 0 ? '+' : ''}{bankrollStatus.profitPercentage}%)
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Status Message */}
+                                        <div className={`p-3 rounded-lg border-l-4 ${bankrollStatus.status.type === 'goal' ? 'bg-yellow-50 border-yellow-400' : bankrollStatus.status.type === 'danger' ? 'bg-red-50 border-red-400' : 'bg-emerald-50 border-emerald-400'}`}>
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-xl">{bankrollStatus.status.emoji}</span>
+                                                <p className={`text-sm font-bold ${bankrollStatus.status.textColor}`}>
+                                                    {bankrollStatus.status.message}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </section>
+
                             {/* Race Metadata Input */}
                             <section className="bg-white rounded-lg shadow p-3">
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                     <div className="col-span-2 sm:col-span-1 relative">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1">
-                                            <Calendar size={12} /> 日付
+                                            <Icons.Calendar size={12} /> 日付
                                         </label>
                                         <button
                                             type="button"
@@ -733,7 +1731,7 @@
                                             className="w-full text-sm bg-white border-2 border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 text-left flex items-center justify-between"
                                         >
                                             <span>{raceMeta.date}</span>
-                                            <Calendar size={16} className="text-gray-400" />
+                                            <Icons.Calendar size={16} className="text-gray-400" />
                                         </button>
                                         
                                         {showCalendar && (
@@ -749,7 +1747,7 @@
                                                             onClick={() => changeMonth(-1)}
                                                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                                                         >
-                                                            <ArrowLeft size={20} />
+                                                            <Icons.ArrowLeft size={20} />
                                                         </button>
                                                         <div className="font-bold text-gray-800">
                                                             {calendarDate.getFullYear()}年 {calendarDate.getMonth() + 1}月
@@ -759,7 +1757,7 @@
                                                             onClick={() => changeMonth(1)}
                                                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors transform rotate-180"
                                                         >
-                                                            <ArrowLeft size={20} />
+                                                            <Icons.ArrowLeft size={20} />
                                                         </button>
                                                     </div>
                                                     
@@ -821,7 +1819,7 @@
                                     </div>
                                     <div>
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1">
-                                            <MapPin size={12} /> 場所
+                                            <Icons.MapPin size={12} /> 場所
                                         </label>
                                         <select 
                                             value={raceMeta.place}
@@ -835,7 +1833,7 @@
                                     </div>
                                     <div>
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1">
-                                            <Flag size={12} /> R
+                                            <Icons.Flag size={12} /> R
                                         </label>
                                         <select 
                                             value={raceMeta.raceNum}
@@ -849,7 +1847,7 @@
                                     </div>
                                     <div className="col-span-2 sm:col-span-1">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1">
-                                            <FileText size={12} /> メモ
+                                            <Icons.FileText size={12} /> メモ
                                         </label>
                                         <input 
                                             type="text" 
@@ -866,7 +1864,7 @@
                             <section className="bg-white rounded-lg shadow overflow-hidden relative">
                                 <div className="p-3 bg-gray-50 border-b flex justify-between items-center">
                                     <h2 className="font-bold text-gray-700 flex items-center gap-2">
-                                        <Settings size={18}/> 買い目作成
+                                        <Icons.Settings size={18}/> 買い目作成
                                     </h2>
                                     <button onClick={clearSelection} className="text-xs text-gray-500 hover:text-red-500 underline">
                                         選択クリア
@@ -904,7 +1902,7 @@
                                                                 votingMode === 'nagashi' ? 'bg-white text-emerald-700 shadow font-bold' : 'text-gray-500'
                                                             }`}
                                                         >
-                                                            <GitMerge size={14} className="rotate-90" /> 流し
+                                                            <Icons.GitMerge size={14} className="rotate-90" /> 流し
                                                         </button>
                                                         <button 
                                                             onClick={() => setVotingMode('formation')}
@@ -912,7 +1910,7 @@
                                                                 votingMode === 'formation' ? 'bg-white text-emerald-700 shadow font-bold' : 'text-gray-500'
                                                             }`}
                                                         >
-                                                            <Layers size={14} /> フォーメ
+                                                            <Icons.Layers size={14} /> フォーメ
                                                         </button>
                                                     </>
                                                 )}
@@ -922,7 +1920,7 @@
                                                         votingMode === 'box' ? 'bg-white text-emerald-700 shadow font-bold' : 'text-gray-500'
                                                     }`}
                                                 >
-                                                    <CheckSquare size={14} /> {isSingleHorseBet ? '通常' : 'BOX'}
+                                                    <Icons.CheckSquare size={14} /> {isSingleHorseBet ? '通常' : 'BOX'}
                                                 </button>
                                             </div>
                                         </div>
@@ -1019,7 +2017,7 @@
                                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                         }`}
                                     >
-                                        <PlusCircle size={20} />
+                                        <Icons.PlusCircle size={20} />
                                         下のリストに追加
                                     </button>
                                 </div>
@@ -1028,20 +2026,94 @@
                             {/* Budget & Stats */}
                             {betList.length > 0 && (
                                 <section className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-400">
+                                    {/* Input Mode Switcher */}
+                                    <div className="mb-4 flex items-center gap-4 pb-3 border-b">
+                                        <span className="text-xs font-bold text-gray-500 uppercase">入力モード:</span>
+                                        <div className="flex gap-3">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="budgetMode"
+                                                    value="budget"
+                                                    checked={budgetInputMode === 'budget'}
+                                                    onChange={(e) => {
+                                                        setBudgetInputMode(e.target.value);
+                                                        setTargetError(null);
+                                                    }}
+                                                    className="w-4 h-4 text-emerald-600"
+                                                />
+                                                <span className="text-sm font-medium text-gray-700">予算から計算</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="budgetMode"
+                                                    value="target"
+                                                    checked={budgetInputMode === 'target'}
+                                                    onChange={(e) => {
+                                                        setBudgetInputMode(e.target.value);
+                                                        setAllocationMode('profit');
+                                                        setTargetError(null);
+                                                    }}
+                                                    className="w-4 h-4 text-blue-600"
+                                                />
+                                                <span className="text-sm font-medium text-gray-700">目標利益から計算</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">総予算</label>
-                                            <div className="flex items-center gap-2">
-                                                <input 
-                                                    type="number" 
-                                                    value={totalBudget}
-                                                    onChange={(e) => setTotalBudget(parseInt(e.target.value) || 0)}
-                                                    className="w-full border border-gray-300 rounded p-2 text-right font-mono text-lg focus:ring-2 focus:ring-emerald-500 outline-none"
-                                                    step="100"
-                                                    inputMode="numeric"
-                                                />
-                                                <span className="text-gray-500 text-sm">円</span>
-                                            </div>
+                                            {budgetInputMode === 'budget' ? (
+                                                <>
+                                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">総予算</label>
+                                                    <div className="flex items-center gap-2">
+                                                        <input 
+                                                            type="number" 
+                                                            value={totalBudget}
+                                                            onChange={(e) => setTotalBudget(parseInt(e.target.value) || 0)}
+                                                            className="w-full border border-gray-300 rounded p-2 text-right font-mono text-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                                                            step="100"
+                                                            inputMode="numeric"
+                                                        />
+                                                        <span className="text-gray-500 text-sm">円</span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <label className="block text-xs font-bold text-blue-600 uppercase mb-1">目標利益</label>
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <input 
+                                                                type="number" 
+                                                                value={targetProfit}
+                                                                onChange={(e) => setTargetProfit(parseInt(e.target.value) || 0)}
+                                                                className="w-full border border-blue-300 rounded p-2 text-right font-mono text-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                                step="100"
+                                                                inputMode="numeric"
+                                                            />
+                                                            <span className="text-gray-500 text-sm">円</span>
+                                                        </div>
+                                                        <button
+                                                            onClick={calculateBudgetFromTarget}
+                                                            className="w-full bg-blue-600 text-white py-2 rounded font-bold text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                                        >
+                                                            <Icons.Calculator size={16} />
+                                                            必要予算を計算
+                                                        </button>
+                                                        {targetError && (
+                                                            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-xs">
+                                                                {targetError}
+                                                            </div>
+                                                        )}
+                                                        {!targetError && budgetInputMode === 'target' && (
+                                                            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-2 rounded text-xs">
+                                                                <strong>必要予算:</strong> {totalBudget.toLocaleString()}円
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
 
                                         <div className="flex flex-col justify-between">
@@ -1056,24 +2128,46 @@
                                                 </span>
                                             </div>
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">平均合成オッズ:</span>
-                                                <span className="font-bold bg-gray-100 px-2 rounded">{stats.syntheticOdds} 倍</span>
+                                                <span className="text-gray-600">実質平均オッズ:</span>
+                                                <span className="font-bold bg-gray-100 px-2 rounded">{stats.realAverageOdds} 倍</span>
                                             </div>
                                         </div>
                                     </div>
 
+                                    {/* 戦略アドバイス */}
+                                    {stats.strategy && stats.strategy.zone !== 'unknown' && (
+                                        <div className={`mt-3 p-3 rounded-lg border-l-4 ${stats.strategy.bgColor} ${stats.strategy.borderColor}`}>
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-lg">{stats.strategy.emoji}</span>
+                                                <div className="flex-1">
+                                                    <p className={`text-sm font-bold ${stats.strategy.textColor}`}>
+                                                        {stats.strategy.message}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="mt-4 flex gap-2">
                                         <button 
-                                            onClick={() => setAllocationMode('profit')}
+                                            onClick={() => { setAllocationMode('profit'); setCustomStakes({}); }}
                                             className={`flex-1 text-xs py-2 rounded border ${allocationMode === 'profit' ? 'bg-emerald-100 border-emerald-500 text-emerald-800 font-bold' : 'bg-white text-gray-600'}`}
                                         >
                                             払戻均等 (利益確保)
+                                            {budgetInputMode === 'target' && <span className="block text-[10px] text-emerald-600 mt-0.5">目標利益モード使用中</span>}
                                         </button>
                                         <button 
-                                            onClick={() => setAllocationMode('flat')}
-                                            className={`flex-1 text-xs py-2 rounded border ${allocationMode === 'flat' ? 'bg-emerald-100 border-emerald-500 text-emerald-800 font-bold' : 'bg-white text-gray-600'}`}
+                                            onClick={() => { 
+                                                if (budgetInputMode !== 'target') {
+                                                    setAllocationMode('flat'); 
+                                                    setCustomStakes({});
+                                                }
+                                            }}
+                                            disabled={budgetInputMode === 'target'}
+                                            className={`flex-1 text-xs py-2 rounded border ${budgetInputMode === 'target' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : allocationMode === 'flat' ? 'bg-emerald-100 border-emerald-500 text-emerald-800 font-bold' : 'bg-white text-gray-600'}`}
                                         >
                                             資金均等 (一律)
+                                            {budgetInputMode === 'target' && <span className="block text-[10px] text-gray-400 mt-0.5">利益モードでは無効</span>}
                                         </button>
                                     </div>
                                 </section>
@@ -1084,12 +2178,24 @@
                                 <section id="bet-list-section" className="bg-white rounded-lg shadow overflow-hidden">
                                     <div className="bg-gray-50 p-3 border-b flex justify-between items-center">
                                         <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                                            <Save size={18} /> 
+                                            <Icons.Save size={18} /> 
                                             買い目リスト ({betList.length}点)
                                         </h3>
-                                        <button onClick={fillMockOdds} className="text-xs flex items-center gap-1 text-emerald-600 hover:text-emerald-800">
-                                            <RefreshCw size={12} /> オッズ自動入力(テスト)
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => {
+                                                    console.log('的中判定ボタンクリック');
+                                                    console.log('現在のshowResultInput:', showResultInput);
+                                                    setShowResultInput(!showResultInput);
+                                                }} 
+                                                className="text-xs flex items-center gap-1 text-purple-600 hover:text-purple-800 bg-purple-50 px-2 py-1 rounded border border-purple-200"
+                                            >
+                                                <Icons.Award size={12} /> 的中判定
+                                            </button>
+                                            <button onClick={fillMockOdds} className="text-xs flex items-center gap-1 text-emerald-600 hover:text-emerald-800">
+                                                <Icons.RefreshCw size={12} /> オッズ自動入力(テスト)
+                                            </button>
+                                        </div>
                                     </div>
                                     
                                     <div className="overflow-x-auto max-h-[600px]">
@@ -1141,11 +2247,16 @@
                                                                             </div>
                                                                         </td>
                                                                         <td className="p-2 sm:p-3 text-right font-mono" rowSpan={2}>
-                                                                            {betData?.stake > 0 ? (
+                                                                            {betData?.stake >= 0 ? (
                                                                                 <div className="flex flex-col items-end gap-1">
-                                                                                    <span className="bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm">
-                                                                                        {betData.stake.toLocaleString()}
-                                                                                    </span>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        step="100"
+                                                                                        value={customStakes[bet.key] !== undefined ? customStakes[bet.key] : (betData.stake || '')}
+                                                                                        onChange={(e) => handleStakeChange(bet.key, e.target.value)}
+                                                                                        className="w-20 sm:w-24 bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm text-right border border-emerald-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-mono"
+                                                                                        inputMode="numeric"
+                                                                                    />
                                                                                     <div className="sm:hidden flex flex-col items-end text-[10px]">
                                                                                         <span className="font-bold">{Math.floor(betData.stake * wideOdds.min).toLocaleString()}</span>
                                                                                         <span className={Math.floor(betData.stake * wideOdds.min) - stats.totalStake >= 0 ? 'text-emerald-600' : 'text-red-500'}>
@@ -1180,11 +2291,16 @@
                                                                             />
                                                                         </td>
                                                                         <td className="p-2 sm:p-3 text-right font-mono">
-                                                                            {betData?.stake > 0 ? (
+                                                                            {betData?.stake >= 0 ? (
                                                                                 <div className="flex flex-col items-end gap-1">
-                                                                                    <span className="bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm">
-                                                                                        {betData.stake.toLocaleString()}
-                                                                                    </span>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        step="100"
+                                                                                        value={customStakes[bet.key] !== undefined ? customStakes[bet.key] : (betData.stake || '')}
+                                                                                        onChange={(e) => handleStakeChange(bet.key, e.target.value)}
+                                                                                        className="w-20 sm:w-24 bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm text-right border border-emerald-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-mono"
+                                                                                        inputMode="numeric"
+                                                                                    />
                                                                                     <div className="sm:hidden flex flex-col items-end text-[10px]">
                                                                                         <span className="font-bold">{betData.return.toLocaleString()}</span>
                                                                                         <span className={betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}>
@@ -1211,8 +2327,8 @@
                                                                         onClick={() => removeBet(bet.key)}
                                                                         className="text-gray-400 hover:text-red-500 transition-colors"
                                                                     >
-                                                                        <Trash2 size={14} className="sm:hidden" />
-                                                                        <Trash2 size={16} className="hidden sm:block" />
+                                                                        <Icons.Trash2 size={14} className="sm:hidden" />
+                                                                        <Icons.Trash2 size={16} className="hidden sm:block" />
                                                                     </button>
                                                                 </td>
                                                             </tr>
@@ -1266,14 +2382,72 @@
                                             onClick={saveToHistory}
                                             className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 flex items-center justify-center gap-2"
                                         >
-                                            <Save size={20} />
+                                            <Icons.Save size={20} />
                                             履歴に保存する
                                         </button>
+                                        
+                                        {/* Result Input Section */}
+                                        {showResultInput && (
+                                            <div className="mt-4 p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+                                                <h4 className="font-bold text-purple-900 mb-3 flex items-center gap-2">
+                                                    <Icons.Award size={16} />
+                                                    レース結果を入力
+                                                </h4>
+                                                <div className="grid grid-cols-3 gap-3 mb-3">
+                                                    <div>
+                                                        <label className="text-xs text-purple-700 font-semibold block mb-1">1着</label>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max={horseCount}
+                                                            value={raceResult.first}
+                                                            onChange={(e) => setRaceResult(prev => ({ ...prev, first: e.target.value }))}
+                                                            className="w-full border border-purple-300 rounded px-2 py-2 text-center text-base focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none"
+                                                            placeholder="馬番"
+                                                            inputMode="numeric"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs text-purple-700 font-semibold block mb-1">2着</label>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max={horseCount}
+                                                            value={raceResult.second}
+                                                            onChange={(e) => setRaceResult(prev => ({ ...prev, second: e.target.value }))}
+                                                            className="w-full border border-purple-300 rounded px-2 py-2 text-center text-base focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none"
+                                                            placeholder="馬番"
+                                                            inputMode="numeric"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs text-purple-700 font-semibold block mb-1">3着</label>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max={horseCount}
+                                                            value={raceResult.third}
+                                                            onChange={(e) => setRaceResult(prev => ({ ...prev, third: e.target.value }))}
+                                                            className="w-full border border-purple-300 rounded px-2 py-2 text-center text-base focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none"
+                                                            placeholder="馬番"
+                                                            inputMode="numeric"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={checkResults}
+                                                    className="w-full bg-purple-600 text-white font-bold py-2 rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2"
+                                                >
+                                                    <Icons.Award size={18} />
+                                                    的中判定
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </section>
                             ) : (
                                 <div className="text-center py-12 text-gray-400 bg-white rounded-lg border-2 border-dashed border-gray-200">
-                                    <Info className="mx-auto mb-2 opacity-50" />
+                                    <Icons.Info className="mx-auto mb-2 opacity-50" />
                                     <p>まだ買い目がありません</p>
                                     <p className="text-xs mt-1">馬を選んで「下のリストに追加」を押してください</p>
                                 </div>
@@ -1289,14 +2463,14 @@
                                     onClick={() => setCurrentView('calculator')}
                                     className="p-2 bg-white rounded-full shadow hover:bg-gray-100"
                                 >
-                                    <ArrowLeft size={20} className="text-gray-600" />
+                                    <Icons.ArrowLeft size={20} className="text-gray-600" />
                                 </button>
                                 <h2 className="text-xl font-bold text-gray-700">保存済み履歴</h2>
                             </div>
 
                             {savedHistory.length === 0 ? (
                                 <div className="text-center py-12 text-gray-400 bg-white rounded-lg">
-                                    <History className="mx-auto mb-2 opacity-50" size={48} />
+                                    <Icons.History className="mx-auto mb-2 opacity-50" size={48} />
                                     <p>保存された履歴はありません</p>
                                 </div>
                             ) : (
@@ -1319,7 +2493,7 @@
                                                         </div>
                                                         {entry.meta.note && (
                                                             <p className="text-sm text-gray-500 flex items-center gap-1">
-                                                                <FileText size={12} /> {entry.meta.note}
+                                                                <Icons.FileText size={12} /> {entry.meta.note}
                                                             </p>
                                                         )}
                                                     </div>
@@ -1355,14 +2529,14 @@
                                                         onClick={() => loadFromHistory(entry)}
                                                         className="flex-1 bg-emerald-600 text-white py-2 rounded text-sm font-bold hover:bg-emerald-700 flex items-center justify-center gap-1"
                                                     >
-                                                        <RefreshCw size={14} />
+                                                        <Icons.RefreshCw size={14} />
                                                         読み込む
                                                     </button>
                                                     <button 
                                                         onClick={() => deleteHistoryItem(entry.id)}
                                                         className="px-3 bg-white border border-gray-300 text-gray-500 rounded hover:bg-red-50 hover:text-red-500 hover:border-red-300"
                                                     >
-                                                        <Trash2 size={16} />
+                                                        <Icons.Trash2 size={16} />
                                                     </button>
                                                 </div>
                                             </div>
@@ -1371,6 +2545,207 @@
                                 </div>
                             )}
                         </main>
+                    )}
+
+                    {/* STATS VIEW */}
+                    {currentView === 'stats' && (
+                        <main className="max-w-3xl mx-auto p-4 space-y-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <button 
+                                    onClick={() => setCurrentView('calculator')}
+                                    className="p-2 bg-white rounded-full shadow hover:bg-gray-100"
+                                >
+                                    <Icons.ArrowLeft size={20} className="text-gray-600" />
+                                </button>
+                                <h2 className="text-xl font-bold text-gray-700">収支統計</h2>
+                            </div>
+
+                            {resultHistory.length === 0 ? (
+                                <div className="text-center py-12 text-gray-400 bg-white rounded-lg border-2 border-dashed border-gray-200">
+                                    <Icons.BarChart className="mx-auto mb-2 opacity-50" size={48} />
+                                    <p>まだ的中判定の記録がありません</p>
+                                    <p className="text-xs mt-1">レースの結果を入力して記録を蓄積しましょう</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {/* Overall Stats */}
+                                    <div className="bg-white rounded-lg shadow p-4">
+                                        <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
+                                            <Icons.TrendingUp size={18} />
+                                            全体成績
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-blue-50 p-3 rounded">
+                                                <div className="text-xs text-blue-600 mb-1">総レース数</div>
+                                                <div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div>
+                                            </div>
+                                            <div className="bg-green-50 p-3 rounded">
+                                                <div className="text-xs text-green-600 mb-1">的中率</div>
+                                                <div className="text-2xl font-bold text-green-900">
+                                                    {((resultHistory.reduce((sum, r) => sum + r.winCount, 0) / resultHistory.reduce((sum, r) => sum + r.totalBets, 0)) * 100).toFixed(1)}%
+                                                </div>
+                                            </div>
+                                            <div className="bg-purple-50 p-3 rounded">
+                                                <div className="text-xs text-purple-600 mb-1">総投資額</div>
+                                                <div className="text-2xl font-bold text-purple-900">
+                                                    {resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円
+                                                </div>
+                                            </div>
+                                            <div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                                                <div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div>
+                                                <div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>
+                                                    {resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円
+                                                </div>
+                                            </div>
+                                            <div className="bg-yellow-50 p-3 rounded col-span-2">
+                                                <div className="text-xs text-yellow-600 mb-1">回収率</div>
+                                                <div className="text-2xl font-bold text-yellow-900">
+                                                    {((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1)}%
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* By Place */}
+                                    <div className="bg-white rounded-lg shadow p-4">
+                                        <h3 className="font-bold text-gray-700 mb-3">競馬場別成績</h3>
+                                        <div className="space-y-2">
+                                            {Object.entries(
+                                                resultHistory.reduce((acc, r) => {
+                                                    if (!acc[r.place]) {
+                                                        acc[r.place] = { count: 0, invested: 0, returned: 0, profit: 0 };
+                                                    }
+                                                    acc[r.place].count++;
+                                                    acc[r.place].invested += r.totalInvested;
+                                                    acc[r.place].returned += r.totalReturn;
+                                                    acc[r.place].profit += r.profit;
+                                                    return acc;
+                                                }, {})
+                                            ).map(([place, stats]) => (
+                                                <div key={place} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                                    <div className="flex-1">
+                                                        <div className="font-semibold">{place}</div>
+                                                        <div className="text-xs text-gray-500">{stats.count}レース</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className={`font-bold ${stats.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                            {stats.profit >= 0 ? '+' : ''}{stats.profit.toLocaleString()}円
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">
+                                                            回収率 {((stats.returned / stats.invested) * 100).toFixed(1)}%
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* By Bet Type */}
+                                    <div className="bg-white rounded-lg shadow p-4">
+                                        <h3 className="font-bold text-gray-700 mb-3">式別成績</h3>
+                                        <div className="space-y-2">
+                                            {Object.entries(
+                                                resultHistory.reduce((acc, r) => {
+                                                    r.bets.forEach(bet => {
+                                                        if (!acc[bet.type]) {
+                                                            acc[bet.type] = { count: 0, wins: 0, invested: 0, returned: 0 };
+                                                        }
+                                                        acc[bet.type].count++;
+                                                        if (bet.isWin) {
+                                                            acc[bet.type].wins++;
+                                                            acc[bet.type].returned += bet.stake * bet.odds;
+                                                        }
+                                                        acc[bet.type].invested += bet.stake;
+                                                    });
+                                                    return acc;
+                                                }, {})
+                                            ).map(([type, stats]) => {
+                                                const typeName = {
+                                                    'tansho': '単勝', 'fukusho': '複勝', 'wide': 'ワイド',
+                                                    'umaren': '馬連', 'umatan': '馬単', 
+                                                    'sanrenpuku': '3連複', 'sanrentan': '3連単'
+                                                }[type] || type;
+                                                return (
+                                                    <div key={type} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                                        <div className="flex-1">
+                                                            <div className="font-semibold">{typeName}</div>
+                                                            <div className="text-xs text-gray-500">
+                                                                {stats.count}点 / 的中{stats.wins}点 ({((stats.wins / stats.count) * 100).toFixed(1)}%)
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className={`font-bold ${stats.returned - stats.invested >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                                {stats.returned - stats.invested >= 0 ? '+' : ''}{(stats.returned - stats.invested).toLocaleString()}円
+                                                            </div>
+                                                            <div className="text-xs text-gray-500">
+                                                                回収率 {((stats.returned / stats.invested) * 100).toFixed(1)}%
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Recent History Chart */}
+                                    <div className="bg-white rounded-lg shadow p-4">
+                                        <h3 className="font-bold text-gray-700 mb-3">収支推移</h3>
+                                        <div className="h-48 flex items-end gap-1">
+                                            {resultHistory.slice(-20).map((r, i) => {
+                                                const maxProfit = Math.max(...resultHistory.slice(-20).map(r => Math.abs(r.profit)));
+                                                const height = (Math.abs(r.profit) / maxProfit) * 100;
+                                                return (
+                                                    <div key={i} className="flex-1 flex flex-col items-center group relative">
+                                                        <div 
+                                                            className={`w-full rounded-t transition-all ${r.profit >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`}
+                                                            style={{ height: `${Math.max(height, 5)}%` }}
+                                                        ></div>
+                                                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                                            {r.date}<br/>
+                                                            {r.profit >= 0 ? '+' : ''}{r.profit.toLocaleString()}円
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="text-xs text-gray-500 text-center mt-2">直近{Math.min(resultHistory.length, 20)}レースの収支</div>
+                                    </div>
+                                </div>
+                            )}
+                        </main>
+                    )}
+
+                    {/* COURSE DATA VIEW */}
+                    {currentView === 'courseData' && (
+                        <main className="max-w-3xl mx-auto p-4 space-y-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <button 
+                                    onClick={() => setCurrentView('calculator')}
+                                    className="p-2 bg-white rounded-full shadow hover:bg-gray-100"
+                                >
+                                    <Icons.ArrowLeft size={20} className="text-gray-600" />
+                                </button>
+                                <h2 className="text-xl font-bold text-gray-700">コースデータ</h2>
+                            </div>
+
+                            <div className="space-y-4">
+                                {Object.entries(courseData).map(([place, courses]) => (
+                                    <div key={place} className="space-y-3">
+                                        <h3 className="text-lg font-bold text-gray-800 bg-emerald-100 px-3 py-2 rounded">{place}</h3>
+                                        <div className="space-y-2">
+                                            {Object.entries(courses).map(([courseName, data]) => (
+                                                <CourseAccordion 
+                                                    key={place + '-' + courseName}
+                                                    courseName={courseName}
+                                                    data={data}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </main>
+                    )}
                     )}
                 </div>
             );
@@ -1383,7 +2758,6 @@
         // Initialize lucide icons after render
         setTimeout(() => {
             if (window.lucide) {
-                window.lucide.createIcons();
             }
         }, 100);
     </script>
