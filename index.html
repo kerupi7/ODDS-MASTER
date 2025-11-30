@@ -798,6 +798,15 @@
                 });
             };
 
+            // ★追加: 統計データの全削除機能
+            const clearStats = () => {
+                showConfirm('全ての統計データ（的中判定の履歴）を削除しますか？\nこの操作は取り消せません。', () => {
+                    setResultHistory([]);
+                    localStorage.setItem('jra_odds_results', JSON.stringify([]));
+                    showToast('統計データを削除しました', 'success');
+                });
+            };
+
             // Check which bets won based on race result
             const checkResults = () => {
                 const { first, second, third } = raceResult;
@@ -1522,7 +1531,19 @@
 
                     {currentView === 'stats' && (
                         <main className="max-w-3xl mx-auto p-4 space-y-4">
-                            <div className="flex items-center gap-2 mb-4"><button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button><h2 className="text-xl font-bold text-gray-700">収支統計</h2></div>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button>
+                                    <h2 className="text-xl font-bold text-gray-700">収支統計</h2>
+                                </div>
+                                {/* ★追加: 統計データ削除ボタン */}
+                                {resultHistory.length > 0 && (
+                                    <button onClick={clearStats} className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded border border-red-200 hover:bg-red-100 flex items-center gap-1 transition-colors">
+                                        <Icons.Trash2 size={14} />
+                                        データ削除
+                                    </button>
+                                )}
+                            </div>
                             {resultHistory.length === 0 ? (<div className="text-center py-12 text-gray-400 bg-white rounded-lg border-2 border-dashed border-gray-200"><Icons.BarChart className="mx-auto mb-2 opacity-50" size={48} /><p>まだ的中判定の記録がありません</p><p className="text-xs mt-1">レースの結果を入力して記録を蓄積しましょう</p></div>) : (
                                 <div className="space-y-4">
                                     <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.TrendingUp size={18} /> 全体成績</h3><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 p-3 rounded"><div className="text-xs text-blue-600 mb-1">総レース数</div><div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div></div><div className="bg-green-50 p-3 rounded"><div className="text-xs text-green-600 mb-1">的中率</div><div className="text-2xl font-bold text-green-900">{((resultHistory.reduce((sum, r) => sum + r.winCount, 0) / resultHistory.reduce((sum, r) => sum + r.totalBets, 0)) * 100).toFixed(1)}%</div></div><div className="bg-purple-50 p-3 rounded"><div className="text-xs text-purple-600 mb-1">総投資額</div><div className="text-2xl font-bold text-purple-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円</div></div><div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div><div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>{resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円</div></div><div className="bg-yellow-50 p-3 rounded col-span-2"><div className="text-xs text-yellow-600 mb-1">回収率</div><div className="text-2xl font-bold text-yellow-900">{((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1)}%</div></div></div></div>
