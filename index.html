@@ -254,10 +254,11 @@
 
             const [showBankroll, setShowBankroll] = useState(true);
             
+            // 確定オッズ入力用ステート
             const [showOddsConfirm, setShowOddsConfirm] = useState(false);
             const [currentWinningBets, setCurrentWinningBets] = useState([]);
             const [finalOddsMap, setFinalOddsMap] = useState({});
-            const [tempRaceResultData, setTempRaceResultData] = useState(null);
+            const [tempRaceResultData, setTempRaceResultData] = useState(null); // 確定待ちの一時データ
 
             const [toast, setToast] = useState(null);
             const [confirmModal, setConfirmModal] = useState(null);
@@ -822,20 +823,46 @@
                     showToast('着順を全て入力してください', 'error');
                     return;
                 }
+
+                // 数値として確実に扱うために変換
+                const r1 = parseInt(first);
+                const r2 = parseInt(second);
+                const r3 = parseInt(third);
                 
                 const results = betList.map(bet => {
                     let isWin = false;
+                    // bet.ids は数値配列のはずだが、念のため確認
+                    const ids = bet.ids.map(id => parseInt(id));
+
                     switch (bet.type) {
-                        case 'tansho': isWin = bet.ids[0] === parseInt(first); break;
-                        case 'fukusho': isWin = bet.ids[0] === parseInt(first) || bet.ids[0] === parseInt(second) || bet.ids[0] === parseInt(third); break;
-                        case 'wide': 
-                            const wideHorses = [parseInt(first), parseInt(second), parseInt(third)];
-                            isWin = wideHorses.includes(bet.ids[0]) && wideHorses.includes(bet.ids[1]);
+                        case 'tansho': 
+                            isWin = ids[0] === r1; 
                             break;
-                        case 'umaren': isWin = (bet.ids.includes(parseInt(first)) && bet.ids.includes(parseInt(second))); break;
-                        case 'umatan': isWin = (bet.ids[0] === parseInt(first) && bet.ids[1] === parseInt(second)); break;
-                        case 'sanrenpuku': isWin = bet.ids.includes(parseInt(first)) && bet.ids.includes(parseInt(second)) && bet.ids.includes(parseInt(third)); break;
-                        case 'sanrentan': isWin = (bet.ids[0] === parseInt(first) && bet.ids[1] === parseInt(second) && bet.ids[2] === parseInt(third)); break;
+                        case 'fukusho': 
+                            isWin = ids[0] === r1 || ids[0] === r2 || ids[0] === r3; 
+                            break;
+                        case 'wide': 
+                            // 3着までに入る馬番のリスト
+                            const winners = [r1, r2, r3];
+                            // 自分の買い目(2頭)が両方とも3着以内に入っているか
+                            isWin = winners.includes(ids[0]) && winners.includes(ids[1]);
+                            break;
+                        case 'umaren': 
+                            const umarenWinners = [r1, r2]; // 1,2着
+                            // 順不同で一致するか（買い目も結果も2頭）
+                            // 単純に、自分の2頭が[r1, r2]に含まれているかチェック
+                            isWin = umarenWinners.includes(ids[0]) && umarenWinners.includes(ids[1]);
+                            break;
+                        case 'umatan': 
+                            isWin = (ids[0] === r1 && ids[1] === r2); 
+                            break;
+                        case 'sanrenpuku': 
+                            const sanrenWinners = [r1, r2, r3];
+                            isWin = sanrenWinners.includes(ids[0]) && sanrenWinners.includes(ids[1]) && sanrenWinners.includes(ids[2]);
+                            break;
+                        case 'sanrentan': 
+                            isWin = (ids[0] === r1 && ids[1] === r2 && ids[2] === r3); 
+                            break;
                     }
                     return { ...bet, isWin };
                 });
@@ -867,8 +894,26 @@
                     return;
                 }
                 
-                // 的中なしの場合は即時確定（払戻0円）
-                finalizeBatch(results, totalInvested, {});
+                // 的中なしの場合は「的中なし」メッセージと共に確定
+                const profit = -totalInvested; // 全額没収
+                const current = bankrollCurrent === '' ? 0 : parseInt(bankrollCurrent);
+                const newBankroll = current + profit;
+                
+                // 確定ダイアログを出す前に、ユーザーに「はずれ」であることを伝える
+                const resultMessage = `残念...的中はありませんでした。
+投資額: ${totalInvested.toLocaleString()}円
+回収: 0円
+収支: ${profit.toLocaleString()}円
+
+💰 資金更新: ${current.toLocaleString()}円 → ${newBankroll.toLocaleString()}円`;
+
+                showConfirm(
+                    resultMessage,
+                    () => {
+                        // OKを押したら確定処理（的中なしとして保存）
+                        finalizeBatch(results, totalInvested, {});
+                    }
+                );
             };
 
             // 確定処理の実行
@@ -923,21 +968,29 @@
                 setResultHistory(updatedResults);
                 localStorage.setItem('jra_odds_results', JSON.stringify(updatedResults));
                 
-                const resultMessage = `的中: ${winCount}点 / ${betList.length}点
+                // 的中があった場合のみ、最後に結果サマリーを出す（的中なしの場合は既に出ている）
+                if (winCount > 0) {
+                    const resultMessage = `的中: ${winCount}点 / ${betList.length}点
 投資額: ${totalInvested.toLocaleString()}円
 払戻: ${totalReturn.toLocaleString()}円
 収支: ${profit >= 0 ? '+' : ''}${profit.toLocaleString()}円
 
 💰 資金更新: ${current.toLocaleString()}円 → ${newBankroll.toLocaleString()}円`;
-                
-                showConfirm(
-                    resultMessage,
-                    () => {
-                        setShowResultInput(false);
-                        setRaceResult({ first: '', second: '', third: '' });
-                        setShowOddsConfirm(false); // モーダルを閉じる
-                    }
-                );
+                    
+                    showConfirm(
+                        resultMessage,
+                        () => {
+                            setShowResultInput(false);
+                            setRaceResult({ first: '', second: '', third: '' });
+                            setShowOddsConfirm(false);
+                        }
+                    );
+                } else {
+                    // 的中なしの場合は既にダイアログが出ているので、ここでリセットだけ行う
+                    setShowResultInput(false);
+                    setRaceResult({ first: '', second: '', third: '' });
+                    setShowOddsConfirm(false);
+                }
             };
 
             const handleFinalOddsSubmit = () => {
@@ -1095,7 +1148,7 @@
             // MAIN RENDER
             return (
                 <div className="min-h-screen bg-gray-100 font-sans pb-20">
-                    {/* 確定オッズ入力モーダル */}
+                    {/* ★追加: 確定オッズ入力モーダル */}
                     {showOddsConfirm && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
                             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-slide-in">
