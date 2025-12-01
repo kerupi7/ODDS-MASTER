@@ -700,18 +700,9 @@
                 setBetList(prev => prev.filter(b => b.key !== key));
             };
 
-            const handleOddsChange = (key, value, oddsType = 'default') => {
-                if (oddsType === 'default') {
-                    setOddsData(prev => ({ ...prev, [key]: parseFloat(value) }));
-                } else {
-                    setOddsData(prev => ({
-                        ...prev,
-                        [key]: {
-                            ...(typeof prev[key] === 'object' ? prev[key] : {}),
-                            [oddsType]: parseFloat(value)
-                        }
-                    }));
-                }
+            // 修正: ワイドの特別扱いをやめ、単一の値として処理するように変更
+            const handleOddsChange = (key, value) => {
+                setOddsData(prev => ({ ...prev, [key]: parseFloat(value) }));
             };
 
             // 修正: 空文字を許容し、勝手に0に変換しない
@@ -733,19 +724,10 @@
                 
                 for (const bet of betList) {
                     const odds = oddsData[bet.key];
-                    if (bet.type === 'wide') {
-                        if (odds && typeof odds === 'object' && (odds.min > 0 || odds.max > 0)) {
-                            const avgOdds = ((odds.min || 0) + (odds.max || 0)) / 2;
-                            if (avgOdds > 0) {
-                                inverseSum += 1 / avgOdds;
-                                hasValidOdds = true;
-                            }
-                        }
-                    } else {
-                        if (odds > 0) {
-                            inverseSum += 1 / odds;
-                            hasValidOdds = true;
-                        }
+                    // 修正: ワイドの特別扱いを削除し、全ての券種で単一オッズとして処理
+                    if (odds > 0) {
+                        inverseSum += 1 / odds;
+                        hasValidOdds = true;
                     }
                 }
                 
@@ -876,14 +858,8 @@
                     // 的中がある場合、確定オッズ入力フェーズへ移行
                     const initialFinalOdds = {};
                     winning.forEach(bet => {
-                        // 初期値として、入力されていた予想オッズ（ワイドの場合はmin）を使用
-                        let defaultOdds = '';
-                        if (bet.type === 'wide') {
-                            const wideOdds = oddsData[bet.key];
-                            defaultOdds = wideOdds && typeof wideOdds === 'object' ? wideOdds.min : '';
-                        } else {
-                            defaultOdds = oddsData[bet.key] || '';
-                        }
+                        // 修正: ワイドの特別扱いを削除
+                        let defaultOdds = oddsData[bet.key] || '';
                         initialFinalOdds[bet.key] = defaultOdds;
                     });
                     
@@ -1005,13 +981,8 @@
                 const budget = totalBudget === '' ? 0 : parseInt(totalBudget);
                 
                 const results = betList.map(c => ({ ...c, odds: oddsData[c.key] || 0 }));
-                const validBets = results.filter(r => {
-                    if (r.type === 'wide') {
-                        const wideOdds = oddsData[r.key];
-                        return wideOdds && typeof wideOdds === 'object' && (wideOdds.min > 0 || wideOdds.max > 0);
-                    }
-                    return r.odds > 0;
-                });
+                // 修正: ワイドの特別扱いを削除
+                const validBets = results.filter(r => r.odds > 0);
                 
                 if (validBets.length === 0) {
                     return results.map(r => ({ ...r, stake: 0, return: 0, profit: -budget }));
@@ -1033,34 +1004,17 @@
                         profit: Math.floor(r.stake * r.odds) - actualTotal
                     }));
                 } else {
+                    // 修正: ワイドの特別扱いを削除した単純な合成オッズ計算
                     const sumInverseOdds = validBets.reduce((acc, curr) => {
-                        if (curr.type === 'wide') {
-                            const wideOdds = oddsData[curr.key];
-                            const avgOdds = ((wideOdds.min || 0) + (wideOdds.max || 0)) / 2;
-                            return acc + (avgOdds > 0 ? 1 / avgOdds : 0);
-                        }
                         return acc + (1 / curr.odds);
                     }, 0);
                     
                     const calculatedBets = results.map(r => {
-                        if (r.type === 'wide') {
-                            const wideOdds = oddsData[r.key];
-                            if (!wideOdds || typeof wideOdds !== 'object') {
-                                return { ...r, stake: 0, return: 0, profit: 0 };
-                            }
-                            const avgOdds = ((wideOdds.min || 0) + (wideOdds.max || 0)) / 2;
-                            if (avgOdds <= 0) return { ...r, stake: 0, return: 0, profit: 0 };
-                            let rawStake = (budget / sumInverseOdds) / avgOdds;
-                            let stake = Math.round(rawStake / 100) * 100;
-                            if (stake < 100) stake = 100;
-                            return { ...r, stake };
-                        } else {
-                            if (r.odds <= 0) return { ...r, stake: 0, return: 0, profit: 0 };
-                            let rawStake = (budget / sumInverseOdds) / r.odds;
-                            let stake = Math.round(rawStake / 100) * 100;
-                            if (stake < 100) stake = 100;
-                            return { ...r, stake };
-                        }
+                        if (r.odds <= 0) return { ...r, stake: 0, return: 0, profit: 0 };
+                        let rawStake = (budget / sumInverseOdds) / r.odds;
+                        let stake = Math.round(rawStake / 100) * 100;
+                        if (stake < 100) stake = 100;
+                        return { ...r, stake };
                     });
 
                     let currentTotal = calculatedBets.reduce((sum, item) => sum + item.stake, 0);
@@ -1073,17 +1027,26 @@
                     const actualTotal = finalBets.reduce((sum, item) => sum + item.stake, 0);
                     return finalBets.map(r => ({
                         ...r,
-                        return: Math.floor(r.stake * (r.type === 'wide' ? ((oddsData[r.key]?.min || 0) + (oddsData[r.key]?.max || 0)) / 2 : r.odds)),
-                        profit: Math.floor(r.stake * (r.type === 'wide' ? ((oddsData[r.key]?.min || 0) + (oddsData[r.key]?.max || 0)) / 2 : r.odds)) - actualTotal
+                        return: Math.floor(r.stake * r.odds),
+                        profit: Math.floor(r.stake * r.odds) - actualTotal
                     }));
                 }
             }, [betList, oddsData, totalBudget, allocationMode, customStakes]);
 
             const stats = useMemo(() => {
                 const totalStake = calculatedData.reduce((acc, curr) => acc + curr.stake, 0);
-                const numerator = calculatedData.reduce((sum, item) => sum + (item.stake * item.return), 0);
+                // 修正: ワイドの特別扱いを削除
+                const validCombos = calculatedData.filter(c => c.odds > 0);
+                
+                // 実質平均オッズの計算
+                // 計算式: (各買い目の払戻期待値の総和) ÷ (総投資額 × 総投資額)
+                const numerator = calculatedData.reduce((sum, item) => {
+                    return sum + (item.stake * item.return);
+                }, 0);
+                
                 const realAverageOdds = totalStake > 0 ? (numerator / (totalStake * totalStake)).toFixed(2) : '---';
                 
+                // 戦略アドバイス判定
                 let strategy = { zone: 'unknown', color: 'gray', message: '', emoji: '' };
                 const oddsValue = parseFloat(realAverageOdds);
                 
@@ -1258,25 +1221,25 @@
                                                         onChange={(e) => setBankrollGoal(e.target.value === '' ? '' : parseInt(e.target.value))} 
                                                         className="w-full border border-gray-300 rounded px-2 py-1.5 pr-8 text-sm text-right font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
                                                         placeholder="0" 
-                                                            />
-                                                            <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 pointer-events-none">円</span>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs font-bold text-gray-500 block mb-1">現在資金</label>
-                                                        <div className="relative">
-                                                            <input 
-                                                                type="number" 
-                                                                step="100" 
-                                                                value={bankrollCurrent === 0 ? '' : bankrollCurrent} 
-                                                                onChange={(e) => setBankrollCurrent(e.target.value === '' ? '' : parseInt(e.target.value))} 
-                                                                className="w-full border border-gray-300 rounded px-2 py-1.5 pr-8 text-sm text-right font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
-                                                                placeholder="0" 
-                                                            />
-                                                            <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 pointer-events-none">円</span>
-                                                        </div>
-                                                    </div>
+                                                    />
+                                                    <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 pointer-events-none">円</span>
                                                 </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-gray-500 block mb-1">現在資金</label>
+                                                <div className="relative">
+                                                    <input 
+                                                        type="number" 
+                                                        step="100" 
+                                                        value={bankrollCurrent === 0 ? '' : bankrollCurrent} 
+                                                        onChange={(e) => setBankrollCurrent(e.target.value === '' ? '' : parseInt(e.target.value))} 
+                                                        className="w-full border border-gray-300 rounded px-2 py-1.5 pr-8 text-sm text-right font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+                                                        placeholder="0" 
+                                                    />
+                                                    <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 pointer-events-none">円</span>
+                                                </div>
+                                            </div>
+                                        </div>
 
                                         {/* Progress Bar */}
                                         <div className="space-y-2">
@@ -1538,81 +1501,64 @@
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
                                                 {betList.map((bet) => {
-                                                    const isWide = bet.type === 'wide';
-                                                    const wideOdds = isWide ? oddsData[bet.key] : null;
-                                                    const hasWideOdds = wideOdds && typeof wideOdds === 'object';
-                                                    
                                                     const betData = calculatedData.find(row => row.key === bet.key);
                                                     
                                                     return (
-                                                        <React.Fragment key={bet.key}>
-                                                            <tr className="hover:bg-emerald-50 transition-colors">
-                                                                <td className="p-1.5 sm:p-3" rowSpan={isWide && hasWideOdds ? 2 : 1}>
-                                                                    <div className="flex flex-col">
-                                                                        <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">{getTypeName(bet.type)}</span>
-                                                                        <span className="font-mono font-bold text-gray-700 text-sm sm:text-lg">{bet.label}</span>
+                                                        <tr key={bet.key} className="hover:bg-emerald-50 transition-colors">
+                                                            <td className="p-1.5 sm:p-3">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">{getTypeName(bet.type)}</span>
+                                                                    <span className="font-mono font-bold text-gray-700 text-sm sm:text-lg">{bet.label}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-1.5 sm:p-3 text-center">
+                                                                <input 
+                                                                    type="number" 
+                                                                    step="0.1" 
+                                                                    placeholder="0.0" 
+                                                                    value={oddsData[bet.key] || ''} 
+                                                                    onChange={(e) => handleOddsChange(bet.key, e.target.value)} 
+                                                                    className="w-16 border border-gray-300 rounded px-1 py-1 text-base sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" 
+                                                                    inputMode="decimal" 
+                                                                />
+                                                            </td>
+                                                            <td className="p-1.5 sm:p-3 text-right font-mono">
+                                                                {betData?.stake >= 0 ? (
+                                                                    <div className="flex flex-col items-end gap-1">
+                                                                        {/* 修正: 空文字を許容 */}
+                                                                        <input 
+                                                                            type="number" 
+                                                                            step="100" 
+                                                                            value={customStakes[bet.key] !== undefined ? customStakes[bet.key] : (betData.stake || '')} 
+                                                                            onChange={(e) => handleStakeChange(bet.key, e.target.value)} 
+                                                                            className="w-20 sm:w-24 bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm text-right border border-emerald-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-mono" 
+                                                                            inputMode="numeric" 
+                                                                            placeholder="0"
+                                                                        />
+                                                                        <div className="sm:hidden flex flex-col items-end text-[10px]"><span className="font-bold">{betData.return.toLocaleString()}</span><span className={betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}>{betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()}</span></div>
                                                                     </div>
-                                                                </td>
-                                                                {isWide ? (
-                                                                    <>
-                                                                        <td className="p-1.5 sm:p-3">
-                                                                            <div className="flex flex-col sm:flex-row items-center gap-1">
-                                                                                <span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">下限</span>
-                                                                                <input type="number" step="0.1" placeholder="0.0" value={hasWideOdds ? wideOdds.min || '' : ''} onChange={(e) => handleOddsChange(bet.key, e.target.value, 'min')} className="w-16 border border-gray-300 rounded px-1 py-1 text-base sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" inputMode="decimal" />
-                                                                            </div>
-                                                                        </td>
-                                                                        <td className="p-1.5 sm:p-3 text-right font-mono" rowSpan={2}>
-                                                                            {betData?.stake >= 0 ? (
-                                                                                <div className="flex flex-col items-end gap-1">
-                                                                                    {/* 修正: 空文字を許容 */}
-                                                                                    <input 
-                                                                                        type="number" 
-                                                                                        step="100" 
-                                                                                        value={customStakes[bet.key] !== undefined ? customStakes[bet.key] : (betData.stake || '')} 
-                                                                                        onChange={(e) => handleStakeChange(bet.key, e.target.value)} 
-                                                                                        className="w-20 sm:w-24 bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm text-right border border-emerald-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-mono" 
-                                                                                        inputMode="numeric" 
-                                                                                        placeholder="0"
-                                                                                    />
-                                                                                    <div className="sm:hidden flex flex-col items-end text-[10px]"><span className="font-bold">{betData.return.toLocaleString()}</span><span className={betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}>{betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()}</span></div>
-                                                                                </div>
-                                                                            ) : '-'}
-                                                                        </td>
-                                                                        <td className="p-1.5 sm:p-3 text-right hidden sm:table-cell">{betData?.stake > 0 && wideOdds.min ? (<div className="flex flex-col items-end"><span className="font-bold">{Math.floor(betData.stake * wideOdds.min).toLocaleString()}</span><span className={`text-xs ${Math.floor(betData.stake * wideOdds.min) - stats.totalStake >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{Math.floor(betData.stake * wideOdds.min) - stats.totalStake >= 0 ? '+' : ''}{(Math.floor(betData.stake * wideOdds.min) - stats.totalStake).toLocaleString()}</span></div>) : '-'}</td>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <td className="p-1.5 sm:p-3 text-center"><input type="number" step="0.1" placeholder="0.0" value={oddsData[bet.key] || ''} onChange={(e) => handleOddsChange(bet.key, e.target.value)} className="w-16 border border-gray-300 rounded px-1 py-1 text-base sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" inputMode="decimal" /></td>
-                                                                        <td className="p-1.5 sm:p-3 text-right font-mono">
-                                                                            {betData?.stake >= 0 ? (
-                                                                                <div className="flex flex-col items-end gap-1">
-                                                                                    {/* 修正: 空文字を許容 */}
-                                                                                    <input 
-                                                                                        type="number" 
-                                                                                        step="100" 
-                                                                                        value={customStakes[bet.key] !== undefined ? customStakes[bet.key] : (betData.stake || '')} 
-                                                                                        onChange={(e) => handleStakeChange(bet.key, e.target.value)} 
-                                                                                        className="w-20 sm:w-24 bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm text-right border border-emerald-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-mono" 
-                                                                                        inputMode="numeric" 
-                                                                                        placeholder="0"
-                                                                                    />
-                                                                                    <div className="sm:hidden flex flex-col items-end text-[10px]"><span className="font-bold">{betData.return.toLocaleString()}</span><span className={betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}>{betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()}</span></div>
-                                                                                </div>
-                                                                            ) : '-'}
-                                                                        </td>
-                                                                        <td className="p-1.5 sm:p-3 text-right hidden sm:table-cell">{betData?.stake > 0 ? (<div className="flex flex-col items-end"><span className="font-bold">{betData.return.toLocaleString()}</span><span className={`text-xs ${betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()}</span></div>) : '-'}</td>
-                                                                    </>
-                                                                )}
-                                                                <td className="p-1.5 sm:p-3 text-right" rowSpan={isWide && hasWideOdds ? 2 : 1}><button onClick={() => removeBet(bet.key)} className="text-gray-400 hover:text-red-500 transition-colors"><Icons.Trash2 size={14} className="sm:hidden" /><Icons.Trash2 size={16} className="hidden sm:block" /></button></td>
-                                                            </tr>
-                                                            {isWide && hasWideOdds && (
-                                                                <tr className="hover:bg-emerald-50 transition-colors border-l-4 border-l-blue-200">
-                                                                    <td className="p-1.5 sm:p-3"><div className="flex flex-col sm:flex-row items-center gap-1"><span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">上限</span><input type="number" step="0.1" placeholder="0.0" value={wideOdds.max || ''} onChange={(e) => handleOddsChange(bet.key, e.target.value, 'max')} className="w-16 border border-gray-300 rounded px-1 py-1 text-base sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" inputMode="decimal" /></div></td>
-                                                                    <td className="p-1.5 sm:p-3 text-right hidden sm:table-cell">{betData?.stake > 0 && wideOdds.max ? (<div className="flex flex-col items-end"><span className="font-bold">{Math.floor(betData.stake * wideOdds.max).toLocaleString()}</span><span className={`text-xs ${Math.floor(betData.stake * wideOdds.max) - stats.totalStake >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{Math.floor(betData.stake * wideOdds.max) - stats.totalStake >= 0 ? '+' : ''}{(Math.floor(betData.stake * wideOdds.max) - stats.totalStake).toLocaleString()}</span></div>) : '-'}</td>
-                                                                    <td className="p-1.5 sm:p-3 text-right sm:hidden">{betData?.stake > 0 && wideOdds.max ? (<div className="flex flex-col items-end text-[10px]"><span className="font-bold">{Math.floor(betData.stake * wideOdds.max).toLocaleString()}</span><span className={Math.floor(betData.stake * wideOdds.max) - stats.totalStake >= 0 ? 'text-emerald-600' : 'text-red-500'}>{Math.floor(betData.stake * wideOdds.max) - stats.totalStake >= 0 ? '+' : ''}{(Math.floor(betData.stake * wideOdds.max) - stats.totalStake).toLocaleString()}</span></div>) : '-'}</td>
-                                                                </tr>
-                                                            )}
-                                                        </React.Fragment>
+                                                                ) : '-'}
+                                                            </td>
+                                                            <td className="p-1.5 sm:p-3 text-right hidden sm:table-cell">
+                                                                {betData?.stake > 0 ? (
+                                                                    <div className="flex flex-col items-end">
+                                                                        <span className="font-bold">{betData.return.toLocaleString()}</span>
+                                                                        <span className={`text-xs ${betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                                            {betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()}
+                                                                        </span>
+                                                                    </div>
+                                                                ) : '-'}
+                                                            </td>
+                                                            <td className="p-1.5 sm:p-3 text-right">
+                                                                <button 
+                                                                    onClick={() => removeBet(bet.key)} 
+                                                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                                                >
+                                                                    <Icons.Trash2 size={14} className="sm:hidden" />
+                                                                    <Icons.Trash2 size={16} className="hidden sm:block" />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
                                                     );
                                                 })}
                                             </tbody>
