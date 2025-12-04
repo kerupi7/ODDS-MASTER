@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ODDS MASTER</title>
+    <title>ODDS MASTER v2</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -65,7 +65,7 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect } = React;
         
-        // --- Icon System (Fixed: Using Inline SVGs instead of external script) ---
+        // --- Icon System (Lightbulb, Ban for Tips/Avoid included) ---
         const IconBase = ({ children, size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {children}
@@ -100,9 +100,12 @@
             Award: (props) => <IconBase {...props}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></IconBase>,
             DollarSign: (props) => <IconBase {...props}><line x1="12" x2="12" y1="1" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></IconBase>,
             Upload: (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></IconBase>,
+            // 追加
+            Lightbulb: (props) => <IconBase {...props}><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.4 1.5-3.8 0-3.3-2.7-6-6-6 0 3.3-2.7 6-6 6-1.5 0-2.5-1.4-3.8-1.5-2.5 .8-1 1.3 1.7 1.5 2.5"/><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/></IconBase>,
+            Ban: (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="4.93" x2="19.07" y1="4.93" y2="19.07"/></IconBase>,
         };
 
-        // Course Accordion Component
+        // Course Accordion Component (Updated to show Avoid and Tips)
         const CourseAccordion = ({ courseName, data }) => {
             const [isOpen, setIsOpen] = React.useState(false);
             
@@ -197,6 +200,30 @@
                                     </div>
                                 </div>
 
+                                {/* Added: Tips (攻略のヒント) Section */}
+                                {data.tips && data.tips.length > 0 && (
+                                    <div className="bg-emerald-50 p-3 rounded border border-emerald-100">
+                                        <h5 className="text-xs font-bold text-emerald-700 mb-1 flex items-center gap-1">
+                                            <Icons.Lightbulb size={12}/> 攻略のヒント (Tips)
+                                        </h5>
+                                        <ul className="text-xs text-emerald-900 space-y-1">
+                                            {data.tips.map((t, i) => <li key={i}>・{t}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {/* Added: Avoid (消し) Section */}
+                                {data.avoid && data.avoid.length > 0 && (
+                                    <div className="bg-red-50 p-3 rounded border border-red-100">
+                                        <h5 className="text-xs font-bold text-red-700 mb-1 flex items-center gap-1">
+                                            <Icons.Ban size={12}/> 消しのポイント (Avoid)
+                                        </h5>
+                                        <ul className="text-xs text-red-900 space-y-1">
+                                            {data.avoid.map((t, i) => <li key={i}>・{t}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+
                             </div>
                         </div>
                     )}
@@ -258,7 +285,7 @@
             const [showOddsConfirm, setShowOddsConfirm] = useState(false);
             const [currentWinningBets, setCurrentWinningBets] = useState([]);
             const [finalOddsMap, setFinalOddsMap] = useState({});
-            const [tempRaceResultData, setTempRaceResultData] = useState(null); // 確定待ちの一時データ
+            const [tempRaceResultData, setTempRaceResultData] = useState(null); 
 
             const [toast, setToast] = useState(null);
             const [confirmModal, setConfirmModal] = useState(null);
@@ -271,7 +298,7 @@
             const [showCourseData, setShowCourseData] = useState(false);
             const [selectedCourse, setSelectedCourse] = useState(null);
             
-            // コースデータをStateで管理
+            // コースデータをStateで管理 (External Load Only)
             const [courseData, setCourseData] = useState({});
 
             // Show toast helper
@@ -537,7 +564,6 @@
                 });
             };
 
-            // 統計データの全削除機能
             const clearStats = () => {
                 showConfirm('全ての統計データ（的中判定の履歴）を削除しますか？\nこの操作は取り消せません。', () => {
                     setResultHistory([]);
@@ -700,12 +726,10 @@
                 setBetList(prev => prev.filter(b => b.key !== key));
             };
 
-            // 修正: ワイドの特別扱いをやめ、単一の値として処理するように変更
             const handleOddsChange = (key, value) => {
                 setOddsData(prev => ({ ...prev, [key]: parseFloat(value) }));
             };
 
-            // 修正: 空文字を許容し、勝手に0に変換しない
             const handleStakeChange = (key, value) => {
                 const val = value === '' ? '' : parseInt(value);
                 setCustomStakes(prev => ({ ...prev, [key]: val }));
@@ -724,7 +748,6 @@
                 
                 for (const bet of betList) {
                     const odds = oddsData[bet.key];
-                    // 修正: ワイドの特別扱いを削除し、全ての券種で単一オッズとして処理
                     if (odds > 0) {
                         inverseSum += 1 / odds;
                         hasValidOdds = true;
@@ -741,7 +764,6 @@
                     return;
                 }
                 
-                // 修正: targetProfitが空文字の場合は0として扱う
                 const target = targetProfit === '' ? 0 : targetProfit;
                 const totalPayout = target / (1 - inverseSum);
                 const requiredBudget = Math.ceil((totalPayout - target) / 100) * 100; 
@@ -781,7 +803,6 @@
             const resetBankrollSession = () => {
                 showConfirm('現在の記録を保存して、新しいセッションを開始しますか？\n（開始資金・目標利益・現在資金はリセットされます）', () => {
                     saveBankrollSession();
-                    // 全てリセット（空文字に設定して空欄にする）
                     setBankrollStart('');
                     setBankrollGoal('');
                     setBankrollCurrent('');
@@ -806,14 +827,12 @@
                     return;
                 }
 
-                // 数値として確実に扱うために変換
                 const r1 = parseInt(first);
                 const r2 = parseInt(second);
                 const r3 = parseInt(third);
                 
                 const results = betList.map(bet => {
                     let isWin = false;
-                    // bet.ids は数値配列のはずだが、念のため確認
                     const ids = bet.ids.map(id => parseInt(id));
 
                     switch (bet.type) {
@@ -824,15 +843,11 @@
                             isWin = ids[0] === r1 || ids[0] === r2 || ids[0] === r3; 
                             break;
                         case 'wide': 
-                            // 3着までに入る馬番のリスト
                             const winners = [r1, r2, r3];
-                            // 自分の買い目(2頭)が両方とも3着以内に入っているか
                             isWin = winners.includes(ids[0]) && winners.includes(ids[1]);
                             break;
                         case 'umaren': 
-                            const umarenWinners = [r1, r2]; // 1,2着
-                            // 順不同で一致するか（買い目も結果も2頭）
-                            // 単純に、自分の2頭が[r1, r2]に含まれているかチェック
+                            const umarenWinners = [r1, r2]; 
                             isWin = umarenWinners.includes(ids[0]) && umarenWinners.includes(ids[1]);
                             break;
                         case 'umatan': 
@@ -851,31 +866,26 @@
                 
                 const totalInvested = calculatedData.reduce((sum, bet) => sum + (bet.stake || 0), 0);
 
-                // 的中があるか確認
                 const winning = results.filter(r => r.isWin);
                 
                 if (winning.length > 0) {
-                    // 的中がある場合、確定オッズ入力フェーズへ移行
                     const initialFinalOdds = {};
                     winning.forEach(bet => {
-                        // 修正: ワイドの特別扱いを削除
                         let defaultOdds = oddsData[bet.key] || '';
                         initialFinalOdds[bet.key] = defaultOdds;
                     });
                     
                     setFinalOddsMap(initialFinalOdds);
                     setCurrentWinningBets(winning);
-                    setTempRaceResultData({ results, totalInvested }); // 確定処理に必要なデータを保持
+                    setTempRaceResultData({ results, totalInvested });
                     setShowOddsConfirm(true);
                     return;
                 }
                 
-                // 的中なしの場合は「的中なし」メッセージと共に確定
-                const profit = -totalInvested; // 全額没収
+                const profit = -totalInvested; 
                 const current = bankrollCurrent === '' ? 0 : parseInt(bankrollCurrent);
                 const newBankroll = current + profit;
                 
-                // 確定ダイアログを出す前に、ユーザーに「はずれ」であることを伝える
                 const resultMessage = `残念...的中はありませんでした。
 投資額: ${totalInvested.toLocaleString()}円
 回収: 0円
@@ -886,13 +896,11 @@
                 showConfirm(
                     resultMessage,
                     () => {
-                        // OKを押したら確定処理（的中なしとして保存）
                         finalizeBatch(results, totalInvested, {});
                     }
                 );
             };
 
-            // 確定処理の実行
             const finalizeBatch = (results, totalInvested, finalOdds) => {
                 const winCount = results.filter(r => r.isWin).length;
 
@@ -901,7 +909,6 @@
                     const betData = calculatedData.find(row => row.key === bet.key);
                     if (!betData) return sum;
                     
-                    // 確定オッズ（finalOdds）を使用
                     const actualOdds = parseFloat(finalOdds[bet.key]) || 0;
                     return sum + Math.floor(betData.stake * actualOdds);
                 }, 0);
@@ -927,7 +934,6 @@
                     bets: betList.map(bet => {
                         const betData = calculatedData.find(row => row.key === bet.key);
                         const isWin = results.find(r => r.key === bet.key)?.isWin || false;
-                        // 確定オッズを保存（的中時のみ）
                         const finalOddValue = isWin ? (parseFloat(finalOdds[bet.key]) || 0) : (betData?.odds || 0);
 
                         return {
@@ -944,7 +950,6 @@
                 setResultHistory(updatedResults);
                 localStorage.setItem('jra_odds_results', JSON.stringify(updatedResults));
                 
-                // 的中があった場合のみ、最後に結果サマリーを出す（的中なしの場合は既に出ている）
                 if (winCount > 0) {
                     const resultMessage = `的中: ${winCount}点 / ${betList.length}点
 投資額: ${totalInvested.toLocaleString()}円
@@ -962,7 +967,6 @@
                         }
                     );
                 } else {
-                    // 的中なしの場合は既にダイアログが出ているので、ここでリセットだけ行う
                     setShowResultInput(false);
                     setRaceResult({ first: '', second: '', third: '' });
                     setShowOddsConfirm(false);
@@ -977,11 +981,9 @@
             const calculatedData = useMemo(() => {
                 if (betList.length === 0) return [];
                 
-                // 修正: totalBudgetが空文字の場合は0として扱う
                 const budget = totalBudget === '' ? 0 : parseInt(totalBudget);
                 
                 const results = betList.map(c => ({ ...c, odds: oddsData[c.key] || 0 }));
-                // 修正: ワイドの特別扱いを削除
                 const validBets = results.filter(r => r.odds > 0);
                 
                 if (validBets.length === 0) {
@@ -992,7 +994,6 @@
                     const stakePerBet = Math.floor((budget / results.length) / 100) * 100;
                     const betsWithStakes = results.map(r => {
                         const customStake = customStakes[r.key];
-                        // 修正: customStakeが空文字でない場合のみ採用
                         const actualStake = (customStake !== undefined && customStake !== '') ? customStake : stakePerBet;
                         return { ...r, stake: actualStake };
                     });
@@ -1004,7 +1005,6 @@
                         profit: Math.floor(r.stake * r.odds) - actualTotal
                     }));
                 } else {
-                    // 修正: ワイドの特別扱いを削除した単純な合成オッズ計算
                     const sumInverseOdds = validBets.reduce((acc, curr) => {
                         return acc + (1 / curr.odds);
                     }, 0);
@@ -1020,7 +1020,6 @@
                     let currentTotal = calculatedBets.reduce((sum, item) => sum + item.stake, 0);
                     const finalBets = calculatedBets.map(r => {
                         const customStake = customStakes[r.key];
-                        // 修正: customStakeが空文字でない場合のみ採用
                         const actualStake = (customStake !== undefined && customStake !== '') ? customStake : r.stake;
                         return { ...r, stake: actualStake };
                     });
@@ -1035,18 +1034,14 @@
 
             const stats = useMemo(() => {
                 const totalStake = calculatedData.reduce((acc, curr) => acc + curr.stake, 0);
-                // 修正: ワイドの特別扱いを削除
                 const validCombos = calculatedData.filter(c => c.odds > 0);
                 
-                // 実質平均オッズの計算
-                // 計算式: (各買い目の払戻期待値の総和) ÷ (総投資額 × 総投資額)
                 const numerator = calculatedData.reduce((sum, item) => {
                     return sum + (item.stake * item.return);
                 }, 0);
                 
                 const realAverageOdds = totalStake > 0 ? (numerator / (totalStake * totalStake)).toFixed(2) : '---';
                 
-                // 戦略アドバイス判定
                 let strategy = { zone: 'unknown', color: 'gray', message: '', emoji: '' };
                 const oddsValue = parseFloat(realAverageOdds);
                 
@@ -1062,7 +1057,6 @@
                 return { totalStake, realAverageOdds, count: betList.length, strategy };
             }, [calculatedData, betList]);
 
-            // Bankroll Status Calculation
             const bankrollStatus = useMemo(() => {
                 const start = bankrollStart === '' ? 0 : parseInt(bankrollStart);
                 const goal = bankrollGoal === '' ? 0 : parseInt(bankrollGoal);
@@ -1086,7 +1080,6 @@
                 return { targetAmount, profit, profitPercentage, progressPercentage, status };
             }, [bankrollStart, bankrollGoal, bankrollCurrent]);
 
-            // Render Components
             const renderHorseButton = (num, isSelected, colorClass, onClick) => (
                 <button key={num} onClick={onClick} className={`h-12 sm:h-9 w-full rounded border text-lg sm:text-sm font-bold transition-all active:scale-95 ${isSelected ? `${colorClass} text-white shadow-md ring-1 ring-opacity-50` : "bg-white border-gray-300 text-gray-600 hover:bg-gray-50"}`}>{num}</button>
             );
@@ -1111,7 +1104,6 @@
             // MAIN RENDER
             return (
                 <div className="min-h-screen bg-gray-100 font-sans pb-20">
-                    {/* ★追加: 確定オッズ入力モーダル */}
                     {showOddsConfirm && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
                             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-slide-in">
@@ -1175,7 +1167,7 @@
                     
                     <header className="bg-emerald-700 text-white p-4 sticky top-0 z-30 shadow-md">
                         <div className="max-w-3xl mx-auto flex justify-between items-center">
-                            <h1 className="text-xl font-bold flex items-center gap-2"><Icons.Calculator size={20} /> ODDS MASTER</h1>
+                            <h1 className="text-xl font-bold flex items-center gap-2"><Icons.Calculator size={20} /> ODDS MASTER v2</h1>
                             <div className="flex gap-2">
                                 <button onClick={() => setCurrentView('courseData')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'courseData' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.BookOpen size={14} /> コース</button>
                                 <button onClick={() => setCurrentView('stats')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'stats' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.BarChart size={14} /> 統計</button>
@@ -1195,7 +1187,6 @@
 
                                 {showBankroll && (
                                     <div className="p-4 space-y-4">
-                                        {/* Input Fields */}
                                         <div className="grid grid-cols-3 gap-3">
                                             <div>
                                                 <label className="text-xs font-bold text-gray-500 block mb-1">開始資金</label>
@@ -1241,7 +1232,6 @@
                                             </div>
                                         </div>
 
-                                        {/* Progress Bar */}
                                         <div className="space-y-2">
                                             <div className="flex justify-between text-xs text-gray-600">
                                                 <span>開始: {(bankrollStart === '' ? 0 : bankrollStart).toLocaleString()}円</span>
@@ -1271,7 +1261,6 @@
                                             </div>
                                         </div>
 
-                                        {/* Status Message */}
                                         <div className={`p-3 rounded-lg border-l-4 ${bankrollStatus.status.type === 'goal' ? 'bg-yellow-50 border-yellow-400' : bankrollStatus.status.type === 'danger' ? 'bg-red-50 border-red-400' : 'bg-emerald-50 border-emerald-400'}`}>
                                             <div className="flex items-start gap-2">
                                                 <span className="text-xl">{bankrollStatus.status.emoji}</span>
@@ -1281,7 +1270,6 @@
                                             </div>
                                         </div>
                                         
-                                        {/* Action Buttons & History */}
                                         <div className="pt-2 border-t border-gray-100">
                                             <div className="flex gap-2 mb-4">
                                                 <button
@@ -1419,7 +1407,6 @@
                                                 <>
                                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">総予算</label>
                                                     <div className="flex items-center gap-2">
-                                                        {/* 修正: 空文字を許容 */}
                                                         <input 
                                                             type="number" 
                                                             value={totalBudget} 
@@ -1437,7 +1424,6 @@
                                                     <label className="block text-xs font-bold text-blue-600 uppercase mb-1">目標利益</label>
                                                     <div className="flex flex-col gap-2">
                                                         <div className="flex items-center gap-2">
-                                                            {/* 修正: 空文字を許容 */}
                                                             <input 
                                                                 type="number" 
                                                                 value={targetProfit} 
@@ -1525,7 +1511,6 @@
                                                             <td className="p-1.5 sm:p-3 text-right font-mono">
                                                                 {betData?.stake >= 0 ? (
                                                                     <div className="flex flex-col items-end gap-1">
-                                                                        {/* 修正: 空文字を許容 */}
                                                                         <input 
                                                                             type="number" 
                                                                             step="100" 
@@ -1639,7 +1624,6 @@
                                     <button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button>
                                     <h2 className="text-xl font-bold text-gray-700">収支統計</h2>
                                 </div>
-                                {/* 統計データ削除ボタン */}
                                 {resultHistory.length > 0 && (
                                     <button onClick={clearStats} className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded border border-red-200 hover:bg-red-100 flex items-center gap-1 transition-colors">
                                         <Icons.Trash2 size={14} />
@@ -1662,7 +1646,6 @@
                         <main className="max-w-3xl mx-auto p-4 space-y-4">
                             <div className="flex items-center gap-2 mb-4"><button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button><h2 className="text-xl font-bold text-gray-700">コースデータ</h2></div>
                             
-                            {/* ファイル読み込みボタン */}
                             <div className="bg-white p-4 rounded-lg shadow mb-4">
                                 <h3 className="font-bold text-gray-700 mb-2 text-sm">コースデータ (JSON) を読み込む</h3>
                                 <label className="flex items-center gap-2 p-2 border border-dashed border-gray-300 rounded cursor-pointer hover:bg-gray-50 text-sm text-gray-600">
