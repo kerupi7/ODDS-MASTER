@@ -231,6 +231,39 @@
             );
         };
 
+        // Location Accordion Component
+        const LocationAccordion = ({ place, courses }) => {
+            const [isOpen, setIsOpen] = useState(false);
+
+            return (
+                <div className="border border-emerald-200 rounded-lg overflow-hidden shadow-sm bg-white mb-3">
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className={`w-full p-4 flex items-center justify-between transition-colors ${isOpen ? 'bg-emerald-50' : 'bg-white hover:bg-gray-50'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full ${isOpen ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                                <Icons.MapPin size={20} />
+                            </div>
+                            <div className="text-left">
+                                <h3 className="text-lg font-bold text-gray-800">{place}</h3>
+                                <span className="text-xs text-gray-500">{Object.keys(courses).length}コース</span>
+                            </div>
+                        </div>
+                        {isOpen ? <Icons.ChevronUp size={24} className="text-gray-400" /> : <Icons.ChevronDown size={24} className="text-gray-400" />}
+                    </button>
+                    
+                    {isOpen && (
+                        <div className="p-4 bg-gray-50 space-y-3 border-t border-gray-100">
+                            {Object.entries(courses).map(([courseName, data]) => (
+                                <CourseAccordion key={place + '-' + courseName} courseName={courseName} data={data} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
         const HorseRacingOddsManager = () => {
             // State Definitions
             const [currentView, setCurrentView] = useState('calculator');
@@ -1634,7 +1667,11 @@
                                     <p>データが読み込まれていません</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4">{Object.entries(courseData).map(([place, courses]) => (<div key={place} className="space-y-3"><h3 className="text-lg font-bold text-gray-800 bg-emerald-100 px-3 py-2 rounded">{place}</h3><div className="space-y-2">{Object.entries(courses).map(([courseName, data]) => (<CourseAccordion key={place + '-' + courseName} courseName={courseName} data={data} />))}</div></div>))}</div>
+                                <div className="space-y-2">
+                                    {Object.entries(courseData).map(([place, courses]) => (
+                                        <LocationAccordion key={place} place={place} courses={courses} />
+                                    ))}
+                                </div>
                             )}
                         </main>
                     )}
