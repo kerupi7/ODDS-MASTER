@@ -1006,6 +1006,22 @@
                 setResultHistory(updatedResults);
                 localStorage.setItem('jra_odds_results', JSON.stringify(updatedResults));
                 
+                // 共通のリセット処理
+                const resetGameState = () => {
+                    setShowResultInput(false);
+                    setRaceResult({ first: '', second: '', third: '' });
+                    setShowOddsConfirm(false);
+                    
+                    // 買い目・オッズ・選択状態をすべてリセット
+                    setBetList([]);
+                    setOddsData({});
+                    setCustomStakes({});
+                    clearSelection();
+                    
+                    // 予算を現在資金に合わせて更新（オプション）
+                    setTotalBudget(newBankroll);
+                };
+
                 if (winCount > 0) {
                     const resultMessage = `的中: ${winCount}点 / ${betList.length}点
 投資額: ${totalInvested.toLocaleString()}円
@@ -1017,15 +1033,12 @@
                     showConfirm(
                         resultMessage,
                         () => {
-                            setShowResultInput(false);
-                            setRaceResult({ first: '', second: '', third: '' });
-                            setShowOddsConfirm(false);
+                            resetGameState();
                         }
                     );
                 } else {
-                    setShowResultInput(false);
-                    setRaceResult({ first: '', second: '', third: '' });
-                    setShowOddsConfirm(false);
+                    // 的中なしの場合（メッセージはcheckResultsで表示済みなのでリセットのみ）
+                    resetGameState();
                 }
             };
 
