@@ -297,15 +297,15 @@
             // Bankroll Management State
             const [bankrollStart, setBankrollStart] = useState(() => {
                 const saved = localStorage.getItem('bankroll_start');
-                return saved ? parseInt(saved) : 30000;
+                return saved ? parseInt(saved) : 3000;
             });
             const [bankrollGoal, setBankrollGoal] = useState(() => {
                 const saved = localStorage.getItem('bankroll_goal');
-                return saved ? parseInt(saved) : 10000;
+                return saved ? parseInt(saved) : 9000;
             });
             const [bankrollCurrent, setBankrollCurrent] = useState(() => {
                 const saved = localStorage.getItem('bankroll_current');
-                return saved ? parseInt(saved) : 30000;
+                return saved ? parseInt(saved) : 3000;
             });
             const [bankrollHistory, setBankrollHistory] = useState(() => {
                 const saved = localStorage.getItem('bankroll_history');
