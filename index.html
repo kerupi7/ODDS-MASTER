@@ -856,11 +856,14 @@
             };
 
             const resetBankrollSession = () => {
-                showConfirm('現在の記録を保存して、新しいセッションを開始しますか？\n（開始資金・目標利益・現在資金はリセットされます）', () => {
+                showConfirm('現在の記録を保存して、新しいセッションを開始しますか？\n（開始資金・目標利益・現在資金は初期値にリセットされます）', () => {
                     saveBankrollSession();
-                    setBankrollStart('');
-                    setBankrollGoal('');
-                    setBankrollCurrent('');
+                    // 修正: 初期値（3000, 9000, 3000）にリセット
+                    setBankrollStart(3000);
+                    setBankrollGoal(9000);
+                    setBankrollCurrent(3000);
+                    // 予算も連動してリセット
+                    setTotalBudget(3000);
                 });
             };
 
