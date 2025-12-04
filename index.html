@@ -1575,13 +1575,12 @@
                                     
                                     <div className="overflow-x-auto max-h-[600px]">
                                         <table className="w-full text-sm text-left relative">
-                                            <thead className="bg-gray-100 text-gray-600 text-xs uppercase sticky top-0 z-10 shadow-sm">
+                                            <thead className="bg-gray-50 text-gray-500 text-xs sticky top-0 z-10 shadow-sm">
                                                 <tr>
-                                                    <th className="p-1.5 sm:p-3">式別/組合せ</th>
-                                                    <th className="p-1.5 sm:p-3 text-center">オッズ</th>
-                                                    <th className="p-1.5 sm:p-3 text-right">投資額</th>
-                                                    <th className="p-1.5 sm:p-3 text-right hidden sm:table-cell">予想払戻</th>
-                                                    <th className="p-1.5 sm:p-3 w-8 sm:w-10"></th>
+                                                    <th className="p-2 text-left font-normal">式別/組合せ</th>
+                                                    <th className="p-2 text-center font-normal">オッズ</th>
+                                                    <th className="p-2 text-right font-normal">投資額</th>
+                                                    <th className="p-2 w-8"></th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
@@ -1589,63 +1588,51 @@
                                                     const betData = calculatedData.find(row => row.key === bet.key);
                                                     
                                                     return (
-                                                        <tr key={bet.key} className="hover:bg-emerald-50 transition-colors">
-                                                            <td className="p-1.5 sm:p-3">
+                                                        <tr key={bet.key} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                                                            <td className="p-2 align-middle">
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">{getTypeName(bet.type)}</span>
-                                                                    <span className="font-mono font-bold text-gray-700 text-sm sm:text-lg">{bet.label}</span>
+                                                                    <span className="text-[10px] text-gray-400 font-bold leading-none mb-0.5">{getTypeName(bet.type)}</span>
+                                                                    <span className="font-mono font-bold text-gray-700 text-lg leading-tight">{bet.label}</span>
                                                                 </div>
                                                             </td>
-                                                            <td className="p-1.5 sm:p-3 text-center">
+                                                            <td className="p-2 align-middle text-center">
                                                                 <input 
                                                                     type="number" 
                                                                     step="0.1" 
                                                                     placeholder="0.0" 
                                                                     value={oddsData[bet.key] || ''} 
                                                                     onChange={(e) => handleOddsChange(bet.key, e.target.value)} 
-                                                                    className="w-16 border border-gray-300 rounded px-1 py-1 text-base sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" 
+                                                                    className="w-16 h-10 border border-gray-300 rounded text-center text-lg font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" 
                                                                     inputMode="decimal" 
                                                                 />
                                                             </td>
-                                                            <td className="p-1.5 sm:p-3 text-right font-mono">
-                                                                {betData?.stake >= 0 ? (
-                                                                    <div className="flex flex-col items-end gap-1">
-                                                                        <input 
-                                                                            type="number" 
-                                                                            step="100" 
-                                                                            value={customStakes[bet.key] !== undefined ? customStakes[bet.key] : (betData.stake || '')} 
-                                                                            onChange={(e) => handleStakeChange(bet.key, e.target.value)} 
-                                                                            className="w-20 sm:w-24 bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm text-right border border-emerald-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-mono" 
-                                                                            inputMode="numeric" 
-                                                                            placeholder="0"
-                                                                        />
-                                                                        <div className="sm:hidden flex items-center justify-end gap-1 text-[10px] mt-0.5">
-                                                                            <span className="text-gray-500">予想:</span>
-                                                                            <span className="font-bold text-gray-800">{betData.return.toLocaleString()}</span>
-                                                                            <span className={betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}>
+                                                            <td className="p-2 align-middle text-right">
+                                                                <div className="flex flex-col items-end">
+                                                                    <input 
+                                                                        type="number" 
+                                                                        step="100" 
+                                                                        value={customStakes[bet.key] !== undefined ? customStakes[bet.key] : (betData.stake || '')} 
+                                                                        onChange={(e) => handleStakeChange(bet.key, e.target.value)} 
+                                                                        className="w-24 h-10 bg-emerald-100 border border-emerald-300 rounded text-right text-lg font-bold text-emerald-800 font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none px-2" 
+                                                                        inputMode="numeric" 
+                                                                        placeholder="0"
+                                                                    />
+                                                                    {betData?.stake > 0 && (
+                                                                        <div className="text-[10px] sm:text-xs mt-1 whitespace-nowrap font-medium text-gray-500">
+                                                                            予想: <span className="text-gray-800">{betData.return.toLocaleString()}</span>
+                                                                            <span className={`ml-1 ${betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                                                                                 ({betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()})
                                                                             </span>
                                                                         </div>
-                                                                    </div>
-                                                                ) : '-'}
+                                                                    )}
+                                                                </div>
                                                             </td>
-                                                            <td className="p-1.5 sm:p-3 text-right hidden sm:table-cell">
-                                                                {betData?.stake > 0 ? (
-                                                                    <div className="flex flex-col items-end">
-                                                                        <span className="font-bold">{betData.return.toLocaleString()}</span>
-                                                                        <span className={`text-xs ${betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                                                            {betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()}
-                                                                        </span>
-                                                                    </div>
-                                                                ) : '-'}
-                                                            </td>
-                                                            <td className="p-1.5 sm:p-3 text-right">
+                                                            <td className="p-2 align-middle text-center">
                                                                 <button 
                                                                     onClick={() => removeBet(bet.key)} 
                                                                     className="text-gray-400 hover:text-red-500 transition-colors"
                                                                 >
-                                                                    <Icons.Trash2 size={14} className="sm:hidden" />
-                                                                    <Icons.Trash2 size={16} className="hidden sm:block" />
+                                                                    <Icons.Trash2 size={18} />
                                                                 </button>
                                                             </td>
                                                         </tr>
