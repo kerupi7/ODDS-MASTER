@@ -267,6 +267,25 @@
         const HorseRacingOddsManager = () => {
             // State Definitions
             const [currentView, setCurrentView] = useState('calculator');
+
+            // --- Bankroll Management State (Moved to top to initialize totalBudget) ---
+            const [bankrollStart, setBankrollStart] = useState(() => {
+                const saved = localStorage.getItem('bankroll_start');
+                return saved ? parseInt(saved) : 3000;
+            });
+            const [bankrollGoal, setBankrollGoal] = useState(() => {
+                const saved = localStorage.getItem('bankroll_goal');
+                return saved ? parseInt(saved) : 9000;
+            });
+            const [bankrollCurrent, setBankrollCurrent] = useState(() => {
+                const saved = localStorage.getItem('bankroll_current');
+                return saved ? parseInt(saved) : 3000;
+            });
+            const [bankrollHistory, setBankrollHistory] = useState(() => {
+                const saved = localStorage.getItem('bankroll_history');
+                return saved ? JSON.parse(saved) : [];
+            });
+
             const [raceMeta, setRaceMeta] = useState({
                 date: new Date().toISOString().split('T')[0],
                 place: '東京',
@@ -286,7 +305,10 @@
             const [betList, setBetList] = useState([]); 
             const [oddsData, setOddsData] = useState({}); 
             const [customStakes, setCustomStakes] = useState({}); 
-            const [totalBudget, setTotalBudget] = useState(10000); 
+            
+            // Modified: Initialize totalBudget with bankrollCurrent
+            const [totalBudget, setTotalBudget] = useState(bankrollCurrent); 
+            
             const [allocationMode, setAllocationMode] = useState('profit'); 
             const [budgetInputMode, setBudgetInputMode] = useState('budget'); 
             const [targetProfit, setTargetProfit] = useState(10000);
@@ -294,24 +316,6 @@
 
             const [savedHistory, setSavedHistory] = useState([]);
             
-            // Bankroll Management State
-            const [bankrollStart, setBankrollStart] = useState(() => {
-                const saved = localStorage.getItem('bankroll_start');
-                return saved ? parseInt(saved) : 3000;
-            });
-            const [bankrollGoal, setBankrollGoal] = useState(() => {
-                const saved = localStorage.getItem('bankroll_goal');
-                return saved ? parseInt(saved) : 9000;
-            });
-            const [bankrollCurrent, setBankrollCurrent] = useState(() => {
-                const saved = localStorage.getItem('bankroll_current');
-                return saved ? parseInt(saved) : 3000;
-            });
-            const [bankrollHistory, setBankrollHistory] = useState(() => {
-                const saved = localStorage.getItem('bankroll_history');
-                return saved ? JSON.parse(saved) : [];
-            });
-
             const [showBankroll, setShowBankroll] = useState(true);
             
             // 確定オッズ入力用ステート
