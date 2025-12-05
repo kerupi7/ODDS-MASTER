@@ -1247,7 +1247,7 @@
                                     <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center"><Icons.Info size={24} className="text-yellow-600" /></div>
                                     <h3 className="text-lg font-bold text-gray-800">確認</h3>
                                 </div>
-                                <p className="text-gray-600 mb-6 leading-relaxed">{confirmModal.message}</p>
+                                <p className="text-gray-600 mb-6 leading-relaxed whitespace-pre-line">{confirmModal.message}</p>
                                 <div className="flex gap-3">
                                     <button onClick={() => setConfirmModal(null)} className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-colors">キャンセル</button>
                                     <button onClick={handleConfirm} className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition-colors">OK</button>
@@ -1492,7 +1492,21 @@
                                     </div>
                                     <div className="col-span-1 sm:col-span-2"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.MapPin size={12} /> 場所</label><select value={raceMeta.place} onChange={(e) => handleMetaChange('place', e.target.value)} className="w-full text-sm border-gray-300 rounded border p-1.5">{['札幌','函館','福島','新潟','東京','中山','中京','京都','阪神','小倉'].map(p => (<option key={p} value={p}>{p}</option>))}</select></div>
                                     <div className="col-span-1 sm:col-span-2"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Flag size={12} /> R</label><select value={raceMeta.raceNum} onChange={(e) => handleMetaChange('raceNum', parseInt(e.target.value))} className="w-full text-sm border-gray-300 rounded border p-1.5">{Array.from({length:12}, (_, i) => i + 1).map(n => (<option key={n} value={n}>{n}R</option>))}</select></div>
-                                    <div className="col-span-2 sm:col-span-3">
+                                    <div className="col-span-1 sm:col-span-2">
+                                        <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Star size={12} /> 自信度</label>
+                                        <div className="relative">
+                                            <select
+                                                value={raceMeta.confidence}
+                                                onChange={(e) => setRaceMeta(prev => ({ ...prev, confidence: e.target.value }))}
+                                                className={`w-full strategy-select text-sm font-bold rounded border p-1.5 appearance-none outline-none ${CONFIDENCES[raceMeta.confidence].color.replace('bg-', 'text-')}`}
+                                            >
+                                                {Object.values(CONFIDENCES).map(c => (
+                                                    <option key={c.id} value={c.id}>{c.fullLabel}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="col-span-1 sm:col-span-3">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Lightbulb size={12} /> 根拠</label>
                                         <div className="relative">
                                             <select
@@ -1506,7 +1520,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div className="col-span-2 sm:col-span-2"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.FileText size={12} /> メモ</label><input type="text" placeholder="レース名など" value={raceMeta.note} onChange={(e) => setRaceMeta(prev => ({ ...prev, note: e.target.value }))} className="w-full text-sm border-gray-300 rounded border p-1.5" /></div>
+                                    <div className="col-span-2 sm:col-span-3"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.FileText size={12} /> メモ</label><input type="text" placeholder="レース名など" value={raceMeta.note} onChange={(e) => setRaceMeta(prev => ({ ...prev, note: e.target.value }))} className="w-full text-sm border-gray-300 rounded border p-1.5" /></div>
                                 </div>
                             </section>
 
@@ -1791,8 +1805,9 @@
                             </div>
                             {resultHistory.length === 0 ? (<div className="text-center py-12 text-gray-400 bg-white rounded-lg border-2 border-dashed border-gray-200"><Icons.BarChart className="mx-auto mb-2 opacity-50" size={48} /><p>まだ的中判定の記録がありません</p><p className="text-xs mt-1">レースの結果を入力して記録を蓄積しましょう</p></div>) : (
                                 <div className="space-y-4">
-                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.TrendingUp size={18} /> 全体成績</h3><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 p-3 rounded"><div className="text-xs text-blue-600 mb-1">総レース数</div><div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div></div><div className="bg-green-50 p-3 rounded"><div className="text-xs text-green-600 mb-1">的中率</div><div className="text-2xl font-bold text-green-900">{((resultHistory.reduce((sum, r) => sum + r.winCount, 0) / resultHistory.reduce((sum, r) => sum + r.totalBets, 0)) * 100).toFixed(1)}%</div></div><div className="bg-purple-50 p-3 rounded"><div className="text-xs text-purple-600 mb-1">総投資額</div><div className="text-2xl font-bold text-purple-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円</div></div><div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div><div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>{resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円</div></div><div className="bg-yellow-50 p-3 rounded col-span-2"><div className="text-xs text-yellow-600 mb-1">回収率</div><div className="text-2xl font-bold text-yellow-900">{((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1)}%</div></div></div></div>
+                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.TrendingUp size={18} /> 全体成績</h3><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 p-3 rounded"><div className="text-xs text-blue-600 mb-1">総レース数</div><div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div></div><div className="bg-green-50 p-3 rounded"><div className="text-xs text-green-600 mb-1">的中率</div><div className="text-2xl font-bold text-green-900">{resultHistory.length > 0 ? ((resultHistory.filter(r => r.winCount > 0).length / resultHistory.length) * 100).toFixed(1) : 0}%</div></div><div className="bg-purple-50 p-3 rounded"><div className="text-xs text-purple-600 mb-1">総投資額</div><div className="text-2xl font-bold text-purple-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円</div></div><div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div><div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>{resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円</div></div><div className="bg-yellow-50 p-3 rounded col-span-2"><div className="text-xs text-yellow-600 mb-1">回収率</div><div className="text-2xl font-bold text-yellow-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0) > 0 ? ((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1) : 0}%</div></div></div></div>
                                     
+                                    {/* 根拠別成績 (Added Section) */}
                                     <div className="bg-white rounded-lg shadow p-4">
                                         <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Lightbulb size={18} /> 根拠別成績</h3>
                                         <div className="space-y-2">
@@ -1836,6 +1851,7 @@
                                         </div>
                                     </div>
 
+                                    {/* 自信度別成績 (New) */}
                                     <div className="bg-white rounded-lg shadow p-4">
                                         <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Star size={18} /> 自信度別成績</h3>
                                         <div className="space-y-2">
@@ -1855,6 +1871,7 @@
                                                 const winRate = ((stats.wins / stats.count) * 100).toFixed(1);
                                                 const returnRate = stats.invested > 0 ? ((stats.returned / stats.invested) * 100).toFixed(1) : 0;
                                                 
+                                                // Determine border color based on text color
                                                 const borderColorClass = conf.color.split(' ').find(c => c.startsWith('text-')).replace('text-', 'border-');
 
                                                 return (
@@ -1881,7 +1898,7 @@
                                         </div>
                                     </div>
 
-                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3">競馬場別成績</h3><div className="space-y-2">{Object.entries(resultHistory.reduce((acc, r) => { if (!acc[r.place]) { acc[r.place] = { count: 0, invested: 0, returned: 0, profit: 0 }; } acc[r.place].count++; acc[r.place].invested += r.totalInvested; acc[r.place].returned += r.totalReturn; acc[r.place].profit += r.profit; return acc; }, {})).map(([place, stats]) => (<div key={place} className="flex items-center justify-between p-2 bg-gray-50 rounded"><div className="flex-1"><div className="font-semibold">{place}</div><div className="text-xs text-gray-500">{stats.count}レース</div></div><div className="text-right"><div className={`font-bold ${stats.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{stats.profit >= 0 ? '+' : ''}{stats.profit.toLocaleString()}円</div><div className="text-xs text-gray-500">回収率 {((stats.returned / stats.invested) * 100).toFixed(1)}%</div></div></div>))}</div></div>
+                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3">競馬場別成績</h3><div className="space-y-2">{Object.entries(resultHistory.reduce((acc, r) => { if (!acc[r.place]) { acc[r.place] = { count: 0, invested: 0, returned: 0, profit: 0 }; } acc[r.place].count++; acc[r.place].invested += r.totalInvested; acc[r.place].returned += r.totalReturn; acc[r.place].profit += r.profit; return acc; }, {})).map(([place, stats]) => (<div key={place} className="flex items-center justify-between p-2 bg-gray-50 rounded"><div className="flex-1"><div className="font-semibold">{place}</div><div className="text-xs text-gray-500">{stats.count}レース</div></div><div className="text-right"><div className={`font-bold ${stats.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{stats.profit >= 0 ? '+' : ''}{stats.profit.toLocaleString()}円</div><div className="text-xs text-gray-500">回収率 {stats.invested > 0 ? ((stats.returned / stats.invested) * 100).toFixed(1) : 0}%</div></div></div>))}</div></div>
                                     <div className="bg-white rounded-lg shadow p-4">
                                         <h3 className="font-bold text-gray-700 mb-3">式別成績</h3>
                                         <div className="space-y-2">
@@ -1927,22 +1944,16 @@
                         <main className="max-w-3xl mx-auto p-4 space-y-4">
                             <div className="flex items-center gap-2 mb-4"><button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button><h2 className="text-xl font-bold text-gray-700">コースデータ</h2></div>
                             
-                            {/* ファイル読み込みボタン */}
-                            <div className="bg-white p-4 rounded-lg shadow mb-4">
-                                <h3 className="font-bold text-gray-700 mb-2 text-sm">コースデータ (JSON) を読み込む</h3>
-                                <label className="flex items-center gap-2 p-2 border border-dashed border-gray-300 rounded cursor-pointer hover:bg-gray-50 text-sm text-gray-600">
-                                    <Icons.Upload size={18} />
-                                    ファイルを選択してください
-                                    <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
-                                </label>
-                            </div>
-
                             {Object.keys(courseData).length === 0 ? (
                                 <div className="text-center py-12 text-gray-400">
                                     <p>データが読み込まれていません</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4">{Object.entries(courseData).map(([place, courses]) => (<div key={place} className="space-y-3"><h3 className="text-lg font-bold text-gray-800 bg-emerald-100 px-3 py-2 rounded">{place}</h3><div className="space-y-2">{Object.entries(courses).map(([courseName, data]) => (<CourseAccordion key={place + '-' + courseName} courseName={courseName} data={data} />))}</div></div>))}</div>
+                                <div className="space-y-2">
+                                    {Object.entries(courseData).map(([place, courses]) => (
+                                        <LocationAccordion key={place} place={place} courses={courses} />
+                                    ))}
+                                </div>
                             )}
                         </main>
                     )}
