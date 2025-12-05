@@ -83,6 +83,14 @@
             intuition: { id: 'intuition', label: '直感', fullLabel: '直感', color: 'bg-gray-100 text-gray-800 border-gray-300 focus:ring-gray-500 font-bold' }
         };
 
+        // --- Confidence Definitions ---
+        const CONFIDENCES = {
+            'A': { id: 'A', label: '◎', fullLabel: '◎ 本命', color: 'text-red-600 bg-red-50 border-red-200' },
+            'B': { id: 'B', label: '◯', fullLabel: '◯ 対抗', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+            'C': { id: 'C', label: '▲', fullLabel: '▲ 単穴', color: 'text-stone-700 bg-stone-100 border-stone-300' },
+            'D': { id: 'D', label: '△', fullLabel: '△ 連下', color: 'text-gray-500 bg-gray-50 border-gray-200' }
+        };
+
         // --- Icon System ---
         const IconBase = ({ children, size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -121,6 +129,7 @@
             Lightbulb: (props) => <IconBase {...props}><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.4 1.5-3.8 0-3.3-2.7-6-6-6 0 3.3-2.7 6-6 6-1.5 0-2.5-1.4-3.8-1.5-2.5 .8-1 1.3 1.7 1.5 2.5"/><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/></IconBase>,
             Ban: (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="4.93" x2="19.07" y1="4.93" y2="19.07"/></IconBase>,
             Tag: (props) => <IconBase {...props}><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></IconBase>,
+            Star: (props) => <IconBase {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></IconBase>,
         };
 
         // Course Accordion Component
@@ -302,12 +311,13 @@
                 return saved ? JSON.parse(saved) : [];
             });
 
-            // Modified RaceMeta to include Strategy
+            // Modified RaceMeta to include Strategy and Confidence
             const [raceMeta, setRaceMeta] = useState({
                 date: new Date().toISOString().split('T')[0],
                 place: '東京',
                 raceNum: 11,
-                strategy: 'matchup', // Changed default to 'matchup' (相手関係)
+                strategy: 'matchup',
+                confidence: 'A', // Default Confidence: ◎
                 note: ''
             });
 
@@ -533,14 +543,13 @@
 
             const clearAll = () => {
                 showConfirm('現在の入力内容をすべて消去しますか？', () => {
-                    clearSelection();
-                    setBetList([]);
-                    setOddsData({});
+                    resetInputs();
                     setRaceMeta({
                         date: new Date().toISOString().split('T')[0],
                         place: '東京',
                         raceNum: 11,
                         strategy: 'matchup',
+                        confidence: 'A', // Reset confidence
                         note: ''
                     });
                     setBetType('tansho');
@@ -560,6 +569,20 @@
                 }
             };
 
+            // Reset input fields (Reusable function)
+            const resetInputs = () => {
+                setShowResultInput(false);
+                setRaceResult({ first: '', second: '', third: '' });
+                setShowOddsConfirm(false);
+                
+                setBetList([]);
+                setOddsData({});
+                setCustomStakes({});
+                clearSelection();
+                
+                setTotalBudget(bankrollCurrent);
+            };
+
             // History Save/Load/Delete
             const saveToHistory = () => {
                 if (betList.length === 0) {
@@ -569,7 +592,7 @@
 
                 const newEntry = {
                     id: Date.now(),
-                    meta: { ...raceMeta }, // Includes strategy now
+                    meta: { ...raceMeta }, // Includes strategy and confidence
                     data: {
                         betList: [...betList],
                         oddsData: { ...oddsData },
@@ -584,6 +607,7 @@
                 localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
                 
                 showToast(`${raceMeta.place} ${raceMeta.raceNum}R を保存しました (${betList.length}点)`, 'success');
+                resetInputs();
             };
 
             const loadFromHistory = (entry) => {
@@ -856,7 +880,7 @@
             };
 
             const resetBankrollSession = () => {
-                showConfirm('現在の記録を保存して、新しいセッションを開始しますか？\n（開始資金・目標利益・現在資金は初期値にリセットされます）', () => {
+                showConfirm('今週の集計を終了してリセットしますか？\n（記録を保存し、資金を初期値 3,000円に戻します）', () => {
                     saveBankrollSession();
                     // 修正: 初期値（3000, 9000, 3000）にリセット
                     setBankrollStart(3000);
@@ -984,6 +1008,7 @@
                     raceNum: raceMeta.raceNum,
                     note: raceMeta.note,
                     strategy: raceMeta.strategy || 'data', // Save Strategy
+                    confidence: raceMeta.confidence || 'A', // Save Confidence
                     result: { first: parseInt(raceResult.first), second: parseInt(raceResult.second), third: parseInt(raceResult.third) },
                     totalBets: betList.length,
                     winCount: winCount,
@@ -1372,21 +1397,25 @@
                                         </div>
                                         
                                         <div className="pt-2 border-t border-gray-100">
-                                            <div className="flex gap-2 mb-4">
+                                            <div className="flex gap-2 mb-2">
                                                 <button
                                                     onClick={saveBankrollSession}
                                                     className="flex-1 bg-blue-600 text-white py-2 px-3 rounded font-bold text-xs hover:bg-blue-700 flex items-center justify-center gap-1"
                                                 >
                                                     <Icons.Save size={14} />
-                                                    記録のみ保存
+                                                    今日の記録を保存
                                                 </button>
                                                 <button
                                                     onClick={resetBankrollSession}
                                                     className="flex-1 bg-emerald-600 text-white py-2 px-3 rounded font-bold text-xs hover:bg-emerald-700 flex items-center justify-center gap-1"
                                                 >
                                                     <Icons.RefreshCw size={14} />
-                                                    保存して次へ
+                                                    週次リセット (次走へ)
                                                 </button>
+                                            </div>
+                                            <div className="flex justify-between text-[10px] text-gray-400 px-1 mb-2">
+                                                <span>※資金を維持して履歴のみ保存<br/>（土曜終了時など）</span>
+                                                <span className="text-right">※保存して初期金に戻す<br/>（日曜終了時など）</span>
                                             </div>
 
                                             {bankrollHistory.length > 0 && (
@@ -1589,7 +1618,7 @@
                                         </h3>
                                     </div>
                                     
-                                    <div className="overflow-x-auto max-h-[600px]">
+                                    <div className="overflow-x-auto">
                                         <table className="w-full text-sm text-left relative">
                                             <thead className="bg-gray-50 text-gray-500 text-xs sticky top-0 z-10 shadow-sm">
                                                 <tr>
@@ -1713,6 +1742,8 @@
                                         const hasOdds = entry.data.oddsData && Object.keys(entry.data.oddsData).length > 0;
                                         const strategyKey = entry.meta.strategy || 'data';
                                         const strategy = STRATEGIES[strategyKey] || STRATEGIES.data;
+                                        const confidenceKey = entry.meta.confidence || 'A';
+                                        const confidence = CONFIDENCES[confidenceKey] || CONFIDENCES.A;
 
                                         return (
                                             <div key={entry.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
@@ -1722,6 +1753,9 @@
                                                             <span className="font-bold text-lg text-gray-800">{entry.meta.place} {entry.meta.raceNum}R</span>
                                                             <span className={`text-[10px] px-1.5 py-0.5 rounded border ${strategy.color.replace('focus:ring-', '')}`}>
                                                                 {strategy.label}
+                                                            </span>
+                                                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${confidence.color.replace('bg-', 'bg-opacity-10 bg-').replace('text-', 'text-opacity-90 text-')}`}>
+                                                                {confidence.label}
                                                             </span>
                                                         </div>
                                                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border">{formatDate(entry.meta.date)}</span>
@@ -1759,7 +1793,6 @@
                                 <div className="space-y-4">
                                     <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.TrendingUp size={18} /> 全体成績</h3><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 p-3 rounded"><div className="text-xs text-blue-600 mb-1">総レース数</div><div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div></div><div className="bg-green-50 p-3 rounded"><div className="text-xs text-green-600 mb-1">的中率</div><div className="text-2xl font-bold text-green-900">{((resultHistory.reduce((sum, r) => sum + r.winCount, 0) / resultHistory.reduce((sum, r) => sum + r.totalBets, 0)) * 100).toFixed(1)}%</div></div><div className="bg-purple-50 p-3 rounded"><div className="text-xs text-purple-600 mb-1">総投資額</div><div className="text-2xl font-bold text-purple-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円</div></div><div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div><div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>{resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円</div></div><div className="bg-yellow-50 p-3 rounded col-span-2"><div className="text-xs text-yellow-600 mb-1">回収率</div><div className="text-2xl font-bold text-yellow-900">{((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1)}%</div></div></div></div>
                                     
-                                    {/* 根拠別成績 (Added Section) */}
                                     <div className="bg-white rounded-lg shadow p-4">
                                         <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Lightbulb size={18} /> 根拠別成績</h3>
                                         <div className="space-y-2">
@@ -1785,6 +1818,51 @@
                                                             <div className="flex items-center gap-2">
                                                                 <span className={`text-xs font-bold px-2 py-0.5 rounded ${strategy.color.replace('focus:ring-', '')}`}>
                                                                     {strategy.label}
+                                                                </span>
+                                                                <span className="text-xs text-gray-500">{stats.count}レース / 的中{stats.wins}</span>
+                                                            </div>
+                                                            <div className="text-xs text-gray-500 mt-1">
+                                                                的中率 {winRate}% / 回収率 {returnRate}%
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className={`font-bold ${stats.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                                {stats.profit >= 0 ? '+' : ''}{stats.profit.toLocaleString()}円
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-lg shadow p-4">
+                                        <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Star size={18} /> 自信度別成績</h3>
+                                        <div className="space-y-2">
+                                            {Object.entries(resultHistory.reduce((acc, r) => {
+                                                const c = r.confidence || 'A';
+                                                if (!acc[c]) {
+                                                    acc[c] = { count: 0, wins: 0, invested: 0, returned: 0, profit: 0 };
+                                                }
+                                                acc[c].count++;
+                                                if (r.winCount > 0) acc[c].wins++;
+                                                acc[c].invested += r.totalInvested;
+                                                acc[c].returned += r.totalReturn;
+                                                acc[c].profit += r.profit;
+                                                return acc;
+                                            }, {})).sort().map(([key, stats]) => {
+                                                const conf = CONFIDENCES[key] || CONFIDENCES.A;
+                                                const winRate = ((stats.wins / stats.count) * 100).toFixed(1);
+                                                const returnRate = stats.invested > 0 ? ((stats.returned / stats.invested) * 100).toFixed(1) : 0;
+                                                
+                                                const borderColorClass = conf.color.split(' ').find(c => c.startsWith('text-')).replace('text-', 'border-');
+
+                                                return (
+                                                    <div key={key} className={`flex items-center justify-between p-2 rounded border-l-4 ${borderColorClass} bg-gray-50`}>
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${conf.color.replace('text-', 'text-opacity-90 text-').replace('bg-', 'bg-opacity-10 bg-')}`}>
+                                                                    {conf.fullLabel}
                                                                 </span>
                                                                 <span className="text-xs text-gray-500">{stats.count}レース / 的中{stats.wins}</span>
                                                             </div>
@@ -1849,16 +1927,22 @@
                         <main className="max-w-3xl mx-auto p-4 space-y-4">
                             <div className="flex items-center gap-2 mb-4"><button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button><h2 className="text-xl font-bold text-gray-700">コースデータ</h2></div>
                             
+                            {/* ファイル読み込みボタン */}
+                            <div className="bg-white p-4 rounded-lg shadow mb-4">
+                                <h3 className="font-bold text-gray-700 mb-2 text-sm">コースデータ (JSON) を読み込む</h3>
+                                <label className="flex items-center gap-2 p-2 border border-dashed border-gray-300 rounded cursor-pointer hover:bg-gray-50 text-sm text-gray-600">
+                                    <Icons.Upload size={18} />
+                                    ファイルを選択してください
+                                    <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+                                </label>
+                            </div>
+
                             {Object.keys(courseData).length === 0 ? (
                                 <div className="text-center py-12 text-gray-400">
                                     <p>データが読み込まれていません</p>
                                 </div>
                             ) : (
-                                <div className="space-y-2">
-                                    {Object.entries(courseData).map(([place, courses]) => (
-                                        <LocationAccordion key={place} place={place} courses={courses} />
-                                    ))}
-                                </div>
+                                <div className="space-y-4">{Object.entries(courseData).map(([place, courses]) => (<div key={place} className="space-y-3"><h3 className="text-lg font-bold text-gray-800 bg-emerald-100 px-3 py-2 rounded">{place}</h3><div className="space-y-2">{Object.entries(courses).map(([courseName, data]) => (<CourseAccordion key={place + '-' + courseName} courseName={courseName} data={data} />))}</div></div>))}</div>
                             )}
                         </main>
                     )}
