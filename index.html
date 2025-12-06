@@ -292,6 +292,9 @@
         const HorseRacingOddsManager = () => {
             // State Definitions
             const [currentView, setCurrentView] = useState('calculator');
+            
+            // 編集中の履歴IDを管理（新規作成時はnull）
+            const [editingId, setEditingId] = useState(null);
 
             // --- Bankroll Management State ---
             const [bankrollStart, setBankrollStart] = useState(() => {
@@ -549,7 +552,7 @@
                         place: '東京',
                         raceNum: 11,
                         strategy: 'matchup',
-                        confidence: 'A', // Reset confidence
+                        confidence: 'A', 
                         note: ''
                     });
                     setBetType('tansho');
@@ -580,6 +583,9 @@
                 setCustomStakes({});
                 clearSelection();
                 
+                // 編集状態を解除（IDリセット）
+                setEditingId(null);
+                
                 setTotalBudget(bankrollCurrent);
             };
 
@@ -590,8 +596,11 @@
                     return;
                 }
 
+                // Use existing ID if editing, otherwise create new ID
+                const entryId = editingId || Date.now();
+
                 const newEntry = {
-                    id: Date.now(),
+                    id: entryId,
                     meta: { ...raceMeta }, // Includes strategy and confidence
                     data: {
                         betList: [...betList],
@@ -602,12 +611,25 @@
                     savedAt: new Date().toISOString()
                 };
 
-                const newHistory = [newEntry, ...savedHistory];
+                let newHistory;
+                
+                // Check if updating existing entry
+                if (editingId) {
+                     newHistory = savedHistory.map(item => 
+                        item.id === editingId ? newEntry : item
+                    );
+                    showToast(`履歴を更新しました`, 'success');
+                } else {
+                    // Add new entry to top
+                    newHistory = [newEntry, ...savedHistory];
+                    showToast(`${raceMeta.place} ${raceMeta.raceNum}R を新規保存しました`, 'success');
+                }
+                
                 setSavedHistory(newHistory);
                 localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
                 
-                showToast(`${raceMeta.place} ${raceMeta.raceNum}R を保存しました (${betList.length}点)`, 'success');
-                resetInputs();
+                // Update editing state to current ID so subsequent saves overwrite
+                setEditingId(entryId);
             };
 
             const loadFromHistory = (entry) => {
@@ -619,10 +641,13 @@
                     setTotalBudget(entry.data.totalBudget || 10000);
                     setAllocationMode(entry.data.allocationMode || 'profit');
                     
+                    // Set editing ID to enable overwrite on save
+                    setEditingId(entry.id);
+                    
                     setCurrentView('calculator');
 
                     setTimeout(() => {
-                        showToast(`${entry.meta.place} ${entry.meta.raceNum}R を読み込みました (${entry.data.betList.length}点)`, 'success');
+                        showToast(`${entry.meta.place} ${entry.meta.raceNum}R を読み込みました`, 'success');
                     }, 100);
 
                     setTimeout(() => {
@@ -639,6 +664,12 @@
                     const newHistory = savedHistory.filter(item => item.id !== id);
                     setSavedHistory(newHistory);
                     localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
+                    
+                    // If deleting currently editing item, reset editing state
+                    if (editingId === id) {
+                        setEditingId(null);
+                    }
+                    
                     showToast('履歴を削除しました', 'success');
                 });
             };
@@ -880,7 +911,7 @@
             };
 
             const resetBankrollSession = () => {
-                showConfirm('今週の集計を終了してリセットしますか？\n（記録を保存し、資金を初期値 3,000円に戻します）', () => {
+                showConfirm('今週の収支を確定し、資金を初期状態（3,000円）に戻しますか？\n（日曜日の最終レース終了後に推奨）', () => {
                     saveBankrollSession();
                     // 修正: 初期値（3000, 9000, 3000）にリセット
                     setBankrollStart(3000);
@@ -1048,7 +1079,17 @@
                     
                     // 予算を現在資金に合わせて更新（オプション）
                     setTotalBudget(newBankroll);
+
+                    // 編集IDもクリア
+                    setEditingId(null);
                 };
+
+                // ★ 追加: 履歴から読み込んでいる場合、判定完了とともに履歴から削除する
+                if (editingId) {
+                    const newHistory = savedHistory.filter(item => item.id !== editingId);
+                    setSavedHistory(newHistory);
+                    localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
+                }
 
                 if (winCount > 0) {
                     const resultMessage = `的中: ${winCount}点 / ${betList.length}点
@@ -1201,7 +1242,7 @@
             // MAIN RENDER
             return (
                 <div className="min-h-screen bg-gray-100 font-sans pb-20">
-                    {/* (Omitted: Modals and Header remain same) */}
+                    {/* Modals */}
                     {showOddsConfirm && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
                             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-slide-in">
@@ -1403,14 +1444,14 @@
                                                     className="flex-1 bg-blue-600 text-white py-2 px-3 rounded font-bold text-xs hover:bg-blue-700 flex items-center justify-center gap-1"
                                                 >
                                                     <Icons.Save size={14} />
-                                                    今日の記録を保存
+                                                    今日の記録を保存 (資金維持)
                                                 </button>
                                                 <button
                                                     onClick={resetBankrollSession}
                                                     className="flex-1 bg-emerald-600 text-white py-2 px-3 rounded font-bold text-xs hover:bg-emerald-700 flex items-center justify-center gap-1"
                                                 >
                                                     <Icons.RefreshCw size={14} />
-                                                    週次リセット (次走へ)
+                                                    週次リセット (資金リセット)
                                                 </button>
                                             </div>
                                             <div className="flex justify-between text-[10px] text-gray-400 px-1 mb-2">
@@ -1708,7 +1749,7 @@
                                                 className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 flex items-center justify-center gap-2"
                                             >
                                                 <Icons.Save size={20} />
-                                                履歴に保存
+                                                今日の記録を保存 (資金維持)
                                             </button>
                                             <button 
                                                 onClick={() => setShowResultInput(!showResultInput)} 
@@ -1805,7 +1846,7 @@
                             </div>
                             {resultHistory.length === 0 ? (<div className="text-center py-12 text-gray-400 bg-white rounded-lg border-2 border-dashed border-gray-200"><Icons.BarChart className="mx-auto mb-2 opacity-50" size={48} /><p>まだ的中判定の記録がありません</p><p className="text-xs mt-1">レースの結果を入力して記録を蓄積しましょう</p></div>) : (
                                 <div className="space-y-4">
-                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.TrendingUp size={18} /> 全体成績</h3><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 p-3 rounded"><div className="text-xs text-blue-600 mb-1">総レース数</div><div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div></div><div className="bg-green-50 p-3 rounded"><div className="text-xs text-green-600 mb-1">的中率</div><div className="text-2xl font-bold text-green-900">{resultHistory.length > 0 ? ((resultHistory.filter(r => r.winCount > 0).length / resultHistory.length) * 100).toFixed(1) : 0}%</div></div><div className="bg-purple-50 p-3 rounded"><div className="text-xs text-purple-600 mb-1">総投資額</div><div className="text-2xl font-bold text-purple-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円</div></div><div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div><div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>{resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円</div></div><div className="bg-yellow-50 p-3 rounded col-span-2"><div className="text-xs text-yellow-600 mb-1">回収率</div><div className="text-2xl font-bold text-yellow-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0) > 0 ? ((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1) : 0}%</div></div></div></div>
+                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.TrendingUp size={18} /> 全体成績</h3><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 p-3 rounded"><div className="text-xs text-blue-600 mb-1">総レース数</div><div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div></div><div className="bg-green-50 p-3 rounded"><div className="text-xs text-green-600 mb-1">的中率</div><div className="text-2xl font-bold text-green-900">{((resultHistory.reduce((sum, r) => sum + r.winCount, 0) / resultHistory.reduce((sum, r) => sum + r.totalBets, 0)) * 100).toFixed(1)}%</div></div><div className="bg-purple-50 p-3 rounded"><div className="text-xs text-purple-600 mb-1">総投資額</div><div className="text-2xl font-bold text-purple-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円</div></div><div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div><div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>{resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円</div></div><div className="bg-yellow-50 p-3 rounded col-span-2"><div className="text-xs text-yellow-600 mb-1">回収率</div><div className="text-2xl font-bold text-yellow-900">{((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1)}%</div></div></div></div>
                                     
                                     {/* 根拠別成績 (Added Section) */}
                                     <div className="bg-white rounded-lg shadow p-4">
@@ -1898,7 +1939,7 @@
                                         </div>
                                     </div>
 
-                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3">競馬場別成績</h3><div className="space-y-2">{Object.entries(resultHistory.reduce((acc, r) => { if (!acc[r.place]) { acc[r.place] = { count: 0, invested: 0, returned: 0, profit: 0 }; } acc[r.place].count++; acc[r.place].invested += r.totalInvested; acc[r.place].returned += r.totalReturn; acc[r.place].profit += r.profit; return acc; }, {})).map(([place, stats]) => (<div key={place} className="flex items-center justify-between p-2 bg-gray-50 rounded"><div className="flex-1"><div className="font-semibold">{place}</div><div className="text-xs text-gray-500">{stats.count}レース</div></div><div className="text-right"><div className={`font-bold ${stats.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{stats.profit >= 0 ? '+' : ''}{stats.profit.toLocaleString()}円</div><div className="text-xs text-gray-500">回収率 {stats.invested > 0 ? ((stats.returned / stats.invested) * 100).toFixed(1) : 0}%</div></div></div>))}</div></div>
+                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3">競馬場別成績</h3><div className="space-y-2">{Object.entries(resultHistory.reduce((acc, r) => { if (!acc[r.place]) { acc[r.place] = { count: 0, invested: 0, returned: 0, profit: 0 }; } acc[r.place].count++; acc[r.place].invested += r.totalInvested; acc[r.place].returned += r.totalReturn; acc[r.place].profit += r.profit; return acc; }, {})).map(([place, stats]) => (<div key={place} className="flex items-center justify-between p-2 bg-gray-50 rounded"><div className="flex-1"><div className="font-semibold">{place}</div><div className="text-xs text-gray-500">{stats.count}レース</div></div><div className="text-right"><div className={`font-bold ${stats.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{stats.profit >= 0 ? '+' : ''}{stats.profit.toLocaleString()}円</div><div className="text-xs text-gray-500">回収率 {((stats.returned / stats.invested) * 100).toFixed(1)}%</div></div></div>))}</div></div>
                                     <div className="bg-white rounded-lg shadow p-4">
                                         <h3 className="font-bold text-gray-700 mb-3">式別成績</h3>
                                         <div className="space-y-2">
