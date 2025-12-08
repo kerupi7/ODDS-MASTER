@@ -627,11 +627,8 @@
                 
                 setSavedHistory(newHistory);
                 localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
-                
-                // Update editing state to current ID so subsequent saves overwrite
-                setEditingId(entryId);
-                
-                // Note: Removed resetInputs() here to allow continuous editing after save
+
+                // Reset all inputs and selections after saving
                 resetInputs(); 
             };
 
