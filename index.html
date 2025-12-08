@@ -627,11 +627,8 @@
                 
                 setSavedHistory(newHistory);
                 localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
-                
-                // Update editing state to current ID so subsequent saves overwrite
-                setEditingId(entryId);
-                
-                // Note: Removed resetInputs() here to allow continuous editing after save
+
+                // Reset all inputs and selections after saving
                 resetInputs(); 
             };
 
@@ -1313,7 +1310,7 @@
                             <div className="flex gap-2">
                                 <button onClick={() => setCurrentView('courseData')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'courseData' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.BookOpen size={14} /> コース</button>
                                 <button onClick={() => setCurrentView('stats')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'stats' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.BarChart size={14} /> 統計</button>
-                                <button onClick={() => setCurrentView('history')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'history' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.History size={14} /> 履歴</button>
+                                <button onClick={() => setCurrentView('history')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'history' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.History size={14} /> 買い目</button>
                                 {currentView === 'calculator' && <button onClick={clearAll} className="text-xs bg-emerald-800 px-2 sm:px-3 py-1 rounded hover:bg-emerald-600 border border-emerald-600">リセット</button>}
                             </div>
                         </div>
@@ -1771,8 +1768,8 @@
 
                     {currentView === 'history' && (
                         <main className="max-w-3xl mx-auto p-4 space-y-4">
-                            <div className="flex items-center gap-2 mb-4"><button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button><h2 className="text-xl font-bold text-gray-700">保存済み履歴</h2></div>
-                            {savedHistory.length === 0 ? (<div className="text-center py-12 text-gray-400 bg-white rounded-lg"><Icons.History className="mx-auto mb-2 opacity-50" size={48} /><p>保存された履歴はありません</p></div>) : (
+                            <div className="flex items-center gap-2 mb-4"><button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button><h2 className="text-xl font-bold text-gray-700">買い目</h2></div>
+                            {savedHistory.length === 0 ? (<div className="text-center py-12 text-gray-400 bg-white rounded-lg"><Icons.History className="mx-auto mb-2 opacity-50" size={48} /><p>保存された買い目はありません</p></div>) : (
                                 <div className="space-y-4">
                                     {savedHistory.map((entry) => {
                                         const betCount = entry.data.betList?.length || 0;
