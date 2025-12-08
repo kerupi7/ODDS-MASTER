@@ -659,17 +659,60 @@
                 });
             };
 
+            const loadFromResult = (result) => {
+                if (!result.originalData) {
+                    showToast('この結果には買い目データが保存されていません', 'error');
+                    return;
+                }
+
+                showConfirm('現在の編集内容を破棄して、この結果の買い目を読み込みますか？', () => {
+                    clearSelection();
+
+                    // レース情報を復元
+                    setRaceMeta({
+                        date: result.date,
+                        place: result.place,
+                        raceNum: result.raceNum,
+                        strategy: result.strategy || 'data',
+                        confidence: result.confidence || 'A',
+                        note: result.note || ''
+                    });
+
+                    // 買い目データを復元
+                    setBetList([...result.originalData.betList]);
+                    setOddsData({ ...result.originalData.oddsData });
+                    setTotalBudget(result.originalData.totalBudget || 10000);
+                    setAllocationMode(result.originalData.allocationMode || 'profit');
+
+                    // 編集IDをクリア（新規保存扱い）
+                    setEditingId(null);
+
+                    setCurrentView('calculator');
+
+                    setTimeout(() => {
+                        showToast(`${result.place} ${result.raceNum}R の買い目を読み込みました`, 'success');
+                    }, 100);
+
+                    setTimeout(() => {
+                        const listSection = document.getElementById('bet-list-section');
+                        if (listSection) {
+                            listSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 300);
+                });
+            };
+
             const deleteHistoryItem = (id) => {
                 showConfirm('この履歴を削除しますか？', () => {
                     const newHistory = savedHistory.filter(item => item.id !== id);
                     setSavedHistory(newHistory);
                     localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
-                    
+
                     // If deleting currently editing item, reset editing state
                     if (editingId === id) {
                         setEditingId(null);
                     }
-                    
+
                     showToast('履歴を削除しました', 'success');
                 });
             };
@@ -934,7 +977,7 @@
             // Check which bets won based on race result
             const checkResults = () => {
                 const { first, second, third } = raceResult;
-                
+
                 if (!first || !second || !third) {
                     showToast('着順を全て入力してください', 'error');
                     return;
@@ -1058,7 +1101,14 @@
                             stake: betData?.stake || 0,
                             isWin: isWin
                         };
-                    })
+                    }),
+                    // 編集可能にするため、元の買い目データも保存
+                    originalData: {
+                        betList: [...betList],
+                        oddsData: { ...oddsData },
+                        totalBudget,
+                        allocationMode
+                    }
                 };
                 
                 const updatedResults = [...resultHistory, resultRecord];
@@ -1083,13 +1133,6 @@
                     // 編集IDもクリア
                     setEditingId(null);
                 };
-
-                // ★ 追加: 履歴から読み込んでいる場合、判定完了とともに履歴から削除する
-                if (editingId) {
-                    const newHistory = savedHistory.filter(item => item.id !== editingId);
-                    setSavedHistory(newHistory);
-                    localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
-                }
 
                 if (winCount > 0) {
                     const resultMessage = `的中: ${winCount}点 / ${betList.length}点
@@ -1309,7 +1352,7 @@
                             <h1 className="text-xl font-bold flex items-center gap-2"><Icons.Calculator size={20} /> ODDS MASTER</h1>
                             <div className="flex gap-2">
                                 <button onClick={() => setCurrentView('courseData')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'courseData' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.BookOpen size={14} /> コース</button>
-                                <button onClick={() => setCurrentView('stats')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'stats' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.BarChart size={14} /> 統計</button>
+                                <button onClick={() => setCurrentView('results')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'results' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.Award size={14} /> 結果</button>
                                 <button onClick={() => setCurrentView('history')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'history' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.History size={14} /> 買い目</button>
                                 {currentView === 'calculator' && <button onClick={clearAll} className="text-xs bg-emerald-800 px-2 sm:px-3 py-1 rounded hover:bg-emerald-600 border border-emerald-600">リセット</button>}
                             </div>
@@ -1809,12 +1852,12 @@
                         </main>
                     )}
 
-                    {currentView === 'stats' && (
+                    {currentView === 'results' && (
                         <main className="max-w-3xl mx-auto p-4 space-y-4">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
                                     <button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button>
-                                    <h2 className="text-xl font-bold text-gray-700">収支統計</h2>
+                                    <h2 className="text-xl font-bold text-gray-700">的中判定結果</h2>
                                 </div>
                                 {resultHistory.length > 0 && (
                                     <button onClick={clearStats} className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded border border-red-200 hover:bg-red-100 flex items-center gap-1 transition-colors">
@@ -1955,6 +1998,81 @@
                                         </div>
                                     </div>
                                     <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3">収支推移</h3><div className="h-48 flex items-end gap-1">{resultHistory.slice(-20).map((r, i) => { const maxProfit = Math.max(...resultHistory.slice(-20).map(r => Math.abs(r.profit))); const height = (Math.abs(r.profit) / maxProfit) * 100; return (<div key={i} className="flex-1 flex flex-col items-center group relative"><div className={`w-full rounded-t transition-all ${r.profit >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`} style={{ height: `${Math.max(height, 5)}%` }}></div><div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{r.date}<br/>{r.profit >= 0 ? '+' : ''}{r.profit.toLocaleString()}円</div></div>); })}</div><div className="text-xs text-gray-500 text-center mt-2">直近{Math.min(resultHistory.length, 20)}レースの収支</div></div>
+
+                                    {/* レース詳細リスト */}
+                                    <div className="bg-white rounded-lg shadow p-4">
+                                        <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.List size={18} /> レース詳細</h3>
+                                        <div className="space-y-3">
+                                            {[...resultHistory].reverse().map((result) => {
+                                                const strategy = STRATEGIES[result.strategy] || STRATEGIES.data;
+                                                const confidence = CONFIDENCES[result.confidence] || CONFIDENCES.A;
+
+                                                return (
+                                                    <div key={result.id} className={`border-l-4 rounded-lg p-4 ${result.profit >= 0 ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50'}`}>
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <div>
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <span className="font-bold text-lg text-gray-800">{result.place} {result.raceNum}R</span>
+                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${strategy.color.replace('focus:ring-', '')}`}>
+                                                                        {strategy.label}
+                                                                    </span>
+                                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${confidence.color.replace('bg-', 'bg-opacity-10 bg-').replace('text-', 'text-opacity-90 text-')}`}>
+                                                                        {confidence.label}
+                                                                    </span>
+                                                                </div>
+                                                                <span className="text-xs bg-white text-gray-600 px-2 py-0.5 rounded border">{result.date}</span>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <div className={`font-bold text-xl ${result.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                                    {result.profit >= 0 ? '+' : ''}{result.profit.toLocaleString()}円
+                                                                </div>
+                                                                <div className="text-xs text-gray-600">
+                                                                    的中 {result.winCount}/{result.totalBets}点
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-3 gap-2 text-xs mb-3 bg-white p-2 rounded">
+                                                            <div>
+                                                                <span className="text-gray-500">投資:</span>
+                                                                <span className="font-bold ml-1">{result.totalInvested.toLocaleString()}円</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-gray-500">回収:</span>
+                                                                <span className="font-bold ml-1">{result.totalReturn.toLocaleString()}円</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-gray-500">回収率:</span>
+                                                                <span className="font-bold ml-1">{result.totalInvested > 0 ? ((result.totalReturn / result.totalInvested) * 100).toFixed(1) : 0}%</span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="text-xs bg-white p-2 rounded mb-2">
+                                                            <span className="text-gray-600">結果: </span>
+                                                            <span className="font-bold">
+                                                                1着-{result.result.first} / 2着-{result.result.second} / 3着-{result.result.third}
+                                                            </span>
+                                                        </div>
+
+                                                        {result.note && (
+                                                            <div className="text-xs bg-white p-2 rounded mb-2">
+                                                                <span className="text-gray-600">メモ: </span>
+                                                                <span>{result.note}</span>
+                                                            </div>
+                                                        )}
+
+                                                        <button
+                                                            onClick={() => loadFromResult(result)}
+                                                            className="w-full bg-white border border-emerald-600 text-emerald-600 py-2 rounded text-sm font-bold hover:bg-emerald-50 flex items-center justify-center gap-2"
+                                                        >
+                                                            <Icons.RefreshCw size={14} />
+                                                            買い目を確認・編集
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </main>
