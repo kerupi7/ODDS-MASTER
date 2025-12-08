@@ -630,6 +630,9 @@
                 
                 // Update editing state to current ID so subsequent saves overwrite
                 setEditingId(entryId);
+                
+                // Note: Removed resetInputs() here to allow continuous editing after save
+                // resetInputs(); 
             };
 
             const loadFromHistory = (entry) => {
@@ -911,14 +914,11 @@
             };
 
             const resetBankrollSession = () => {
-                showConfirm('今週の収支を確定し、資金を初期状態（3,000円）に戻しますか？\n（日曜日の最終レース終了後に推奨）', () => {
+                showConfirm('現在の記録を保存して、新しいセッションを開始しますか？\n（開始資金・目標利益・現在資金はリセットされます）', () => {
                     saveBankrollSession();
-                    // 修正: 初期値（3000, 9000, 3000）にリセット
-                    setBankrollStart(3000);
-                    setBankrollGoal(9000);
-                    setBankrollCurrent(3000);
-                    // 予算も連動してリセット
-                    setTotalBudget(3000);
+                    setBankrollStart('');
+                    setBankrollGoal('');
+                    setBankrollCurrent('');
                 });
             };
 
@@ -1038,8 +1038,6 @@
                     place: raceMeta.place,
                     raceNum: raceMeta.raceNum,
                     note: raceMeta.note,
-                    strategy: raceMeta.strategy || 'data', // Save Strategy
-                    confidence: raceMeta.confidence || 'A', // Save Confidence
                     result: { first: parseInt(raceResult.first), second: parseInt(raceResult.second), third: parseInt(raceResult.third) },
                     totalBets: betList.length,
                     winCount: winCount,
@@ -1065,32 +1063,6 @@
                 setResultHistory(updatedResults);
                 localStorage.setItem('jra_odds_results', JSON.stringify(updatedResults));
                 
-                // 共通のリセット処理
-                const resetGameState = () => {
-                    setShowResultInput(false);
-                    setRaceResult({ first: '', second: '', third: '' });
-                    setShowOddsConfirm(false);
-                    
-                    // 買い目・オッズ・選択状態をすべてリセット
-                    setBetList([]);
-                    setOddsData({});
-                    setCustomStakes({});
-                    clearSelection();
-                    
-                    // 予算を現在資金に合わせて更新（オプション）
-                    setTotalBudget(newBankroll);
-
-                    // 編集IDもクリア
-                    setEditingId(null);
-                };
-
-                // ★ 追加: 履歴から読み込んでいる場合、判定完了とともに履歴から削除する
-                if (editingId) {
-                    const newHistory = savedHistory.filter(item => item.id !== editingId);
-                    setSavedHistory(newHistory);
-                    localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
-                }
-
                 if (winCount > 0) {
                     const resultMessage = `的中: ${winCount}点 / ${betList.length}点
 投資額: ${totalInvested.toLocaleString()}円
@@ -1102,12 +1074,15 @@
                     showConfirm(
                         resultMessage,
                         () => {
-                            resetGameState();
+                            setShowResultInput(false);
+                            setRaceResult({ first: '', second: '', third: '' });
+                            setShowOddsConfirm(false);
                         }
                     );
                 } else {
-                    // 的中なしの場合（メッセージはcheckResultsで表示済みなのでリセットのみ）
-                    resetGameState();
+                    setShowResultInput(false);
+                    setRaceResult({ first: '', second: '', third: '' });
+                    setShowOddsConfirm(false);
                 }
             };
 
@@ -1242,7 +1217,6 @@
             // MAIN RENDER
             return (
                 <div className="min-h-screen bg-gray-100 font-sans pb-20">
-                    {/* Modals */}
                     {showOddsConfirm && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
                             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all animate-slide-in">
@@ -1288,7 +1262,7 @@
                                     <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center"><Icons.Info size={24} className="text-yellow-600" /></div>
                                     <h3 className="text-lg font-bold text-gray-800">確認</h3>
                                 </div>
-                                <p className="text-gray-600 mb-6 leading-relaxed whitespace-pre-line">{confirmModal.message}</p>
+                                <p className="text-gray-600 mb-6 leading-relaxed">{confirmModal.message}</p>
                                 <div className="flex gap-3">
                                     <button onClick={() => setConfirmModal(null)} className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-colors">キャンセル</button>
                                     <button onClick={handleConfirm} className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition-colors">OK</button>
@@ -1304,42 +1278,14 @@
                         </div>
                     )}
                     
-                    <header className="bg-emerald-700 text-white p-2 sm:p-4 sticky top-0 z-30 shadow-md">
+                    <header className="bg-emerald-700 text-white p-4 sticky top-0 z-30 shadow-md">
                         <div className="max-w-3xl mx-auto flex justify-between items-center">
-                            <h1 className="text-base sm:text-xl font-bold flex items-center gap-1 sm:gap-2 mr-2 whitespace-nowrap">
-                                <Icons.Calculator className="w-5 h-5 sm:w-6 sm:h-6" /> 
-                                ODDS MASTER
-                            </h1>
-                            <div className="flex gap-1.5 sm:gap-2">
-                                <button 
-                                    onClick={() => setCurrentView('courseData')} 
-                                    className={`px-2 py-1.5 sm:px-3 sm:py-1 rounded flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 border border-emerald-600 transition-colors whitespace-nowrap ${currentView === 'courseData' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}
-                                >
-                                    <Icons.BookOpen className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> 
-                                    <span className="text-[10px] sm:text-xs font-bold sm:font-normal leading-none scale-90 sm:scale-100">コース</span>
-                                </button>
-                                <button 
-                                    onClick={() => setCurrentView('stats')} 
-                                    className={`px-2 py-1.5 sm:px-3 sm:py-1 rounded flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 border border-emerald-600 transition-colors whitespace-nowrap ${currentView === 'stats' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}
-                                >
-                                    <Icons.BarChart className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> 
-                                    <span className="text-[10px] sm:text-xs font-bold sm:font-normal leading-none scale-90 sm:scale-100">統計</span>
-                                </button>
-                                <button 
-                                    onClick={() => setCurrentView('history')} 
-                                    className={`px-2 py-1.5 sm:px-3 sm:py-1 rounded flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 border border-emerald-600 transition-colors whitespace-nowrap ${currentView === 'history' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}
-                                >
-                                    <Icons.History className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> 
-                                    <span className="text-[10px] sm:text-xs font-bold sm:font-normal leading-none scale-90 sm:scale-100">履歴</span>
-                                </button>
-                                {currentView === 'calculator' && (
-                                    <button 
-                                        onClick={clearAll} 
-                                        className="px-2 py-1.5 sm:px-3 sm:py-1 rounded flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 bg-emerald-800 hover:bg-emerald-600 border border-emerald-600 transition-colors whitespace-nowrap"
-                                    >
-                                        <span className="text-[10px] sm:text-xs font-bold sm:font-normal leading-none scale-90 sm:scale-100">リセット</span>
-                                    </button>
-                                )}
+                            <h1 className="text-xl font-bold flex items-center gap-2"><Icons.Calculator size={20} /> ODDS MASTER v3</h1>
+                            <div className="flex gap-2">
+                                <button onClick={() => setCurrentView('courseData')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'courseData' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.BookOpen size={14} /> コース</button>
+                                <button onClick={() => setCurrentView('stats')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'stats' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.BarChart size={14} /> 統計</button>
+                                <button onClick={() => setCurrentView('history')} className={`text-xs px-2 sm:px-3 py-1 rounded flex items-center gap-1 border border-emerald-600 ${currentView === 'history' ? 'bg-emerald-900' : 'bg-emerald-800 hover:bg-emerald-600'}`}><Icons.History size={14} /> 履歴</button>
+                                {currentView === 'calculator' && <button onClick={clearAll} className="text-xs bg-emerald-800 px-2 sm:px-3 py-1 rounded hover:bg-emerald-600 border border-emerald-600">リセット</button>}
                             </div>
                         </div>
                     </header>
@@ -1438,25 +1384,21 @@
                                         </div>
                                         
                                         <div className="pt-2 border-t border-gray-100">
-                                            <div className="flex gap-2 mb-2">
+                                            <div className="flex gap-2 mb-4">
                                                 <button
                                                     onClick={saveBankrollSession}
                                                     className="flex-1 bg-blue-600 text-white py-2 px-3 rounded font-bold text-xs hover:bg-blue-700 flex items-center justify-center gap-1"
                                                 >
                                                     <Icons.Save size={14} />
-                                                    今日の記録を保存 (資金維持)
+                                                    記録のみ保存
                                                 </button>
                                                 <button
                                                     onClick={resetBankrollSession}
                                                     className="flex-1 bg-emerald-600 text-white py-2 px-3 rounded font-bold text-xs hover:bg-emerald-700 flex items-center justify-center gap-1"
                                                 >
                                                     <Icons.RefreshCw size={14} />
-                                                    週次リセット (資金リセット)
+                                                    保存して次へ
                                                 </button>
-                                            </div>
-                                            <div className="flex justify-between text-[10px] text-gray-400 px-1 mb-2">
-                                                <span>※資金を維持して履歴のみ保存<br/>（土曜終了時など）</span>
-                                                <span className="text-right">※保存して初期金に戻す<br/>（日曜終了時など）</span>
                                             </div>
 
                                             {bankrollHistory.length > 0 && (
@@ -1499,8 +1441,8 @@
                             </section>
 
                             <section className="bg-white rounded-lg shadow p-3">
-                                <div className="grid grid-cols-2 sm:grid-cols-12 gap-3">
-                                    <div className="col-span-2 sm:col-span-3 relative">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    <div className="col-span-2 sm:col-span-1 relative">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Calendar size={12} /> 日付</label>
                                         <button type="button" onClick={() => setShowCalendar(!showCalendar)} className="w-full text-sm bg-white border-2 border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 text-left flex items-center justify-between"><span>{raceMeta.date}</span><Icons.Calendar size={16} className="text-gray-400" /></button>
                                         {showCalendar && (
@@ -1531,37 +1473,9 @@
                                             </>
                                         )}
                                     </div>
-                                    <div className="col-span-1 sm:col-span-2"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.MapPin size={12} /> 場所</label><select value={raceMeta.place} onChange={(e) => handleMetaChange('place', e.target.value)} className="w-full text-sm border-gray-300 rounded border p-1.5">{['札幌','函館','福島','新潟','東京','中山','中京','京都','阪神','小倉'].map(p => (<option key={p} value={p}>{p}</option>))}</select></div>
-                                    <div className="col-span-1 sm:col-span-2"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Flag size={12} /> R</label><select value={raceMeta.raceNum} onChange={(e) => handleMetaChange('raceNum', parseInt(e.target.value))} className="w-full text-sm border-gray-300 rounded border p-1.5">{Array.from({length:12}, (_, i) => i + 1).map(n => (<option key={n} value={n}>{n}R</option>))}</select></div>
-                                    <div className="col-span-1 sm:col-span-2">
-                                        <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Star size={12} /> 自信度</label>
-                                        <div className="relative">
-                                            <select
-                                                value={raceMeta.confidence}
-                                                onChange={(e) => setRaceMeta(prev => ({ ...prev, confidence: e.target.value }))}
-                                                className={`w-full strategy-select text-sm font-bold rounded border p-1.5 appearance-none outline-none ${CONFIDENCES[raceMeta.confidence].color.replace('bg-', 'text-')}`}
-                                            >
-                                                {Object.values(CONFIDENCES).map(c => (
-                                                    <option key={c.id} value={c.id}>{c.fullLabel}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-1 sm:col-span-3">
-                                        <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Lightbulb size={12} /> 根拠</label>
-                                        <div className="relative">
-                                            <select
-                                                value={raceMeta.strategy}
-                                                onChange={(e) => setRaceMeta(prev => ({ ...prev, strategy: e.target.value }))}
-                                                className={`w-full strategy-select text-sm font-bold rounded border p-1.5 appearance-none outline-none ${STRATEGIES[raceMeta.strategy].color}`}
-                                            >
-                                                {Object.values(STRATEGIES).map(s => (
-                                                    <option key={s.id} value={s.id}>{s.label}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-2 sm:col-span-3"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.FileText size={12} /> メモ</label><input type="text" placeholder="レース名など" value={raceMeta.note} onChange={(e) => setRaceMeta(prev => ({ ...prev, note: e.target.value }))} className="w-full text-sm border-gray-300 rounded border p-1.5" /></div>
+                                    <div><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.MapPin size={12} /> 場所</label><select value={raceMeta.place} onChange={(e) => handleMetaChange('place', e.target.value)} className="w-full text-sm border-gray-300 rounded border p-1.5">{['札幌','函館','福島','新潟','東京','中山','中京','京都','阪神','小倉'].map(p => (<option key={p} value={p}>{p}</option>))}</select></div>
+                                    <div><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Flag size={12} /> R</label><select value={raceMeta.raceNum} onChange={(e) => handleMetaChange('raceNum', parseInt(e.target.value))} className="w-full text-sm border-gray-300 rounded border p-1.5">{Array.from({length:12}, (_, i) => i + 1).map(n => (<option key={n} value={n}>{n}R</option>))}</select></div>
+                                    <div className="col-span-2 sm:col-span-1"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.FileText size={12} /> メモ</label><input type="text" placeholder="レース名など" value={raceMeta.note} onChange={(e) => setRaceMeta(prev => ({ ...prev, note: e.target.value }))} className="w-full text-sm border-gray-300 rounded border p-1.5" /></div>
                                 </div>
                             </section>
 
@@ -1673,14 +1587,15 @@
                                         </h3>
                                     </div>
                                     
-                                    <div className="overflow-x-auto">
+                                    <div className="overflow-x-auto max-h-[600px]">
                                         <table className="w-full text-sm text-left relative">
-                                            <thead className="bg-gray-50 text-gray-500 text-xs sticky top-0 z-10 shadow-sm">
+                                            <thead className="bg-gray-100 text-gray-600 text-xs uppercase sticky top-0 z-10 shadow-sm">
                                                 <tr>
-                                                    <th className="p-2 text-left font-normal">式別/組合せ</th>
-                                                    <th className="p-2 text-center font-normal">オッズ</th>
-                                                    <th className="p-2 text-right font-normal">投資額</th>
-                                                    <th className="p-2 w-8"></th>
+                                                    <th className="p-1.5 sm:p-3">式別/組合せ</th>
+                                                    <th className="p-1.5 sm:p-3 text-center">オッズ</th>
+                                                    <th className="p-1.5 sm:p-3 text-right">投資額</th>
+                                                    <th className="p-1.5 sm:p-3 text-right hidden sm:table-cell">予想払戻</th>
+                                                    <th className="p-1.5 sm:p-3 w-8 sm:w-10"></th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
@@ -1688,51 +1603,57 @@
                                                     const betData = calculatedData.find(row => row.key === bet.key);
                                                     
                                                     return (
-                                                        <tr key={bet.key} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                                                            <td className="p-2 align-middle">
+                                                        <tr key={bet.key} className="hover:bg-emerald-50 transition-colors">
+                                                            <td className="p-1.5 sm:p-3">
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-[10px] text-gray-400 font-bold leading-none mb-0.5">{getTypeName(bet.type)}</span>
-                                                                    <span className="font-mono font-bold text-gray-700 text-lg leading-tight">{bet.label}</span>
+                                                                    <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">{getTypeName(bet.type)}</span>
+                                                                    <span className="font-mono font-bold text-gray-700 text-sm sm:text-lg">{bet.label}</span>
                                                                 </div>
                                                             </td>
-                                                            <td className="p-2 align-middle text-center">
+                                                            <td className="p-1.5 sm:p-3 text-center">
                                                                 <input 
                                                                     type="number" 
                                                                     step="0.1" 
                                                                     placeholder="0.0" 
                                                                     value={oddsData[bet.key] || ''} 
                                                                     onChange={(e) => handleOddsChange(bet.key, e.target.value)} 
-                                                                    className="w-16 h-10 border border-gray-300 rounded text-center text-lg font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" 
+                                                                    className="w-16 border border-gray-300 rounded px-1 py-1 text-base sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" 
                                                                     inputMode="decimal" 
                                                                 />
                                                             </td>
-                                                            <td className="p-2 align-middle text-right">
-                                                                <div className="flex flex-col items-end">
-                                                                    <input 
-                                                                        type="number" 
-                                                                        step="100" 
-                                                                        value={customStakes[bet.key] !== undefined ? customStakes[bet.key] : (betData.stake || '')} 
-                                                                        onChange={(e) => handleStakeChange(bet.key, e.target.value)} 
-                                                                        className="w-24 h-10 bg-emerald-100 border border-emerald-300 rounded text-right text-lg font-bold text-emerald-800 font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none px-2" 
-                                                                        inputMode="numeric" 
-                                                                        placeholder="0"
-                                                                    />
-                                                                    {betData?.stake > 0 && (
-                                                                        <div className="text-[10px] sm:text-xs mt-1 whitespace-nowrap font-medium text-gray-500">
-                                                                            予想: <span className="text-gray-800">{betData.return.toLocaleString()}</span>
-                                                                            <span className={`ml-1 ${betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                                                                ({betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()})
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                            <td className="p-1.5 sm:p-3 text-right font-mono">
+                                                                {betData?.stake >= 0 ? (
+                                                                    <div className="flex flex-col items-end gap-1">
+                                                                        <input 
+                                                                            type="number" 
+                                                                            step="100" 
+                                                                            value={customStakes[bet.key] !== undefined ? customStakes[bet.key] : (betData.stake || '')} 
+                                                                            onChange={(e) => handleStakeChange(bet.key, e.target.value)} 
+                                                                            className="w-20 sm:w-24 bg-emerald-100 text-emerald-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm text-right border border-emerald-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-mono" 
+                                                                            inputMode="numeric" 
+                                                                            placeholder="0"
+                                                                        />
+                                                                        <div className="sm:hidden flex flex-col items-end text-[10px]"><span className="font-bold">{betData.return.toLocaleString()}</span><span className={betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}>{betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()}</span></div>
+                                                                    </div>
+                                                                ) : '-'}
                                                             </td>
-                                                            <td className="p-2 align-middle text-center">
+                                                            <td className="p-1.5 sm:p-3 text-right hidden sm:table-cell">
+                                                                {betData?.stake > 0 ? (
+                                                                    <div className="flex flex-col items-end">
+                                                                        <span className="font-bold">{betData.return.toLocaleString()}</span>
+                                                                        <span className={`text-xs ${betData.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                                            {betData.profit >= 0 ? '+' : ''}{betData.profit.toLocaleString()}
+                                                                        </span>
+                                                                    </div>
+                                                                ) : '-'}
+                                                            </td>
+                                                            <td className="p-1.5 sm:p-3 text-right">
                                                                 <button 
                                                                     onClick={() => removeBet(bet.key)} 
                                                                     className="text-gray-400 hover:text-red-500 transition-colors"
                                                                 >
-                                                                    <Icons.Trash2 size={18} />
+                                                                    <Icons.Trash2 size={14} className="sm:hidden" />
+                                                                    <Icons.Trash2 size={16} className="hidden sm:block" />
                                                                 </button>
                                                             </td>
                                                         </tr>
@@ -1749,7 +1670,7 @@
                                                 className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 flex items-center justify-center gap-2"
                                             >
                                                 <Icons.Save size={20} />
-                                                今日の記録を保存 (資金維持)
+                                                買い目を保存 (資金維持)
                                             </button>
                                             <button 
                                                 onClick={() => setShowResultInput(!showResultInput)} 
@@ -1795,30 +1716,9 @@
                                     {savedHistory.map((entry) => {
                                         const betCount = entry.data.betList?.length || 0;
                                         const hasOdds = entry.data.oddsData && Object.keys(entry.data.oddsData).length > 0;
-                                        const strategyKey = entry.meta.strategy || 'data';
-                                        const strategy = STRATEGIES[strategyKey] || STRATEGIES.data;
-                                        const confidenceKey = entry.meta.confidence || 'A';
-                                        const confidence = CONFIDENCES[confidenceKey] || CONFIDENCES.A;
-
                                         return (
                                             <div key={entry.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className="font-bold text-lg text-gray-800">{entry.meta.place} {entry.meta.raceNum}R</span>
-                                                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${strategy.color.replace('focus:ring-', '')}`}>
-                                                                {strategy.label}
-                                                            </span>
-                                                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${confidence.color.replace('bg-', 'bg-opacity-10 bg-').replace('text-', 'text-opacity-90 text-')}`}>
-                                                                {confidence.label}
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border">{formatDate(entry.meta.date)}</span>
-                                                        {entry.meta.note && (<p className="text-sm text-gray-500 flex items-center gap-1 mt-1"><Icons.FileText size={12} /> {entry.meta.note}</p>)}
-                                                    </div>
-                                                    <div className="text-right"><span className="block text-xs text-gray-500">予算</span><span className="font-bold text-emerald-600">{parseInt(entry.data.totalBudget).toLocaleString()}円</span></div>
-                                                </div>
-                                                
+                                                <div className="flex justify-between items-start mb-3"><div className="flex-1"><div className="flex items-center gap-2 mb-1"><span className="font-bold text-lg text-gray-800">{entry.meta.place} {entry.meta.raceNum}R</span><span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border">{formatDate(entry.meta.date)}</span></div>{entry.meta.note && (<p className="text-sm text-gray-500 flex items-center gap-1"><Icons.FileText size={12} /> {entry.meta.note}</p>)}</div><div className="text-right"><span className="block text-xs text-gray-500">予算</span><span className="font-bold text-emerald-600">{parseInt(entry.data.totalBudget).toLocaleString()}円</span></div></div>
                                                 <div className="grid grid-cols-2 gap-2 text-xs mb-3"><div className="bg-gray-50 p-2 rounded"><span className="text-gray-500">買い目:</span><span className="font-bold ml-1">{betCount}点</span></div><div className="bg-gray-50 p-2 rounded"><span className="text-gray-500">モード:</span><span className="font-bold ml-1">{entry.data.allocationMode === 'profit' ? '払戻均等' : '資金均等'}</span></div></div>
                                                 {hasOdds && (<div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mb-3">✓ オッズデータ保存済み</div>)}
                                                 <div className="flex gap-2"><button onClick={() => loadFromHistory(entry)} className="flex-1 bg-emerald-600 text-white py-2 rounded text-sm font-bold hover:bg-emerald-700 flex items-center justify-center gap-1"><Icons.RefreshCw size={14} /> 読み込む</button><button onClick={() => deleteHistoryItem(entry.id)} className="px-3 bg-white border border-gray-300 text-gray-500 rounded hover:bg-red-50 hover:text-red-500 hover:border-red-300"><Icons.Trash2 size={16} /></button></div>
@@ -1837,6 +1737,7 @@
                                     <button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button>
                                     <h2 className="text-xl font-bold text-gray-700">収支統計</h2>
                                 </div>
+                                {/* 統計データ削除ボタン */}
                                 {resultHistory.length > 0 && (
                                     <button onClick={clearStats} className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded border border-red-200 hover:bg-red-100 flex items-center gap-1 transition-colors">
                                         <Icons.Trash2 size={14} />
@@ -1846,135 +1747,9 @@
                             </div>
                             {resultHistory.length === 0 ? (<div className="text-center py-12 text-gray-400 bg-white rounded-lg border-2 border-dashed border-gray-200"><Icons.BarChart className="mx-auto mb-2 opacity-50" size={48} /><p>まだ的中判定の記録がありません</p><p className="text-xs mt-1">レースの結果を入力して記録を蓄積しましょう</p></div>) : (
                                 <div className="space-y-4">
-                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.TrendingUp size={18} /> 全体成績</h3><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 p-3 rounded"><div className="text-xs text-blue-600 mb-1">総レース数</div><div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div></div><div className="bg-green-50 p-3 rounded"><div className="text-xs text-green-600 mb-1">的中率</div><div className="text-2xl font-bold text-green-900">{((resultHistory.reduce((sum, r) => sum + r.winCount, 0) / resultHistory.reduce((sum, r) => sum + r.totalBets, 0)) * 100).toFixed(1)}%</div></div><div className="bg-purple-50 p-3 rounded"><div className="text-xs text-purple-600 mb-1">総投資額</div><div className="text-2xl font-bold text-purple-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円</div></div><div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div><div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>{resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円</div></div><div className="bg-yellow-50 p-3 rounded col-span-2"><div className="text-xs text-yellow-600 mb-1">回収率</div><div className="text-2xl font-bold text-yellow-900">{((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1)}%</div></div></div></div>
-                                    
-                                    {/* 根拠別成績 (Added Section) */}
-                                    <div className="bg-white rounded-lg shadow p-4">
-                                        <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Lightbulb size={18} /> 根拠別成績</h3>
-                                        <div className="space-y-2">
-                                            {Object.entries(resultHistory.reduce((acc, r) => {
-                                                const s = r.strategy || 'data';
-                                                if (!acc[s]) {
-                                                    acc[s] = { count: 0, wins: 0, invested: 0, returned: 0, profit: 0 };
-                                                }
-                                                acc[s].count++;
-                                                if (r.winCount > 0) acc[s].wins++;
-                                                acc[s].invested += r.totalInvested;
-                                                acc[s].returned += r.totalReturn;
-                                                acc[s].profit += r.profit;
-                                                return acc;
-                                            }, {})).map(([key, stats]) => {
-                                                const strategy = STRATEGIES[key] || STRATEGIES.data;
-                                                const winRate = ((stats.wins / stats.count) * 100).toFixed(1);
-                                                const returnRate = stats.invested > 0 ? ((stats.returned / stats.invested) * 100).toFixed(1) : 0;
-                                                
-                                                return (
-                                                    <div key={key} className={`flex items-center justify-between p-2 rounded border-l-4 ${strategy.color.replace('bg-', 'border-').replace('text-', '').split(' ')[0]} bg-gray-50`}>
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${strategy.color.replace('focus:ring-', '')}`}>
-                                                                    {strategy.label}
-                                                                </span>
-                                                                <span className="text-xs text-gray-500">{stats.count}レース / 的中{stats.wins}</span>
-                                                            </div>
-                                                            <div className="text-xs text-gray-500 mt-1">
-                                                                的中率 {winRate}% / 回収率 {returnRate}%
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <div className={`font-bold ${stats.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                                {stats.profit >= 0 ? '+' : ''}{stats.profit.toLocaleString()}円
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* 自信度別成績 (New) */}
-                                    <div className="bg-white rounded-lg shadow p-4">
-                                        <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Star size={18} /> 自信度別成績</h3>
-                                        <div className="space-y-2">
-                                            {Object.entries(resultHistory.reduce((acc, r) => {
-                                                const c = r.confidence || 'A';
-                                                if (!acc[c]) {
-                                                    acc[c] = { count: 0, wins: 0, invested: 0, returned: 0, profit: 0 };
-                                                }
-                                                acc[c].count++;
-                                                if (r.winCount > 0) acc[c].wins++;
-                                                acc[c].invested += r.totalInvested;
-                                                acc[c].returned += r.totalReturn;
-                                                acc[c].profit += r.profit;
-                                                return acc;
-                                            }, {})).sort().map(([key, stats]) => {
-                                                const conf = CONFIDENCES[key] || CONFIDENCES.A;
-                                                const winRate = ((stats.wins / stats.count) * 100).toFixed(1);
-                                                const returnRate = stats.invested > 0 ? ((stats.returned / stats.invested) * 100).toFixed(1) : 0;
-                                                
-                                                // Determine border color based on text color
-                                                const borderColorClass = conf.color.split(' ').find(c => c.startsWith('text-')).replace('text-', 'border-');
-
-                                                return (
-                                                    <div key={key} className={`flex items-center justify-between p-2 rounded border-l-4 ${borderColorClass} bg-gray-50`}>
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${conf.color.replace('text-', 'text-opacity-90 text-').replace('bg-', 'bg-opacity-10 bg-')}`}>
-                                                                    {conf.fullLabel}
-                                                                </span>
-                                                                <span className="text-xs text-gray-500">{stats.count}レース / 的中{stats.wins}</span>
-                                                            </div>
-                                                            <div className="text-xs text-gray-500 mt-1">
-                                                                的中率 {winRate}% / 回収率 {returnRate}%
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <div className={`font-bold ${stats.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                                {stats.profit >= 0 ? '+' : ''}{stats.profit.toLocaleString()}円
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
+                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.TrendingUp size={18} /> 全体成績</h3><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 p-3 rounded"><div className="text-xs text-blue-600 mb-1">総レース数</div><div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div></div><div className="bg-green-50 p-3 rounded"><div className="text-xs text-green-600 mb-1">的中率</div><div className="text-2xl font-bold text-green-900">{resultHistory.length > 0 ? ((resultHistory.filter(r => r.winCount > 0).length / resultHistory.length) * 100).toFixed(1) : 0}%</div></div><div className="bg-purple-50 p-3 rounded"><div className="text-xs text-purple-600 mb-1">総投資額</div><div className="text-2xl font-bold text-purple-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円</div></div><div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div><div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>{resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円</div></div><div className="bg-yellow-50 p-3 rounded col-span-2"><div className="text-xs text-yellow-600 mb-1">回収率</div><div className="text-2xl font-bold text-yellow-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0) > 0 ? ((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1) : 0}%</div></div></div></div>
                                     <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3">競馬場別成績</h3><div className="space-y-2">{Object.entries(resultHistory.reduce((acc, r) => { if (!acc[r.place]) { acc[r.place] = { count: 0, invested: 0, returned: 0, profit: 0 }; } acc[r.place].count++; acc[r.place].invested += r.totalInvested; acc[r.place].returned += r.totalReturn; acc[r.place].profit += r.profit; return acc; }, {})).map(([place, stats]) => (<div key={place} className="flex items-center justify-between p-2 bg-gray-50 rounded"><div className="flex-1"><div className="font-semibold">{place}</div><div className="text-xs text-gray-500">{stats.count}レース</div></div><div className="text-right"><div className={`font-bold ${stats.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{stats.profit >= 0 ? '+' : ''}{stats.profit.toLocaleString()}円</div><div className="text-xs text-gray-500">回収率 {((stats.returned / stats.invested) * 100).toFixed(1)}%</div></div></div>))}</div></div>
-                                    <div className="bg-white rounded-lg shadow p-4">
-                                        <h3 className="font-bold text-gray-700 mb-3">式別成績</h3>
-                                        <div className="space-y-2">
-                                            {Object.entries(resultHistory.reduce((acc, r) => { 
-                                                r.bets.forEach(bet => { 
-                                                    if (!acc[bet.type]) { acc[bet.type] = { count: 0, wins: 0, invested: 0, returned: 0 }; } 
-                                                    acc[bet.type].count++; 
-                                                    if (bet.isWin) { acc[bet.type].wins++; acc[bet.type].returned += bet.stake * bet.odds; } 
-                                                    acc[bet.type].invested += bet.stake; 
-                                                }); 
-                                                return acc; 
-                                            }, {}))
-                                            .sort(([typeA], [typeB]) => {
-                                                const order = ['tansho', 'fukusho', 'wide', 'umaren', 'umatan', 'sanrenpuku', 'sanrentan'];
-                                                return order.indexOf(typeA) - order.indexOf(typeB);
-                                            })
-                                            .map(([type, stats]) => { 
-                                                const typeName = { 'tansho': '単勝', 'fukusho': '複勝', 'wide': 'ワイド', 'umaren': '馬連', 'umatan': '馬単', 'sanrenpuku': '3連複', 'sanrentan': '3連単' }[type] || type; 
-                                                return (
-                                                    <div key={type} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                                        <div className="flex-1">
-                                                            <div className="font-semibold">{typeName}</div>
-                                                            <div className="text-xs text-gray-500">{stats.count}点 / 的中{stats.wins}点 ({((stats.wins / stats.count) * 100).toFixed(1)}%)</div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <div className={`font-bold ${stats.returned - stats.invested >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                                {stats.returned - stats.invested >= 0 ? '+' : ''}{(stats.returned - stats.invested).toLocaleString()}円
-                                                            </div>
-                                                            <div className="text-xs text-gray-500">回収率 {stats.invested > 0 ? ((stats.returned / stats.invested) * 100).toFixed(1) : 0}%</div>
-                                                        </div>
-                                                    </div>
-                                                ); 
-                                            })}
-                                        </div>
-                                    </div>
+                                    <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3">式別成績</h3><div className="space-y-2">{Object.entries(resultHistory.reduce((acc, r) => { r.bets.forEach(bet => { if (!acc[bet.type]) { acc[bet.type] = { count: 0, wins: 0, invested: 0, returned: 0 }; } acc[bet.type].count++; if (bet.isWin) { acc[bet.type].wins++; acc[bet.type].returned += bet.stake * bet.odds; } acc[bet.type].invested += bet.stake; }); return acc; }, {})).map(([type, stats]) => { const typeName = { 'tansho': '単勝', 'fukusho': '複勝', 'wide': 'ワイド', 'umaren': '馬連', 'umatan': '馬単', 'sanrenpuku': '3連複', 'sanrentan': '3連単' }[type] || type; return (<div key={type} className="flex items-center justify-between p-2 bg-gray-50 rounded"><div className="flex-1"><div className="font-semibold">{typeName}</div><div className="text-xs text-gray-500">{stats.count}点 / 的中{stats.wins}点 ({((stats.wins / stats.count) * 100).toFixed(1)}%)</div></div><div className="text-right"><div className={`font-bold ${stats.returned - stats.invested >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{stats.returned - stats.invested >= 0 ? '+' : ''}{(stats.returned - stats.invested).toLocaleString()}円</div><div className="text-xs text-gray-500">回収率 {((stats.returned / stats.invested) * 100).toFixed(1)}%</div></div></div>); })}</div></div>
                                     <div className="bg-white rounded-lg shadow p-4"><h3 className="font-bold text-gray-700 mb-3">収支推移</h3><div className="h-48 flex items-end gap-1">{resultHistory.slice(-20).map((r, i) => { const maxProfit = Math.max(...resultHistory.slice(-20).map(r => Math.abs(r.profit))); const height = (Math.abs(r.profit) / maxProfit) * 100; return (<div key={i} className="flex-1 flex flex-col items-center group relative"><div className={`w-full rounded-t transition-all ${r.profit >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`} style={{ height: `${Math.max(height, 5)}%` }}></div><div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{r.date}<br/>{r.profit >= 0 ? '+' : ''}{r.profit.toLocaleString()}円</div></div>); })}</div><div className="text-xs text-gray-500 text-center mt-2">直近{Math.min(resultHistory.length, 20)}レースの収支</div></div>
                                 </div>
                             )}
@@ -1985,16 +1760,22 @@
                         <main className="max-w-3xl mx-auto p-4 space-y-4">
                             <div className="flex items-center gap-2 mb-4"><button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button><h2 className="text-xl font-bold text-gray-700">コースデータ</h2></div>
                             
+                            {/* ファイル読み込みボタン */}
+                            <div className="bg-white p-4 rounded-lg shadow mb-4">
+                                <h3 className="font-bold text-gray-700 mb-2 text-sm">コースデータ (JSON) を読み込む</h3>
+                                <label className="flex items-center gap-2 p-2 border border-dashed border-gray-300 rounded cursor-pointer hover:bg-gray-50 text-sm text-gray-600">
+                                    <Icons.Upload size={18} />
+                                    ファイルを選択してください
+                                    <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+                                </label>
+                            </div>
+
                             {Object.keys(courseData).length === 0 ? (
                                 <div className="text-center py-12 text-gray-400">
                                     <p>データが読み込まれていません</p>
                                 </div>
                             ) : (
-                                <div className="space-y-2">
-                                    {Object.entries(courseData).map(([place, courses]) => (
-                                        <LocationAccordion key={place} place={place} courses={courses} />
-                                    ))}
-                                </div>
+                                <div className="space-y-4">{Object.entries(courseData).map(([place, courses]) => (<div key={place} className="space-y-3"><h3 className="text-lg font-bold text-gray-800 bg-emerald-100 px-3 py-2 rounded">{place}</h3><div className="space-y-2">{Object.entries(courses).map(([courseName, data]) => (<CourseAccordion key={place + '-' + courseName} courseName={courseName} data={data} />))}</div></div>))}</div>
                             )}
                         </main>
                     )}
