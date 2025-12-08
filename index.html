@@ -694,6 +694,21 @@
             };
 
             const updateResult = (updatedResult) => {
+                // 元の結果を取得
+                const originalResult = resultHistory.find(item => item.id === updatedResult.id);
+
+                // 当日の日付を取得
+                const today = new Date().toISOString().split('T')[0];
+
+                // 当日のレースなら資金を調整
+                if (updatedResult.date === today && originalResult) {
+                    const profitDiff = updatedResult.profit - originalResult.profit;
+                    const current = bankrollCurrent === '' ? 0 : parseInt(bankrollCurrent);
+                    const newBankroll = current + profitDiff;
+                    setBankrollCurrent(newBankroll);
+                    localStorage.setItem('bankroll_current', newBankroll.toString());
+                }
+
                 const updatedResults = resultHistory.map(item =>
                     item.id === updatedResult.id ? updatedResult : item
                 );
