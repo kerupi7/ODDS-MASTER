@@ -297,6 +297,9 @@
             // 編集中の履歴IDを管理（新規作成時はnull）
             const [editingId, setEditingId] = useState(null);
 
+            // 編集中の結果IDを管理（新規作成時はnull）
+            const [editingResultId, setEditingResultId] = useState(null);
+
             // --- Bankroll Management State ---
             const [bankrollStart, setBankrollStart] = useState(() => {
                 const saved = localStorage.getItem('bankroll_start');
@@ -583,10 +586,11 @@
                 setOddsData({});
                 setCustomStakes({});
                 clearSelection();
-                
+
                 // 編集状態を解除（IDリセット）
                 setEditingId(null);
-                
+                setEditingResultId(null);
+
                 setTotalBudget(bankrollCurrent);
             };
 
@@ -685,8 +689,9 @@
                     setTotalBudget(result.originalData.totalBudget || 10000);
                     setAllocationMode(result.originalData.allocationMode || 'profit');
 
-                    // 編集IDをクリア（新規保存扱い）
-                    setEditingId(null);
+                    // 結果編集モードに設定（的中判定時に結果を上書き更新）
+                    setEditingResultId(result.id);
+                    setEditingId(null); // 買い目の履歴編集はクリア
 
                     setCurrentView('calculator');
 
@@ -1076,8 +1081,11 @@
                 const newBankroll = current + profit;
                 setBankrollCurrent(newBankroll);
                 
+                // 結果編集時は既存IDを使用、新規作成時は新しいIDを生成
+                const resultId = editingResultId || Date.now();
+
                 const resultRecord = {
-                    id: Date.now(),
+                    id: resultId,
                     date: raceMeta.date,
                     place: raceMeta.place,
                     raceNum: raceMeta.raceNum,
@@ -1111,8 +1119,18 @@
                         allocationMode
                     }
                 };
-                
-                const updatedResults = [...resultHistory, resultRecord];
+
+                let updatedResults;
+                if (editingResultId) {
+                    // 既存の結果を更新
+                    updatedResults = resultHistory.map(item =>
+                        item.id === editingResultId ? resultRecord : item
+                    );
+                } else {
+                    // 新しい結果を追加
+                    updatedResults = [...resultHistory, resultRecord];
+                }
+
                 setResultHistory(updatedResults);
                 localStorage.setItem('jra_odds_results', JSON.stringify(updatedResults));
                 
@@ -1133,6 +1151,7 @@
 
                     // 編集IDもクリア
                     setEditingId(null);
+                    setEditingResultId(null);
                 };
 
                 if (winCount > 0) {
