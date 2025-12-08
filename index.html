@@ -934,10 +934,31 @@
             // Check which bets won based on race result
             const checkResults = () => {
                 const { first, second, third } = raceResult;
-                
+
                 if (!first || !second || !third) {
                     showToast('着順を全て入力してください', 'error');
                     return;
+                }
+
+                // 的中判定前に買い目を自動保存（まだ保存されていない場合）
+                if (!editingId && betList.length > 0) {
+                    const entryId = Date.now();
+                    const newEntry = {
+                        id: entryId,
+                        meta: { ...raceMeta },
+                        data: {
+                            betList: [...betList],
+                            oddsData: { ...oddsData },
+                            totalBudget,
+                            allocationMode
+                        },
+                        savedAt: new Date().toISOString()
+                    };
+
+                    const newHistory = [newEntry, ...savedHistory];
+                    setSavedHistory(newHistory);
+                    localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
+                    setEditingId(entryId);
                 }
 
                 const r1 = parseInt(first);
@@ -1083,13 +1104,6 @@
                     // 編集IDもクリア
                     setEditingId(null);
                 };
-
-                // ★ 追加: 履歴から読み込んでいる場合、判定完了とともに履歴から削除する
-                if (editingId) {
-                    const newHistory = savedHistory.filter(item => item.id !== editingId);
-                    setSavedHistory(newHistory);
-                    localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
-                }
 
                 if (winCount > 0) {
                     const resultMessage = `的中: ${winCount}点 / ${betList.length}点
