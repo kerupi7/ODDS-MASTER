@@ -1089,8 +1089,6 @@
             const [toast, setToast] = useState(null);
             const [confirmModal, setConfirmModal] = useState(null);
             
-            const [showCalendar, setShowCalendar] = useState(false);
-            const [calendarDate, setCalendarDate] = useState(new Date());
             const [raceResult, setRaceResult] = useState({ first: '', second: '', third: '' });
             const [reflectionNoteInput, setReflectionNoteInput] = useState('');
             const [showResultInput, setShowResultInput] = useState(false);
@@ -1199,35 +1197,6 @@
                 setConfirmModal(null);
             };
             
-            // Calendar helpers
-            const getDaysInMonth = (date) => {
-                const year = date.getFullYear();
-                const month = date.getMonth();
-                const firstDay = new Date(year, month, 1);
-                const lastDay = new Date(year, month + 1, 0);
-                const daysInMonth = lastDay.getDate();
-                const startingDayOfWeek = firstDay.getDay();
-                
-                return { daysInMonth, startingDayOfWeek, year, month };
-            };
-            
-            const selectDate = (day) => {
-                const year = calendarDate.getFullYear();
-                const month = calendarDate.getMonth();
-                const selectedDate = new Date(year, month, day);
-                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                setRaceMeta(prev => ({ ...prev, date: dateString }));
-                setShowCalendar(false);
-            };
-            
-            const changeMonth = (delta) => {
-                setCalendarDate(prev => {
-                    const newDate = new Date(prev);
-                    newDate.setMonth(newDate.getMonth() + delta);
-                    return newDate;
-                });
-            };
-
             // Load history
             useEffect(() => {
                 const saved = localStorage.getItem('jra_odds_history');
@@ -2368,15 +2337,15 @@
                                 <div className="grid grid-cols-2 sm:grid-cols-12 gap-3">
                                     <div className="col-span-2 sm:col-span-3 relative">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Calendar size={12} /> 日付</label>
-                                        <div className="flex flex-col gap-2">
+                                        <div className="flex flex-col gap-3">
                                             <div>
-                                                <div className="text-xs font-semibold text-gray-600 mb-1">
+                                                <div className="text-xs font-semibold text-gray-600 mb-2">
                                                     今週の開催日
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
                                                     {weekendDates.length === 0 && (
                                                         <span className="text-xs text-gray-400">
-                                                            スケジュール情報が取得できなかったため、直接日付を選択してください。
+                                                            スケジュール情報が取得できなかったため、開催日情報を更新してください。
                                                         </span>
                                                     )}
                                                     {weekendDates.map((wd) => {
@@ -2387,10 +2356,7 @@
                                                             <button
                                                                 key={wd.key}
                                                                 type="button"
-                                                                onClick={() => {
-                                                                    setRaceMeta(prev => ({ ...prev, date: wd.key }));
-                                                                    setShowCalendar(false);
-                                                                }}
+                                                                onClick={() => setRaceMeta(prev => ({ ...prev, date: wd.key }))}
                                                                 className={
                                                                     'px-3 py-1 rounded-full text-xs border transition ' +
                                                                     (isActive
@@ -2404,60 +2370,13 @@
                                                     })}
                                                 </div>
                                             </div>
-
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <label className="text-xs text-gray-600 whitespace-nowrap">
-                                                    日付を指定して入力
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    value={raceMeta.date}
-                                                    onChange={(e) => setRaceMeta(prev => ({ ...prev, date: e.target.value }))}
-                                                    className="border rounded px-2 py-1 text-sm"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowCalendar(!showCalendar)}
-                                                    className="text-xs bg-white border-2 border-gray-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 flex items-center gap-1"
-                                                >
-                                                    <Icons.Calendar size={14} className="text-gray-500" />
-                                                    <span>カレンダー</span>
-                                                </button>
-                                            </div>
                                         </div>
-                                        {showCalendar && (
-                                            <>
-                                                <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)}></div>
-                                                <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 z-50 w-80">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <button type="button" onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><Icons.ArrowLeft size={20} /></button>
-                                                        <div className="font-bold text-gray-800">{calendarDate.getFullYear()}年{calendarDate.getMonth() + 1}月</div>
-                                                        <button type="button" onClick={() => changeMonth(1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors transform rotate-180"><Icons.ArrowLeft size={20} /></button>
-                                                    </div>
-                                                    <div className="grid grid-cols-7 gap-1 mb-2">{['日', '月', '火', '水', '木', '金', '土'].map(day => (<div key={day} className="text-center text-xs font-bold text-gray-500 py-2">{day}</div>))}</div>
-                                                    <div className="grid grid-cols-7 gap-1">
-                                                        {(() => {
-                                                            const { daysInMonth, startingDayOfWeek } = getDaysInMonth(calendarDate);
-                                                            const days = [];
-                                                            for (let i = 0; i < startingDayOfWeek; i++) { days.push(<div key={`empty-${i}`} className="aspect-square"></div>); }
-                                                            const selectedDate = new Date(raceMeta.date);
-                                                            for (let day = 1; day <= daysInMonth; day++) {
-                                                                const isSelected = selectedDate.getFullYear() === calendarDate.getFullYear() && selectedDate.getMonth() === calendarDate.getMonth() && selectedDate.getDate() === day;
-                                                                const isToday = new Date().getFullYear() === calendarDate.getFullYear() && new Date().getMonth() === calendarDate.getMonth() && new Date().getDate() === day;
-                                                                days.push(<button key={day} type="button" onClick={() => selectDate(day)} className={`aspect-square rounded-lg text-sm font-medium transition-all hover:bg-emerald-100 ${isSelected ? 'bg-emerald-600 text-white hover:bg-emerald-700' : isToday ? 'border-2 border-emerald-600 text-emerald-600' : 'text-gray-700'}`}>{day}</button>);
-                                                            }
-                                                            return days;
-                                                        })()}
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
                                     </div>
                                     <div className="col-span-2 sm:col-span-4">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.MapPin size={12} /> 場所</label>
-                                        <div className="flex flex-col gap-2">
+                                        <div className="flex flex-col gap-3">
                                             <div>
-                                                <div className="text-xs font-semibold text-gray-600 mb-1">
+                                                <div className="text-xs font-semibold text-gray-600 mb-2">
                                                     この日の開催競馬場
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
@@ -2490,28 +2409,6 @@
                                                     })}
                                                 </div>
                                             </div>
-
-                                            <div className="flex items-center gap-2">
-                                                <label className="text-xs text-gray-600 whitespace-nowrap">
-                                                    競馬場を指定して選ぶ
-                                                </label>
-                                                <select
-                                                    value={selectedCourse}
-                                                    onChange={(e) => setSelectedCourse(e.target.value)}
-                                                    className="border rounded px-2 py-1 text-sm"
-                                                >
-                                                    {allCourses.map((course) => {
-                                                        const name = typeof course === 'string'
-                                                            ? course
-                                                            : (course.name || course.label || course.id);
-                                                        return (
-                                                            <option key={name} value={name}>
-                                                                {name}
-                                                            </option>
-                                                        );
-                                                    })}
-                                                </select>
-                                            </div>
                                         </div>
                                         {isScheduleMissingForDate && (
                                             <p className="text-[10px] text-gray-400 mt-1">開催情報が見つからないため、全競馬場を表示しています。</p>
@@ -2519,9 +2416,9 @@
                                     </div>
                                     <div className="col-span-2 sm:col-span-3">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Flag size={12} /> R</label>
-                                        <div className="flex flex-col gap-2">
+                                        <div className="flex flex-col gap-3">
                                             <div>
-                                                <div className="text-xs font-semibold text-gray-600 mb-1">
+                                                <div className="text-xs font-semibold text-gray-600 mb-2">
                                                     レース番号
                                                 </div>
                                                 <div className="flex flex-wrap gap-1.5">
@@ -2545,26 +2442,6 @@
                                                         );
                                                     })}
                                                 </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-2">
-                                                <label className="text-xs text-gray-600 whitespace-nowrap">
-                                                    直接入力
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    min={1}
-                                                    max={MAX_RACES_PER_DAY}
-                                                    value={raceMeta.raceNum}
-                                                    onChange={(e) => {
-                                                        const v = Number(e.target.value);
-                                                        if (!Number.isNaN(v)) {
-                                                            handleMetaChange('raceNum', v);
-                                                        }
-                                                    }}
-                                                    className="w-20 border rounded px-2 py-1 text-sm"
-                                                />
-                                                <span className="text-xs text-gray-500">R</span>
                                             </div>
                                         </div>
                                     </div>
