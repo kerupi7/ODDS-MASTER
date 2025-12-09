@@ -93,6 +93,29 @@
 
         const ALL_COURSES = ['札幌', '函館', '福島', '新潟', '東京', '中山', '中京', '京都', '阪神', '小倉'];
 
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getInitialRaceDate() {
+            const today = new Date();
+            const day = today.getDay(); // 0=日曜, 1=月曜, 2=火曜...
+
+            // 土・日・月は当日を使用
+            if (day === 0 || day === 1 || day === 6) {
+                return formatDate(today);
+            }
+
+            // 火〜金は次の土曜日
+            const diffToSaturday = (6 - day + 7) % 7;
+            const nextSat = new Date(today);
+            nextSat.setDate(today.getDate() + diffToSaturday);
+            return formatDate(nextSat);
+        }
+
         async function loadSchedule2026() {
             if (window.__schedule2026Cache) return window.__schedule2026Cache;
             try {
@@ -769,7 +792,7 @@
 
             // Modified RaceMeta to include Strategy and Confidence
             const [raceMeta, setRaceMeta] = useState({
-                date: new Date().toISOString().split('T')[0],
+                date: getInitialRaceDate(),
                 place: '東京',
                 raceNum: 11,
                 strategy: 'matchup',
@@ -1812,7 +1835,7 @@
 
             const isSingleHorseBet = betType === 'tansho' || betType === 'fukusho';
 
-            const formatDate = (dateStr) => {
+            const formatDateDisplay = (dateStr) => {
                 const d = new Date(dateStr);
                 return `${d.getMonth() + 1}/${d.getDate()}`;
             };
@@ -2366,7 +2389,7 @@
                                                                 {confidence.label}
                                                             </span>
                                                         </div>
-                                                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border">{formatDate(entry.meta.date)}</span>
+                                                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border">{formatDateDisplay(entry.meta.date)}</span>
                                                         {entry.meta.note && (<p className="text-sm text-gray-500 flex items-center gap-1 mt-1"><Icons.FileText size={12} /> {entry.meta.note}</p>)}
                                                     </div>
                                                     <div className="text-right"><span className="block text-xs text-gray-500">予算</span><span className="font-bold text-emerald-600">{parseInt(entry.data.totalBudget).toLocaleString()}円</span></div>
