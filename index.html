@@ -188,11 +188,46 @@
             </div>
         );
 
+        function formatDateYMD(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
         function formatDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            return formatDateYMD(date);
+        }
+
+        function getBaseSaturday(today = new Date()) {
+            const day = today.getDay(); // 0:日,1:月,2:火,3:水,4:木,5:金,6:土
+            const diffToSaturday = (6 - day + 7) % 7;
+            const base = new Date(today);
+            base.setDate(today.getDate() + diffToSaturday);
+            return base;
+        }
+
+        function getWeekendDatesForSchedule(schedule, today = new Date()) {
+            const baseSat = getBaseSaturday(today);
+            const labels = ['土', '日', '月'];
+            const result = [];
+
+            for (let i = 0; i < 3; i++) {
+                const d = new Date(baseSat);
+                d.setDate(baseSat.getDate() + i);
+                const key = formatDateYMD(d);
+                const courses = schedule[key];
+
+                if (Array.isArray(courses) && courses.length > 0) {
+                    result.push({
+                        key,
+                        date: d,
+                        label: labels[i]
+                    });
+                }
+            }
+
+            return result;
         }
 
         function getInitialRaceDate() {
@@ -201,14 +236,12 @@
 
             // 土・日・月は当日を使用
             if (day === 0 || day === 1 || day === 6) {
-                return formatDate(today);
+                return formatDateYMD(today);
             }
 
             // 火〜金は次の土曜日
-            const diffToSaturday = (6 - day + 7) % 7;
-            const nextSat = new Date(today);
-            nextSat.setDate(today.getDate() + diffToSaturday);
-            return formatDate(nextSat);
+            const nextSat = getBaseSaturday(today);
+            return formatDateYMD(nextSat);
         }
 
         async function loadSchedule2026() {
@@ -1037,6 +1070,7 @@
             // コースデータをStateで管理
             const [courseData, setCourseData] = useState({});
             const [schedule2026, setSchedule2026] = useState(null);
+            const [weekendDates, setWeekendDates] = useState([]);
 
             // Show toast helper
             const showToast = (message, type = 'success') => {
@@ -1056,7 +1090,18 @@
             }, []);
 
             useEffect(() => {
-                loadSchedule2026().then(setSchedule2026);
+                async function loadSchedule() {
+                    try {
+                        const data = await loadSchedule2026();
+                        setSchedule2026(data);
+                        setWeekendDates(getWeekendDatesForSchedule(data, new Date()));
+                    } catch (e) {
+                        console.error('Failed to load schedule 2026', e);
+                        setSchedule2026({});
+                        setWeekendDates([]);
+                    }
+                }
+                loadSchedule();
             }, []);
 
             const normalizedRaceDate = normalizeDateString(raceMeta.date);
@@ -2272,14 +2317,70 @@
                                 <div className="grid grid-cols-2 sm:grid-cols-12 gap-3">
                                     <div className="col-span-2 sm:col-span-3 relative">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Calendar size={12} /> 日付</label>
-                                        <button type="button" onClick={() => setShowCalendar(!showCalendar)} className="w-full text-sm bg-white border-2 border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 text-left flex items-center justify-between"><span>{raceMeta.date}</span><Icons.Calendar size={16} className="text-gray-400" /></button>
+                                        <div className="flex flex-col gap-2">
+                                            <div>
+                                                <div className="text-xs font-semibold text-gray-600 mb-1">
+                                                    今週の開催日
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {weekendDates.length === 0 && (
+                                                        <span className="text-xs text-gray-400">
+                                                            スケジュール情報が取得できなかったため、直接日付を選択してください。
+                                                        </span>
+                                                    )}
+                                                    {weekendDates.map((wd) => {
+                                                        const isActive = raceMeta.date === wd.key;
+                                                        const label = `${wd.key.slice(5)}（${wd.label}）`;
+
+                                                        return (
+                                                            <button
+                                                                key={wd.key}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setRaceMeta(prev => ({ ...prev, date: wd.key }));
+                                                                    setShowCalendar(false);
+                                                                }}
+                                                                className={
+                                                                    'px-3 py-1 rounded-full text-xs border transition ' +
+                                                                    (isActive
+                                                                        ? 'bg-emerald-600 text-white border-emerald-600'
+                                                                        : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50')
+                                                                }
+                                                            >
+                                                                {label}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <label className="text-xs text-gray-600 whitespace-nowrap">
+                                                    日付を指定して入力
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={raceMeta.date}
+                                                    onChange={(e) => setRaceMeta(prev => ({ ...prev, date: e.target.value }))}
+                                                    className="border rounded px-2 py-1 text-sm"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowCalendar(!showCalendar)}
+                                                    className="text-xs bg-white border-2 border-gray-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all hover:border-emerald-300 flex items-center gap-1"
+                                                >
+                                                    <Icons.Calendar size={14} className="text-gray-500" />
+                                                    <span>カレンダー</span>
+                                                </button>
+                                            </div>
+                                        </div>
                                         {showCalendar && (
                                             <>
                                                 <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)}></div>
                                                 <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 z-50 w-80">
                                                     <div className="flex items-center justify-between mb-4">
                                                         <button type="button" onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><Icons.ArrowLeft size={20} /></button>
-                                                        <div className="font-bold text-gray-800">{calendarDate.getFullYear()}年 {calendarDate.getMonth() + 1}月</div>
+                                                        <div className="font-bold text-gray-800">{calendarDate.getFullYear()}年{calendarDate.getMonth() + 1}月</div>
                                                         <button type="button" onClick={() => changeMonth(1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors transform rotate-180"><Icons.ArrowLeft size={20} /></button>
                                                     </div>
                                                     <div className="grid grid-cols-7 gap-1 mb-2">{['日', '月', '火', '水', '木', '金', '土'].map(day => (<div key={day} className="text-center text-xs font-bold text-gray-500 py-2">{day}</div>))}</div>
