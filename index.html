@@ -172,10 +172,13 @@
         };
 
         // Date Accordion Component for Results
-        const DateAccordion = ({ date, results, loadFromResult }) => {
+        const DateAccordion = ({ date, results, loadFromResult, bankrollHistory, deleteBankrollRecord }) => {
             const [isOpen, setIsOpen] = React.useState(false);
             const raceCount = results.length;
             const totalProfit = results.reduce((sum, r) => sum + r.profit, 0);
+
+            // その日付のbankroll記録を探す
+            const bankrollRecord = bankrollHistory.find(record => record.date === date);
 
             return (
                 <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
@@ -204,6 +207,48 @@
 
                     {isOpen && (
                         <div className="p-4 pt-0 border-t border-gray-100 bg-gray-50">
+                            {/* Bankroll記録を表示 */}
+                            {bankrollRecord && (
+                                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-3 mt-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Icons.TrendingUp size={16} className="text-blue-600" />
+                                            <span className="text-sm font-bold text-blue-900">Today's Bankroll 記録</span>
+                                            {bankrollRecord.isGoal && <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs">達成</span>}
+                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                deleteBankrollRecord(bankrollRecord.id);
+                                            }}
+                                            className="text-gray-400 hover:text-red-500 p-1"
+                                        >
+                                            <Icons.Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                                        <div className="bg-white p-2 rounded">
+                                            <div className="text-gray-500">開始資金</div>
+                                            <div className="font-bold text-gray-700">{bankrollRecord.start.toLocaleString()}円</div>
+                                        </div>
+                                        <div className="bg-white p-2 rounded">
+                                            <div className="text-gray-500">終了資金</div>
+                                            <div className="font-bold text-gray-700">{bankrollRecord.end.toLocaleString()}円</div>
+                                        </div>
+                                        <div className="bg-white p-2 rounded">
+                                            <div className="text-gray-500">目標</div>
+                                            <div className="font-bold text-gray-700">{bankrollRecord.goal.toLocaleString()}円</div>
+                                        </div>
+                                        <div className={`p-2 rounded ${bankrollRecord.profit >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                                            <div className="text-gray-500">収支</div>
+                                            <div className={`font-bold ${bankrollRecord.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                {bankrollRecord.profit >= 0 ? '+' : ''}{bankrollRecord.profit.toLocaleString()}円 ({bankrollRecord.percent}%)
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="space-y-3 mt-3">
                                 {results.map((result) => {
                                     const strategy = STRATEGIES[result.strategy] || STRATEGIES.data;
@@ -1637,41 +1682,6 @@
                                                 <span>※資金を維持して履歴のみ保存<br/>（土曜終了時など）</span>
                                                 <span className="text-right">※保存して初期金に戻す<br/>（日曜終了時など）</span>
                                             </div>
-
-                                            {bankrollHistory.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <h4 className="text-xs font-bold text-gray-500 uppercase">過去の記録</h4>
-                                                    <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
-                                                        {bankrollHistory.map(record => (
-                                                            <div key={record.id} className="bg-gray-50 p-2 rounded border border-gray-200 text-xs flex justify-between items-center">
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="font-bold text-gray-700">{record.date}</span>
-                                                                        {record.isGoal && <span className="bg-yellow-100 text-yellow-800 px-1 rounded text-[10px]">達成</span>}
-                                                                    </div>
-                                                                    <div className="text-gray-500 mt-0.5">
-                                                                        {record.start.toLocaleString()} → {record.end.toLocaleString()}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="text-right mr-2">
-                                                                    <div className={`font-bold ${record.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                                        {record.profit >= 0 ? '+' : ''}{record.profit.toLocaleString()}
-                                                                    </div>
-                                                                    <div className="text-[10px] text-gray-400">
-                                                                        ({record.percent}%)
-                                                                    </div>
-                                                                </div>
-                                                                <button 
-                                                                    onClick={() => deleteBankrollRecord(record.id)}
-                                                                    className="text-gray-400 hover:text-red-500 p-1"
-                                                                >
-                                                                    <Icons.Trash2 size={14} />
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -2195,7 +2205,14 @@
                                                 const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
                                                 return sortedDates.map(date => (
-                                                    <DateAccordion key={date} date={date} results={groupedByDate[date]} loadFromResult={loadFromResult} />
+                                                    <DateAccordion
+                                                        key={date}
+                                                        date={date}
+                                                        results={groupedByDate[date]}
+                                                        loadFromResult={loadFromResult}
+                                                        bankrollHistory={bankrollHistory}
+                                                        deleteBankrollRecord={deleteBankrollRecord}
+                                                    />
                                                 ));
                                             })()}
                                         </div>
