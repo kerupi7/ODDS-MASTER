@@ -131,6 +131,7 @@
             Tag: (props) => <IconBase {...props}><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></IconBase>,
             Star: (props) => <IconBase {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></IconBase>,
             List: (props) => <IconBase {...props}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></IconBase>,
+            Activity: (props) => <IconBase {...props}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></IconBase>,
         };
 
         // Effective Odds Calculator
@@ -274,6 +275,43 @@
                 </div>
             );
         };
+
+        function WhatIfResultPanel({ result }) {
+            if (!result) return null;
+
+            const isDanger = result.minProfit < 0;
+
+            return (
+                <div className={`mt-3 p-3 rounded-lg text-xs border ${
+                    isDanger ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                }`}>
+                    <div className="font-bold mb-1 flex items-center gap-1">
+                        <Icons.Activity size={13} />
+                        オッズ変動シミュレーション結果（-{result.rate}%）
+                    </div>
+
+                    <div className="flex justify-between">
+                        <span>最悪利益（当たり時）</span>
+                        <span className="font-mono">{result.minProfit.toLocaleString()}円</span>
+                    </div>
+
+                    <div className="flex justify-between mt-1">
+                        <span>最大利益（当たり時）</span>
+                        <span className="font-mono">{result.maxProfit.toLocaleString()}円</span>
+                    </div>
+
+                    {isDanger ? (
+                        <p className="mt-1 text-[11px]">
+                            ※ 一部の買い目は、オッズが下がると勝っても損失になります（トリガミの可能性）。
+                        </p>
+                    ) : (
+                        <p className="mt-1 text-[11px]">
+                            ※ どの買い目が当たっても利益はプラス圏です。
+                        </p>
+                    )}
+                </div>
+            );
+        }
 
         // Place (Race Track) Accordion Component
         const PlaceAccordion = ({ place, courses }) => {
@@ -683,9 +721,12 @@
             const [formation, setFormation] = useState({ first: [], second: [], third: [] });
             const [boxHorses, setBoxHorses] = useState([]);
 
-            const [betList, setBetList] = useState([]); 
-            const [oddsData, setOddsData] = useState({}); 
-            const [customStakes, setCustomStakes] = useState({}); 
+            const [betList, setBetList] = useState([]);
+            const [oddsData, setOddsData] = useState({});
+            const [customStakes, setCustomStakes] = useState({});
+
+            const [whatIfRate, setWhatIfRate] = useState(20);
+            const [whatIfResult, setWhatIfResult] = useState(null);
             
             const [totalBudget, setTotalBudget] = useState(bankrollCurrent); 
             
@@ -1569,6 +1610,38 @@
                 }));
             }, [calculatedData]);
 
+            const runWhatIfSimulation = () => {
+                if (effectiveOddsBets.length === 0) {
+                    setWhatIfResult(null);
+                    return;
+                }
+
+                const rate = whatIfRate / 100;
+                const totalStake = effectiveOddsBets.reduce((sum, b) => sum + (b.amount || 0), 0);
+
+                const profits = effectiveOddsBets.map((bet) => {
+                    const simulatedOdds = Math.max(1.0, (bet.odds || 1) * (1 - rate));
+                    const payout = simulatedOdds * bet.amount;
+                    return payout - totalStake;
+                });
+
+                const minProfit = Math.min(...profits);
+                const maxProfit = Math.max(...profits);
+
+                setWhatIfResult({
+                    rate: whatIfRate,
+                    minProfit,
+                    maxProfit,
+                    totalStake,
+                });
+            };
+
+            useEffect(() => {
+                if (betList.length === 0) {
+                    setWhatIfResult(null);
+                }
+            }, [betList]);
+
             const bankrollStatus = useMemo(() => {
                 const start = bankrollStart === '' ? 0 : parseInt(bankrollStart);
                 const goal = bankrollGoal === '' ? 0 : parseInt(bankrollGoal);
@@ -1954,6 +2027,29 @@
                                     </div>
 
                                     <EffectiveOddsPanel bets={effectiveOddsBets} />
+
+                                    <div className="mt-3 flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="90"
+                                            value={whatIfRate}
+                                            onChange={(e) => setWhatIfRate(Number(e.target.value))}
+                                            className="w-20 px-2 py-1 border rounded text-sm"
+                                        />
+                                        <span className="text-sm">％オッズが下がった場合の損益を見る（デフォルト20％）</span>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={runWhatIfSimulation}
+                                        className="mt-2 w-full bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold py-2 rounded-lg border border-amber-300 flex items-center justify-center gap-2"
+                                    >
+                                        <Icons.AlertCircle size={14} />
+                                        オッズが {whatIfRate}% 下がった場合の損益をシミュレーション
+                                    </button>
+
+                                    <WhatIfResultPanel result={whatIfResult} />
 
                                     <div className="mt-4 flex gap-2">
                                         <button onClick={() => { setAllocationMode('profit'); setCustomStakes({}); }} className={`flex-1 text-xs py-2 rounded border ${allocationMode === 'profit' ? 'bg-emerald-100 border-emerald-500 text-emerald-800 font-bold' : 'bg-white text-gray-600'}`}>払戻均等 (利益確保){budgetInputMode === 'target' && <span className="block text-[10px] text-emerald-600 mt-0.5">目標利益モード使用中</span>}</button>
