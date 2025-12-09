@@ -185,32 +185,36 @@
             return 66 + Math.min(Math.max(ratio, 0), 1) * 34;
         };
 
+        const POINTER_THEMES = {
+            danger: {
+                badge: 'bg-red-600 text-white border-red-100 shadow-red-200/60 ring-red-200/80',
+                dot: 'bg-red-600 border-red-100'
+            },
+            normal: {
+                badge: 'bg-emerald-600 text-white border-emerald-100 shadow-emerald-200/60 ring-emerald-200/80',
+                dot: 'bg-emerald-600 border-emerald-100'
+            },
+            attack: {
+                badge: 'bg-yellow-500 text-gray-900 border-yellow-100 shadow-yellow-200/60 ring-yellow-200/80',
+                dot: 'bg-yellow-500 border-yellow-100'
+            }
+        };
+
+        const ZONE_ACCENTS = {
+            danger: 'border-red-200 shadow-inner shadow-red-100/70',
+            normal: 'border-emerald-200 shadow-inner shadow-emerald-100/70',
+            attack: 'border-yellow-200 shadow-inner shadow-yellow-100/70'
+        };
+
         const RiskZoneMeter = ({ effectiveOdds, zone }) => {
             const pointerLeft = mapEffectiveOddsToPercent(effectiveOdds);
 
-            const pointerTheme = {
-                danger: {
-                    badge: 'bg-red-600 text-white border-red-100 shadow-red-200/60 ring-red-200/80',
-                    dot: 'bg-red-600 border-red-100'
-                },
-                normal: {
-                    badge: 'bg-emerald-600 text-white border-emerald-100 shadow-emerald-200/60 ring-emerald-200/80',
-                    dot: 'bg-emerald-600 border-emerald-100'
-                },
-                attack: {
-                    badge: 'bg-yellow-500 text-gray-900 border-yellow-100 shadow-yellow-200/60 ring-yellow-200/80',
-                    dot: 'bg-yellow-500 border-yellow-100'
-                }
-            }[zone] || {
+            const pointerTheme = POINTER_THEMES[zone] || {
                 badge: 'bg-gray-700 text-white border-white ring-white/70',
                 dot: 'bg-gray-700 border-white'
             };
 
-            const zoneAccent = {
-                danger: 'border-red-200 shadow-inner shadow-red-100/70',
-                normal: 'border-emerald-200 shadow-inner shadow-emerald-100/70',
-                attack: 'border-yellow-200 shadow-inner shadow-yellow-100/70'
-            }[zone] || 'border-gray-200 shadow-inner';
+            const zoneAccent = ZONE_ACCENTS[zone] || 'border-gray-200 shadow-inner';
 
             return (
                 <div className="mt-4">
