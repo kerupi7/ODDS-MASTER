@@ -91,6 +91,43 @@
             'D': { id: 'D', label: '△', fullLabel: '△ 期待薄', color: 'text-gray-500 bg-gray-50 border-gray-200' }
         };
 
+        const ALL_COURSES = ['札幌', '函館', '福島', '新潟', '東京', '中山', '中京', '京都', '阪神', '小倉'];
+
+        async function loadSchedule2026() {
+            if (window.__schedule2026Cache) return window.__schedule2026Cache;
+            try {
+                const res = await fetch('./jra_schedule_2026.json');
+                const data = await res.json();
+                window.__schedule2026Cache = data;
+                return data;
+            } catch (e) {
+                console.error('Failed to load schedule 2026', e);
+                window.__schedule2026Cache = {};
+                return {};
+            }
+        }
+
+        function normalizeDateString(value) {
+            if (!value) return null;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+            if (/^\d{4}\/\d{2}\/\d{2}$/.test(value)) {
+                return value.replaceAll('/', '-');
+            }
+            return value;
+        }
+
+        function getActiveCoursesForDate(schedule, dateString, allCourses) {
+            const key = normalizeDateString(dateString);
+            if (!key) return allCourses;
+
+            const courses = schedule[key];
+            if (!courses || courses.length === 0) {
+                return allCourses;
+            }
+
+            return allCourses.filter((c) => courses.includes(c.name || c.label || c));
+        }
+
         // --- Icon System ---
         const IconBase = ({ children, size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -784,9 +821,10 @@
             const [resultHistory, setResultHistory] = useState([]);
             const [showCourseData, setShowCourseData] = useState(false);
             const [selectedCourse, setSelectedCourse] = useState(null);
-            
+
             // コースデータをStateで管理
             const [courseData, setCourseData] = useState({});
+            const [schedule2026, setSchedule2026] = useState(null);
 
             // Show toast helper
             const showToast = (message, type = 'success') => {
@@ -804,6 +842,31 @@
                     .then(data => setCourseData(data))
                     .catch(err => console.log('JSON読み込み失敗（手動アップロードしてください）', err));
             }, []);
+
+            useEffect(() => {
+                loadSchedule2026().then(setSchedule2026);
+            }, []);
+
+            const normalizedRaceDate = normalizeDateString(raceMeta.date);
+
+            const activeCourses = useMemo(() => {
+                const allCourses = ALL_COURSES;
+                if (!schedule2026) return allCourses;
+                return getActiveCoursesForDate(schedule2026, raceMeta.date, allCourses);
+            }, [schedule2026, raceMeta.date]);
+
+            const isScheduleMissingForDate = useMemo(() => {
+                if (!schedule2026 || !normalizedRaceDate) return false;
+                return !schedule2026[normalizedRaceDate];
+            }, [schedule2026, normalizedRaceDate]);
+
+            useEffect(() => {
+                if (!schedule2026) return;
+                const filtered = getActiveCoursesForDate(schedule2026, raceMeta.date, ALL_COURSES);
+                if (filtered.length > 0 && !filtered.includes(raceMeta.place)) {
+                    setRaceMeta(prev => ({ ...prev, place: filtered[0] }));
+                }
+            }, [schedule2026, raceMeta.date]);
 
             // ファイルアップロードハンドラ
             const handleFileUpload = (event) => {
@@ -1973,7 +2036,15 @@
                                             </>
                                         )}
                                     </div>
-                                    <div className="col-span-1 sm:col-span-2"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.MapPin size={12} /> 場所</label><select value={raceMeta.place} onChange={(e) => handleMetaChange('place', e.target.value)} className="w-full text-sm border-gray-300 rounded border p-1.5">{['札幌','函館','福島','新潟','東京','中山','中京','京都','阪神','小倉'].map(p => (<option key={p} value={p}>{p}</option>))}</select></div>
+                                    <div className="col-span-1 sm:col-span-2">
+                                        <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.MapPin size={12} /> 場所</label>
+                                        <select value={raceMeta.place} onChange={(e) => handleMetaChange('place', e.target.value)} className="w-full text-sm border-gray-300 rounded border p-1.5">
+                                            {activeCourses.map(p => (<option key={p} value={p}>{p}</option>))}
+                                        </select>
+                                        {isScheduleMissingForDate && (
+                                            <p className="text-[10px] text-gray-400 mt-1">開催情報が見つからないため、全競馬場を表示しています。</p>
+                                        )}
+                                    </div>
                                     <div className="col-span-1 sm:col-span-2"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Flag size={12} /> R</label><select value={raceMeta.raceNum} onChange={(e) => handleMetaChange('raceNum', parseInt(e.target.value))} className="w-full text-sm border-gray-300 rounded border p-1.5">{Array.from({length:12}, (_, i) => i + 1).map(n => (<option key={n} value={n}>{n}R</option>))}</select></div>
                                     <div className="col-span-1 sm:col-span-2">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Star size={12} /> 自信度</label>
