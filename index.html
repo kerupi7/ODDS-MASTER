@@ -1139,10 +1139,14 @@
 
                 const profit = current - start;
                 const profitPercentage = start > 0 ? ((profit / start) * 100).toFixed(1) : 0;
-                
+
+                // 日付をYYYY-MM-DD形式で保存（結果画面の日付と一致させる）
+                const today = new Date();
+                const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
                 const newRecord = {
                     id: Date.now(),
-                    date: new Date().toLocaleDateString('ja-JP'),
+                    date: dateString,
                     start: start,
                     end: current,
                     goal: goal,
@@ -1154,7 +1158,7 @@
                 const newHistory = [newRecord, ...bankrollHistory];
                 setBankrollHistory(newHistory);
                 localStorage.setItem('bankroll_history', JSON.stringify(newHistory));
-                
+
                 showToast('本日の収支を記録しました', 'success');
             };
 
