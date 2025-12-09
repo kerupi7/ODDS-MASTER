@@ -102,6 +102,16 @@
             { value: 'D', label: '△ 期待薄' }
         ];
 
+        const TICKET_TYPES = [
+            { value: 'tansho', label: '単勝' },
+            { value: 'fukusho', label: '複勝' },
+            { value: 'wide', label: 'ワイド' },
+            { value: 'umaren', label: '馬連' },
+            { value: 'umatan', label: '馬単' },
+            { value: 'sanrenpuku', label: '三連複' },
+            { value: 'sanrentan', label: '三連単' }
+        ];
+
         const ALL_COURSES = ['札幌', '函館', '福島', '新潟', '東京', '中山', '中京', '京都', '阪神', '小倉'];
         const MAX_RACES_PER_DAY = 12;
 
@@ -1345,7 +1355,7 @@
             };
 
             // Bet Type
-            const handleBetTypeChange = (type) => {
+            const handleTicketTypeClick = (type) => {
                 setBetType(type);
                 if (type === 'tansho' || type === 'fukusho') {
                     setVotingMode('box');
@@ -2122,10 +2132,9 @@
                 return `${index}着`;
             };
 
-            const getTypeName = (type) => {
-                const types = { sanrenpuku: '3連複', sanrentan: '3連単', umaren: '馬連', umatan: '馬単', wide: 'ワイド', tansho: '単勝', fukusho: '複勝' };
-                return types[type] || type;
-            };
+            const getTicketTypeLabel = (value) => TICKET_TYPES.find(t => t.value === value)?.label || '';
+
+            const getTypeName = (type) => getTicketTypeLabel(type) || type;
 
             const isSingleHorseBet = betType === 'tansho' || betType === 'fukusho';
 
@@ -2615,7 +2624,30 @@
                                 <div className="p-3 bg-gray-50 border-b flex justify-between items-center"><h2 className="font-bold text-gray-700 flex items-center gap-2"><Icons.Settings size={18}/> 買い目作成</h2><button onClick={clearSelection} className="text-xs text-gray-500 hover:text-red-500 underline">選択クリア</button></div>
                                 <div className="p-4 space-y-3 border-b border-gray-100">
                                     <div className="flex flex-col sm:flex-row gap-3">
-                                        <div className="flex-1"><label className="block text-xs font-bold text-gray-500 mb-1">式別</label><select className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded p-2 focus:ring-emerald-500" value={betType} onChange={(e) => handleBetTypeChange(e.target.value)}><option value="tansho">単勝</option><option value="fukusho">複勝</option><option value="wide">ワイド</option><option value="umaren">馬連</option><option value="umatan">馬単</option><option value="sanrenpuku">3連複</option><option value="sanrentan">3連単</option></select></div>
+                                        <div className="flex-1">
+                                            <label className="block text-xs font-bold text-gray-500 mb-1">式別</label>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {TICKET_TYPES.map((type) => {
+                                                    const isActive = betType === type.value;
+
+                                                    return (
+                                                        <button
+                                                            key={type.value}
+                                                            type="button"
+                                                            onClick={() => handleTicketTypeClick(type.value)}
+                                                            className={
+                                                                'px-2.5 py-1 rounded-full text-[11px] border transition ' +
+                                                                (isActive
+                                                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                                                    : 'bg-white text-indigo-700 border-indigo-300 hover:bg-indigo-50')
+                                                            }
+                                                        >
+                                                            {type.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                         <div className="flex-1"><label className="block text-xs font-bold text-gray-500 mb-1">方式</label><div className="flex bg-gray-200 rounded p-1">{!isSingleHorseBet && (<><button onClick={() => setVotingMode('nagashi')} className={`flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded transition-all ${votingMode === 'nagashi' ? 'bg-white text-emerald-700 shadow font-bold' : 'text-gray-500'}`}><Icons.GitMerge size={14} className="rotate-90" /> 流し</button><button onClick={() => setVotingMode('formation')} className={`flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded transition-all ${votingMode === 'formation' ? 'bg-white text-emerald-700 shadow font-bold' : 'text-gray-500'}`}><Icons.Layers size={14} /> フォーメ</button></>)}<button onClick={() => setVotingMode('box')} className={`flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded transition-all ${votingMode === 'box' ? 'bg-white text-emerald-700 shadow font-bold' : 'text-gray-500'}`}><Icons.CheckSquare size={14} /> {isSingleHorseBet ? '通常' : 'BOX'}</button></div></div>
                                     </div>
                                 </div>
