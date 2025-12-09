@@ -280,6 +280,8 @@
             if (!result) return null;
 
             const isDanger = result.minProfit < 0;
+            const totalCount = result.details?.length || 0;
+            const hasLosers = (result.losersCount || 0) > 0;
 
             return (
                 <div className={`mt-3 p-3 rounded-lg text-xs border ${
@@ -289,6 +291,12 @@
                         <Icons.Activity size={13} />
                         オッズ変動シミュレーション結果（-{result.rate}%）
                     </div>
+
+                    <p className="text-[11px] mb-2">
+                        {hasLosers
+                            ? `${totalCount}点中 ${result.losersCount}点が、オッズが下がると勝ってもマイナス（トリガミ候補）です。`
+                            : `${totalCount}点すべて、オッズが下がっても当たればプラス圏です。`}
+                    </p>
 
                     <div className="flex justify-between">
                         <span>最悪利益（当たり時）</span>
@@ -300,14 +308,34 @@
                         <span className="font-mono">{result.maxProfit.toLocaleString()}円</span>
                     </div>
 
-                    {isDanger ? (
-                        <p className="mt-1 text-[11px]">
-                            ※ 一部の買い目は、オッズが下がると勝っても損失になります（トリガミの可能性）。
-                        </p>
-                    ) : (
-                        <p className="mt-1 text-[11px]">
-                            ※ どの買い目が当たっても利益はプラス圏です。
-                        </p>
+                    {result.details && result.details.length > 0 && (
+                        <table className="mt-2 w-full text-[11px]">
+                            <thead className="text-gray-500">
+                                <tr>
+                                    <th className="text-left py-1">買い目</th>
+                                    <th className="text-right py-1">変動後オッズ</th>
+                                    <th className="text-right py-1">投資額</th>
+                                    <th className="text-right py-1">当たり時損益</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {result.details.map((d) => {
+                                    const isLoss = d.profit < 0;
+                                    const isGain = d.profit > 0;
+                                    return (
+                                        <tr key={d.id} className={isLoss ? 'text-red-700' : isGain ? 'text-emerald-700' : 'text-gray-700'}>
+                                            <td className="py-1 pr-2">{d.label}</td>
+                                            <td className="py-1 text-right">{d.simulatedOdds.toFixed(2)}倍</td>
+                                            <td className="py-1 text-right">{d.amount.toLocaleString()}円</td>
+                                            <td className="py-1 text-right">
+                                                {d.profit >= 0 ? '+' : ''}
+                                                {d.profit.toLocaleString()}円
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     )}
                 </div>
             );
@@ -1611,28 +1639,68 @@
             }, [calculatedData]);
 
             const runWhatIfSimulation = () => {
-                if (effectiveOddsBets.length === 0) {
+                if (calculatedData.length === 0) {
                     setWhatIfResult(null);
                     return;
                 }
 
                 const rate = whatIfRate / 100;
-                const totalStake = effectiveOddsBets.reduce((sum, b) => sum + (b.amount || 0), 0);
+                const totalStake = calculatedData.reduce((sum, b) => sum + (Number(b.stake) || 0), 0);
 
-                const profits = effectiveOddsBets.map((bet) => {
-                    const simulatedOdds = Math.max(1.0, (bet.odds || 1) * (1 - rate));
-                    const payout = simulatedOdds * bet.amount;
-                    return payout - totalStake;
+                const buildBetLabel = (bet, index) => {
+                    const baseLabel = bet.label || `#${index + 1}`;
+                    const typeName = getTypeName ? getTypeName(bet.type) : '';
+                    if (!typeName) return baseLabel;
+                    if (bet.type === 'tansho' || bet.type === 'fukusho') return `${typeName} ${baseLabel}番`;
+                    return `${typeName} ${baseLabel}`;
+                };
+
+                let minProfit = Infinity;
+                let maxProfit = -Infinity;
+                let losersCount = 0;
+                let winnersCount = 0;
+                let breakevenCount = 0;
+
+                const details = calculatedData.map((bet, index) => {
+                    const amount = Number(bet.stake) || 0;
+                    const originalOdds = Number(bet.odds) || 0;
+                    const simulatedOdds = Math.max(1.0, originalOdds * (1 - rate));
+                    const payout = simulatedOdds * amount;
+                    const rawProfit = payout - totalStake;
+                    const profit = Math.abs(rawProfit) <= 1 ? 0 : Math.round(rawProfit);
+
+                    if (rawProfit < minProfit) minProfit = rawProfit;
+                    if (rawProfit > maxProfit) maxProfit = rawProfit;
+
+                    if (profit < 0) losersCount += 1;
+                    else if (profit > 0) winnersCount += 1;
+                    else breakevenCount += 1;
+
+                    return {
+                        id: bet.key || bet.id || `bet-${index}`,
+                        label: buildBetLabel(bet, index),
+                        originalOdds,
+                        simulatedOdds,
+                        amount,
+                        payout,
+                        profit,
+                    };
                 });
 
-                const minProfit = Math.min(...profits);
-                const maxProfit = Math.max(...profits);
+                if (!Number.isFinite(minProfit) || !Number.isFinite(maxProfit)) {
+                    setWhatIfResult(null);
+                    return;
+                }
 
                 setWhatIfResult({
                     rate: whatIfRate,
+                    totalStake,
                     minProfit,
                     maxProfit,
-                    totalStake,
+                    details,
+                    losersCount,
+                    winnersCount,
+                    breakevenCount,
                 });
             };
 
