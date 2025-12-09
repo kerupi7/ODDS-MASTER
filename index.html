@@ -194,6 +194,16 @@
                 attack: 'border-yellow-200 shadow-inner shadow-yellow-100/70'
             }[zone] || 'border-gray-200 shadow-inner';
 
+            const pointerAccent = {
+                danger: 'border-b-red-500 text-red-700 border-red-200',
+                normal: 'border-b-emerald-600 text-emerald-700 border-emerald-200',
+                attack: 'border-b-yellow-500 text-amber-700 border-yellow-200'
+            }[zone] || 'border-b-gray-700 text-gray-700 border-gray-200';
+
+            const pointerLabel = Number.isFinite(effectiveOdds) && effectiveOdds > 0
+                ? `${effectiveOdds.toFixed(2)}倍`
+                : '計測外';
+
             return (
                 <div className="mt-4">
                     <div className="flex justify-between text-[10px] text-gray-500 mb-1">
@@ -205,10 +215,13 @@
                         <div className="flex-1 bg-emerald-100" />
                         <div className="flex-1 bg-yellow-100" />
                         <div
-                            className="absolute -top-1.5 transition-all duration-200"
+                            className="absolute -top-4 transition-all duration-200 flex flex-col items-center"
                             style={{ left: `${pointerLeft}%`, transform: 'translateX(-50%)' }}
                         >
-                            <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-b-[7px] border-transparent border-b-gray-700" />
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white shadow-sm border ${pointerAccent}`}>
+                                {pointerLabel}
+                            </span>
+                            <div className={`w-0 h-0 border-l-[5px] border-r-[5px] border-b-[7px] border-transparent ${pointerAccent}`} />
                         </div>
                     </div>
                     <div className="flex justify-between mt-1 text-[10px] text-gray-600">
