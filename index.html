@@ -815,6 +815,7 @@
 
             const [whatIfRate, setWhatIfRate] = useState(20);
             const [whatIfResult, setWhatIfResult] = useState(null);
+            const [showWhatIfResult, setShowWhatIfResult] = useState(false);
             
             const [totalBudget, setTotalBudget] = useState(bankrollCurrent); 
             
@@ -1727,6 +1728,7 @@
             const runWhatIfSimulation = () => {
                 if (calculatedData.length === 0) {
                     setWhatIfResult(null);
+                    setShowWhatIfResult(false);
                     return;
                 }
 
@@ -1775,6 +1777,7 @@
 
                 if (!Number.isFinite(minProfit) || !Number.isFinite(maxProfit)) {
                     setWhatIfResult(null);
+                    setShowWhatIfResult(false);
                     return;
                 }
 
@@ -1788,13 +1791,24 @@
                     winnersCount,
                     breakevenCount,
                 });
+
+                setShowWhatIfResult(true);
             };
 
             useEffect(() => {
                 if (betList.length === 0) {
                     setWhatIfResult(null);
+                    setShowWhatIfResult(false);
                 }
             }, [betList]);
+
+            const handleWhatIfToggle = () => {
+                if (showWhatIfResult) {
+                    setShowWhatIfResult(false);
+                } else {
+                    runWhatIfSimulation();
+                }
+            };
 
             const bankrollStatus = useMemo(() => {
                 const start = bankrollStart === '' ? 0 : parseInt(bankrollStart);
@@ -2199,19 +2213,21 @@
                                             onChange={(e) => setWhatIfRate(Number(e.target.value))}
                                             className="w-20 px-2 py-1 border rounded text-sm"
                                         />
-                                        <span className="text-sm">％オッズが下がった場合の損益を見る（デフォルト20％）</span>
+                                        <span className="text-sm">％オッズが下がった場合の損益を見る</span>
                                     </div>
 
                                     <button
                                         type="button"
-                                        onClick={runWhatIfSimulation}
-                                        className="mt-2 w-full bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold py-2 rounded-lg border border-amber-300 flex items-center justify-center gap-2"
+                                        onClick={handleWhatIfToggle}
+                                        aria-expanded={showWhatIfResult}
+                                        className={`mt-2 w-full bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold py-2 rounded-lg border border-amber-300 flex items-center justify-center gap-2 transition-colors ${showWhatIfResult ? 'ring-2 ring-amber-200' : ''}`}
                                     >
                                         <Icons.AlertCircle size={14} />
                                         オッズが {whatIfRate}% 下がった場合の損益をシミュレーション
+                                        {showWhatIfResult ? <Icons.ChevronUp size={14} /> : <Icons.ChevronDown size={14} />}
                                     </button>
 
-                                    <WhatIfResultPanel result={whatIfResult} />
+                                    {showWhatIfResult && <WhatIfResultPanel result={whatIfResult} />}
 
                                     <div className="mt-4 flex gap-2">
                                         <button onClick={() => { setAllocationMode('profit'); setCustomStakes({}); }} className={`flex-1 text-xs py-2 rounded border ${allocationMode === 'profit' ? 'bg-emerald-100 border-emerald-500 text-emerald-800 font-bold' : 'bg-white text-gray-600'}`}>払戻均等 (利益確保){budgetInputMode === 'target' && <span className="block text-[10px] text-emerald-600 mt-0.5">目標利益モード使用中</span>}</button>
