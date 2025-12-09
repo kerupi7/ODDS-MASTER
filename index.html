@@ -1162,18 +1162,6 @@
                 showToast('本日の収支を記録しました', 'success');
             };
 
-            const resetBankrollSession = () => {
-                showConfirm('今週の収支を確定し、資金を初期状態（3,000円）に戻しますか？\n（日曜日の最終レース終了後に推奨）', () => {
-                    saveBankrollSession();
-                    // 修正: 初期値（3000, 9000, 3000）にリセット
-                    setBankrollStart(3000);
-                    setBankrollGoal(9000);
-                    setBankrollCurrent(3000);
-                    // 予算も連動してリセット
-                    setTotalBudget(3000);
-                });
-            };
-
             const deleteBankrollRecord = (id) => {
                 showConfirm('この記録を削除しますか？', () => {
                     const newHistory = bankrollHistory.filter(item => item.id !== id);
@@ -1666,25 +1654,15 @@
                                         </div>
                                         
                                         <div className="pt-2 border-t border-gray-100">
-                                            <div className="flex gap-2 mb-2">
-                                                <button
-                                                    onClick={saveBankrollSession}
-                                                    className="flex-1 bg-blue-600 text-white py-2 px-3 rounded font-bold text-xs hover:bg-blue-700 flex items-center justify-center gap-1"
-                                                >
-                                                    <Icons.Save size={14} />
-                                                    今日の記録を保存 (資金維持)
-                                                </button>
-                                                <button
-                                                    onClick={resetBankrollSession}
-                                                    className="flex-1 bg-emerald-600 text-white py-2 px-3 rounded font-bold text-xs hover:bg-emerald-700 flex items-center justify-center gap-1"
-                                                >
-                                                    <Icons.RefreshCw size={14} />
-                                                    週次リセット (資金リセット)
-                                                </button>
-                                            </div>
-                                            <div className="flex justify-between text-[10px] text-gray-400 px-1 mb-2">
-                                                <span>※資金を維持して履歴のみ保存<br/>（土曜終了時など）</span>
-                                                <span className="text-right">※保存して初期金に戻す<br/>（日曜終了時など）</span>
+                                            <button
+                                                onClick={saveBankrollSession}
+                                                className="w-full bg-blue-600 text-white py-2 px-3 rounded font-bold text-sm hover:bg-blue-700 flex items-center justify-center gap-2"
+                                            >
+                                                <Icons.Save size={16} />
+                                                今日の記録を保存
+                                            </button>
+                                            <div className="text-[10px] text-gray-400 px-1 mt-2 text-center">
+                                                ※現在の資金を維持したまま、今日の収支を記録します
                                             </div>
                                         </div>
                                     </div>
