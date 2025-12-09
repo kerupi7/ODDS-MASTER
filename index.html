@@ -269,14 +269,17 @@
 
         function getActiveCoursesForDate(schedule, dateString, allCourses) {
             const key = normalizeDateString(dateString);
-            if (!key) return allCourses;
+            if (!schedule || !key) return allCourses;
 
             const courses = schedule[key];
-            if (!courses || courses.length === 0) {
+            if (!Array.isArray(courses) || courses.length === 0) {
                 return allCourses;
             }
 
-            return allCourses.filter((c) => courses.includes(c.name || c.label || c));
+            return allCourses.filter((c) => {
+                const name = typeof c === 'string' ? c : (c.name || c.label || c.id);
+                return courses.includes(name);
+            });
         }
 
         // --- Icon System ---
@@ -1065,7 +1068,7 @@
             const [showResultInput, setShowResultInput] = useState(false);
             const [resultHistory, setResultHistory] = useState([]);
             const [showCourseData, setShowCourseData] = useState(false);
-            const [selectedCourse, setSelectedCourse] = useState(null);
+            const [selectedCourse, setSelectedCourse] = useState(raceMeta.place);
 
             // コースデータをStateで管理
             const [courseData, setCourseData] = useState({});
@@ -1105,12 +1108,25 @@
             }, []);
 
             const normalizedRaceDate = normalizeDateString(raceMeta.date);
+            const allCourses = ALL_COURSES;
+
+            useEffect(() => {
+                if (raceMeta.place !== selectedCourse) {
+                    setSelectedCourse(raceMeta.place);
+                }
+            }, [raceMeta.place]);
+
+            useEffect(() => {
+                if (!selectedCourse) return;
+                if (raceMeta.place !== selectedCourse) {
+                    setRaceMeta(prev => ({ ...prev, place: selectedCourse }));
+                }
+            }, [selectedCourse]);
 
             const activeCourses = useMemo(() => {
-                const allCourses = ALL_COURSES;
                 if (!schedule2026) return allCourses;
                 return getActiveCoursesForDate(schedule2026, raceMeta.date, allCourses);
-            }, [schedule2026, raceMeta.date]);
+            }, [schedule2026, raceMeta.date, allCourses]);
 
             const isScheduleMissingForDate = useMemo(() => {
                 if (!schedule2026 || !normalizedRaceDate) return false;
@@ -2402,11 +2418,66 @@
                                             </>
                                         )}
                                     </div>
-                                    <div className="col-span-1 sm:col-span-2">
+                                    <div className="col-span-2 sm:col-span-4">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.MapPin size={12} /> 場所</label>
-                                        <select value={raceMeta.place} onChange={(e) => handleMetaChange('place', e.target.value)} className="w-full text-sm border-gray-300 rounded border p-1.5">
-                                            {activeCourses.map(p => (<option key={p} value={p}>{p}</option>))}
-                                        </select>
+                                        <div className="flex flex-col gap-2">
+                                            <div>
+                                                <div className="text-xs font-semibold text-gray-600 mb-1">
+                                                    この日の開催競馬場
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {activeCourses.length === 0 && (
+                                                        <span className="text-xs text-gray-400">
+                                                            開催情報が取得できなかったため、下のリストから選択してください。
+                                                        </span>
+                                                    )}
+                                                    {activeCourses.map((course) => {
+                                                        const name = typeof course === 'string'
+                                                            ? course
+                                                            : (course.name || course.label || course.id);
+                                                        const isActive = selectedCourse === name;
+
+                                                        return (
+                                                            <button
+                                                                key={name}
+                                                                type="button"
+                                                                onClick={() => setSelectedCourse(name)}
+                                                                className={
+                                                                    'px-3 py-1 rounded-full text-xs border transition ' +
+                                                                    (isActive
+                                                                        ? 'bg-emerald-600 text-white border-emerald-600'
+                                                                        : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50')
+                                                                }
+                                                            >
+                                                                {name}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-xs text-gray-600 whitespace-nowrap">
+                                                    競馬場を指定して選ぶ
+                                                </label>
+                                                <select
+                                                    value={selectedCourse}
+                                                    onChange={(e) => setSelectedCourse(e.target.value)}
+                                                    className="border rounded px-2 py-1 text-sm"
+                                                >
+                                                    {allCourses.map((course) => {
+                                                        const name = typeof course === 'string'
+                                                            ? course
+                                                            : (course.name || course.label || course.id);
+                                                        return (
+                                                            <option key={name} value={name}>
+                                                                {name}
+                                                            </option>
+                                                        );
+                                                    })}
+                                                </select>
+                                            </div>
+                                        </div>
                                         {isScheduleMissingForDate && (
                                             <p className="text-[10px] text-gray-400 mt-1">開催情報が見つからないため、全競馬場を表示しています。</p>
                                         )}
