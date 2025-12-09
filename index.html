@@ -133,6 +133,44 @@
             List: (props) => <IconBase {...props}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></IconBase>,
         };
 
+        // Place (Race Track) Accordion Component
+        const PlaceAccordion = ({ place, courses }) => {
+            const [isOpen, setIsOpen] = React.useState(false);
+            const courseCount = Object.keys(courses).length;
+
+            return (
+                <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full ${isOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                <Icons.MapPin size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-800">{place}</h3>
+                                <p className="text-xs text-gray-500">{courseCount}コース</p>
+                            </div>
+                        </div>
+                        <div>
+                            {isOpen ? <Icons.ChevronUp size={24} className="text-gray-400" /> : <Icons.ChevronDown size={24} className="text-gray-400" />}
+                        </div>
+                    </button>
+
+                    {isOpen && (
+                        <div className="p-4 pt-0 border-t border-gray-100 bg-gray-50">
+                            <div className="space-y-3 mt-3">
+                                {Object.entries(courses).map(([courseName, data]) => (
+                                    <CourseAccordion key={place + '-' + courseName} courseName={courseName} data={data} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
         // Course Accordion Component
         const CourseAccordion = ({ courseName, data }) => {
             const [isOpen, setIsOpen] = React.useState(false);
@@ -2318,7 +2356,11 @@
                                     <p>データが読み込まれていません</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4">{Object.entries(courseData).map(([place, courses]) => (<div key={place} className="space-y-3"><h3 className="text-lg font-bold text-gray-800 bg-emerald-100 px-3 py-2 rounded">{place}</h3><div className="space-y-2">{Object.entries(courses).map(([courseName, data]) => (<CourseAccordion key={place + '-' + courseName} courseName={courseName} data={data} />))}</div></div>))}</div>
+                                <div className="space-y-4">
+                                    {Object.entries(courseData).map(([place, courses]) => (
+                                        <PlaceAccordion key={place} place={place} courses={courses} />
+                                    ))}
+                                </div>
                             )}
                         </main>
                     )}
