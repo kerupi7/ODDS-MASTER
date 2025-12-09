@@ -189,10 +189,22 @@
             const pointerLeft = mapEffectiveOddsToPercent(effectiveOdds);
 
             const pointerTheme = {
-                danger: { badge: 'bg-red-600 text-white border-red-100 shadow-red-200/60 ring-red-200/80', dot: 'bg-red-600 border-red-100' },
-                normal: { badge: 'bg-emerald-600 text-white border-emerald-100 shadow-emerald-200/60 ring-emerald-200/80', dot: 'bg-emerald-600 border-emerald-100' },
-                attack: { badge: 'bg-yellow-500 text-gray-900 border-yellow-100 shadow-yellow-200/60 ring-yellow-200/80', dot: 'bg-yellow-500 border-yellow-100' }
-            }[zone] || { badge: 'bg-gray-700 text-white border-white ring-white/70', dot: 'bg-gray-700 border-white' };
+                danger: {
+                    badge: 'bg-red-600 text-white border-red-100 shadow-red-200/60 ring-red-200/80',
+                    dot: 'bg-red-600 border-red-100'
+                },
+                normal: {
+                    badge: 'bg-emerald-600 text-white border-emerald-100 shadow-emerald-200/60 ring-emerald-200/80',
+                    dot: 'bg-emerald-600 border-emerald-100'
+                },
+                attack: {
+                    badge: 'bg-yellow-500 text-gray-900 border-yellow-100 shadow-yellow-200/60 ring-yellow-200/80',
+                    dot: 'bg-yellow-500 border-yellow-100'
+                }
+            }[zone] || {
+                badge: 'bg-gray-700 text-white border-white ring-white/70',
+                dot: 'bg-gray-700 border-white'
+            };
 
             const zoneAccent = {
                 danger: 'border-red-200 shadow-inner shadow-red-100/70',
