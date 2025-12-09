@@ -93,6 +93,101 @@
 
         const ALL_COURSES = ['札幌', '函館', '福島', '新潟', '東京', '中山', '中京', '京都', '阪神', '小倉'];
 
+        const HELP_SECTIONS = [
+            {
+                title: '平均オッズはなぜ危険か？資金加重の意味',
+                body: '1点あたりの平均オッズだけを眺めると「全体でこのくらい当たればOK」という錯覚を生みます。\nしかし、実際には投入した金額の重みがかかるため、資金配分の偏りで期待値は大きくぶれます。\nODDS MASTERでは資金加重平均を常に意識し、「どこに資金の重心を置いているか」を可視化することで、勝負のブレを抑えます。'
+            },
+            {
+                title: '危険ゾーンの本当の怖さ（勝率70%の壁）',
+                body: '実質オッズが1.5倍未満の“危険ゾーン”は、当たり前のように当たる反面、少しのブレで即マイナスに転落します。\n勝率70%ラインを超えない限り、複利で資金を増やすのは難しく、むしろドローダウンを深める原因に。\nこのアプリは低オッズへの過剰投資を警告し、リスクリワードを再考させる仕組みを入れています。'
+            },
+            {
+                title: '分散管理：一点買いと分散買いの境界線',
+                body: '一点集中は「当たれば大きい」が、外したときに立て直しが難しくなります。\n一方で分散しすぎると勝率は上がっても回収率は下がり、手数料負けが顕在化します。\nODDS MASTERは想定的中率と資金配分を結びつけ、どこまで分散させるかを可視化することで、最適なリスクレンジを見つける手助けをします。'
+            },
+            {
+                title: '期待値の二階建て：単体EVとポートフォリオEV',
+                body: '単体馬券の期待値がプラスでも、組み合わせ方によっては全体EVがマイナスになります。\n逆に、単体では微妙でもポートフォリオでプラスになる構成も存在します。\nアプリでは「各点の期待値」と「全体の期待値」を別軸で表示し、両方を同時に最大化するデザインを採用しています。'
+            },
+            {
+                title: 'ローテ・適性・仕上げを数字に落とし込む',
+                body: '感覚的な強調ポイント（叩き2走目、距離短縮、輸送慣れなど）をスコアに変換し、オッズと掛け合わせて評価します。\nこれにより「なんとなく買い」という曖昧さを減らし、言語化された理由と数字で意思決定を記録します。'
+            },
+            {
+                title: 'ペースとラップの読みをベット構成に反映',
+                body: '想定ペースが速いのか遅いのかで軸とヒモの配置は変わります。\n逃げ・先行有利なら薄く広く、差し・追い込み決着なら厚く絞るなど、ラップシナリオに合わせて配分を変えるのがポイント。\nODDS MASTERでは買い目ごとの想定シナリオをメモし、結果と照合できるようになっています。'
+            },
+            {
+                title: '枠順と馬場差をどう織り込むか',
+                body: '同じ能力でも内外の差、当日の馬場バイアスで期待値は大きく動きます。\n馬場傾向を観測し、オッズにまだ反映されていないズレを拾うのが妙味の源泉。\nセクションごとに枠・馬場のメモ欄を用意し、あとから検証できる形で残すことを推奨しています。'
+            },
+            {
+                title: 'データドリブン vs 勘：役割分担の設計',
+                body: 'データは平均的な勝ち方を示し、直感は文脈的な例外を拾います。\nどちらか一方に寄りすぎると、過剰最適化かギャンブル的暴走のどちらかに。\n本アプリは「データ」「相手」「直感」のタグを明示し、判断軸を分解することで偏りをチェックできます。'
+            },
+            {
+                title: '資金は口座、買い目は投資案件',
+                body: '資金は銀行残高、買い目は案件として扱い、案件ごとにリターンとリスクを記録します。\n期待値の高い案件に厚く、低い案件にはリスク許容度に応じて薄く投資する発想で、資金曲線を安定化。\nバンクロール管理の履歴は資金推移として残り、次の勝負額の指針になります。'
+            },
+            {
+                title: '逆算型のベットメイク（ゴールから組み立てる）',
+                body: '「何円プラスにしたいか」から逆算して、必要なリターンと想定的中率を決めるのがODDS MASTER流。\n目標利益に対してどの買い目がボトルネックかを可視化し、過剰投資や過小投資を抑制します。'
+            },
+            {
+                title: '三層防御のリスクヘッジ',
+                body: '1. 本命ライン（軸）\n2. 打点ライン（相手）\n3. 保険ライン（押さえ）\nこの三層で勝負を組み立てると、当たり方のパターンが明確になり、どこで利益が出るか／守るかを整理できます。\nアプリではボックス・フォーメーションの切り替えで三層構造を再現しやすくしています。'
+            },
+            {
+                title: '過去データの再学習と未来の仮説作り',
+                body: '結果入力と回収率の推移は、単なる記録ではなく仮説検証の材料です。\n「どのパターンで外し、どのパターンで当たったか」を振り返ることで、次のレースでの仮説精度が上がります。\n履歴機能はそのためのログブックとして機能します。'
+            },
+            {
+                title: 'メモは短く具体的に残す',
+                body: '長文の反省よりも、次に使える短いトリガーワードを残すほうが実践的です。\n例："内伸び馬場＋先行有利→逃げ残り警戒" のように、条件と行動をセットで書くと再利用性が高まります。'
+            },
+            {
+                title: '感情のノイズを切り離す仕組み',
+                body: '連敗や連勝の後はベットサイズが無意識に変わりがちです。\n目標利益と許容損失を先に決めておくことで、感情ドリフトを抑止。\nODDS MASTERはバンクロールと目標設定を画面上部に固定し、常に現在地を確認できるようにしています。'
+            }
+        ];
+
+        const HelpOverlay = ({ onClose }) => (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-white max-w-4xl w-[90%] max-h-[90vh] rounded-2xl shadow-xl overflow-hidden flex flex-col">
+                    <header className="px-6 py-4 border-b flex items-center justify-between bg-emerald-700 text-white">
+                        <h2 className="text-base font-bold">ODDS MASTERの内容について</h2>
+                        <button
+                            className="text-sm px-3 py-1 border border-white/60 rounded-full hover:bg-white/10"
+                            onClick={onClose}
+                        >
+                            閉じる
+                        </button>
+                    </header>
+                    <div className="px-6 py-4 overflow-y-auto text-sm leading-relaxed bg-emerald-50/40">
+                        <p className="text-xs text-gray-600 mb-4">
+                            ODDS MASTERの裏側にある思想・ロジックをまとめたガイドです。時間があるときに、上から順番に読んでみてください。
+                        </p>
+                        <div className="space-y-4">
+                            {HELP_SECTIONS.map((sec, idx) => (
+                                <section
+                                    key={idx}
+                                    className="bg-white rounded-xl border border-emerald-100 px-4 py-3 shadow-sm"
+                                >
+                                    <h3 className="text-sm font-bold text-emerald-800 mb-1">
+                                        {idx + 1}. {sec.title}
+                                    </h3>
+                                    <p className="text-xs text-gray-700 whitespace-pre-line">
+                                        {sec.body}
+                                    </p>
+                                </section>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
         function formatDate(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -854,6 +949,7 @@
             // State Definitions
             const [currentView, setCurrentView] = useState('calculator');
             const [menuOpen, setMenuOpen] = useState(false);
+            const [showHelp, setShowHelp] = useState(false);
             
             // 編集中の履歴IDを管理（新規作成時はnull）
             const [editingId, setEditingId] = useState(null);
@@ -2015,7 +2111,11 @@
                             <span>{toast.message}</span>
                         </div>
                     )}
-                    
+
+                    {showHelp && (
+                        <HelpOverlay onClose={() => setShowHelp(false)} />
+                    )}
+
                     <header className="bg-emerald-700 text-white p-4 sticky top-0 z-30 shadow-md">
                         <div className="max-w-3xl mx-auto flex justify-between items-center relative">
                             <h1 className="text-xl font-bold flex items-center gap-2"><Icons.Calculator size={20} /> ODDS MASTER</h1>
@@ -2029,6 +2129,12 @@
                                 </button>
                                 {menuOpen && (
                                     <div className="absolute right-0 top-12 bg-white text-sm rounded shadow-lg border z-50 min-w-[160px]">
+                                        <button
+                                            className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 text-gray-800 font-semibold border-b border-gray-100"
+                                            onClick={() => { setShowHelp(true); setMenuOpen(false); }}
+                                        >
+                                            <Icons.Info size={14} /> ODDS MASTERの内容について
+                                        </button>
                                         <button
                                             className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 text-gray-800"
                                             onClick={() => { setCurrentView('courseData'); setMenuOpen(false); }}
