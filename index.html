@@ -133,6 +133,80 @@
             List: (props) => <IconBase {...props}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></IconBase>,
         };
 
+        // Effective Odds Calculator
+        function calculateEffectiveOdds(bets) {
+            const safeBets = Array.isArray(bets) ? bets : [];
+
+            const totalAmount = safeBets.reduce((sum, bet) => sum + (Number(bet.amount) || 0), 0);
+            const weightedOdds = safeBets.reduce((sum, bet) => sum + ((Number(bet.amount) || 0) * (Number(bet.odds) || 0)), 0);
+
+            const effectiveOddsBase = totalAmount > 0 ? weightedOdds / totalAmount : 0;
+            const effectiveOdds = Number.isFinite(effectiveOddsBase) ? effectiveOddsBase : 0;
+
+            let zone = 'normal';
+            let zoneLabel = '適正ゾーン（1.5〜2.9倍）';
+            let zoneDescription = '勝率40〜60%で資金が増えやすい、最も現実的で安定した領域です。ここを主戦場にするのが理想です。';
+
+            if (effectiveOdds < 1.5) {
+                zone = 'danger';
+                zoneLabel = '危険ゾーン（1.5倍未満）';
+                zoneDescription = '勝率70%以上を維持しないと増えない、極めてシビアな領域です。基本的には見送り推奨です。';
+            } else if (effectiveOdds >= 3.0) {
+                zone = 'attack';
+                zoneLabel = '攻撃ゾーン（3.0倍以上）';
+                zoneDescription = '一撃のリターンは大きいですが連敗リスクも高い領域です。「ボーナスゲーム」として限定的に使うのが安全です。';
+            }
+
+            return {
+                effectiveOdds,
+                zone,
+                zoneLabel,
+                zoneDescription,
+                totalAmount
+            };
+        }
+
+        const EffectiveOddsPanel = ({ bets }) => {
+            const info = useMemo(() => calculateEffectiveOdds(bets || []), [bets]);
+
+            if (!bets || bets.length === 0 || info.totalAmount === 0) return null;
+
+            const { effectiveOdds, zone, zoneLabel, zoneDescription } = info;
+
+            const zoneStyle = {
+                danger: 'bg-red-50 border-red-200 text-red-700',
+                normal: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+                attack: 'bg-yellow-50 border-yellow-200 text-yellow-700'
+            }[zone] || 'bg-gray-50 border-gray-200 text-gray-700';
+
+            return (
+                <div className={`mt-4 p-4 rounded-xl border ${zoneStyle} shadow-sm`}>
+                    <h3 className="text-xs font-bold uppercase flex items-center gap-2 mb-2">
+                        <Icons.Calculator size={14} />
+                        実質オッズとリスクゾーン
+                    </h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <div className="text-2xl font-extrabold">
+                                {effectiveOdds.toFixed(2)}<span className="text-base font-semibold ml-1">倍</span>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1">
+                                資金配分を考慮した「あなたの勝負の重心」です。
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <span className="inline-flex px-3 py-1 rounded-full text-[11px] font-bold bg-white/70 border border-current">
+                                {zoneLabel}
+                            </span>
+                            <p className="text-[11px] mt-1">
+                                {zoneDescription}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // Place (Race Track) Accordion Component
         const PlaceAccordion = ({ place, courses }) => {
             const [isOpen, setIsOpen] = React.useState(false);
@@ -1417,7 +1491,7 @@
             const stats = useMemo(() => {
                 const totalStake = calculatedData.reduce((acc, curr) => acc + curr.stake, 0);
                 const validCombos = calculatedData.filter(c => c.odds > 0);
-                
+
                 const numerator = calculatedData.reduce((sum, item) => {
                     return sum + (item.stake * item.return);
                 }, 0);
@@ -1438,6 +1512,13 @@
                 }
                 return { totalStake, realAverageOdds, count: betList.length, strategy };
             }, [calculatedData, betList]);
+
+            const effectiveOddsBets = useMemo(() => {
+                return calculatedData.map(bet => ({
+                    amount: Number(bet.stake) || 0,
+                    odds: Number(bet.odds) || 0
+                }));
+            }, [calculatedData]);
 
             const bankrollStatus = useMemo(() => {
                 const start = bankrollStart === '' ? 0 : parseInt(bankrollStart);
@@ -1827,6 +1908,8 @@
                                     {stats.strategy && stats.strategy.zone !== 'unknown' && (
                                         <div className={`mt-3 p-3 rounded-lg border-l-4 ${stats.strategy.bgColor} ${stats.strategy.borderColor}`}><div className="flex items-start gap-2"><span className="text-lg">{stats.strategy.emoji}</span><div className="flex-1"><p className={`text-sm font-bold ${stats.strategy.textColor}`}>{stats.strategy.message}</p></div></div></div>
                                     )}
+
+                                    <EffectiveOddsPanel bets={effectiveOddsBets} />
 
                                     <div className="mt-4 flex gap-2">
                                         <button onClick={() => { setAllocationMode('profit'); setCustomStakes({}); }} className={`flex-1 text-xs py-2 rounded border ${allocationMode === 'profit' ? 'bg-emerald-100 border-emerald-500 text-emerald-800 font-bold' : 'bg-white text-gray-600'}`}>払戻均等 (利益確保){budgetInputMode === 'target' && <span className="block text-[10px] text-emerald-600 mt-0.5">目標利益モード使用中</span>}</button>
