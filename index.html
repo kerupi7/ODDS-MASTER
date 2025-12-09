@@ -1231,13 +1231,6 @@
                 localStorage.setItem('bankroll_current', bankrollCurrent.toString());
             }, [bankrollCurrent]);
             
-            // Update calendar
-            useEffect(() => {
-                if (raceMeta.date) {
-                    setCalendarDate(new Date(raceMeta.date));
-                }
-            }, [raceMeta.date]);
-
             // Meta Change
             const handleMetaChange = (field, value) => {
                 if (betList.length > 0) {
