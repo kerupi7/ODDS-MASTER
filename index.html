@@ -1558,27 +1558,8 @@
 
             const stats = useMemo(() => {
                 const totalStake = calculatedData.reduce((acc, curr) => acc + curr.stake, 0);
-                const validCombos = calculatedData.filter(c => c.odds > 0);
 
-                const numerator = calculatedData.reduce((sum, item) => {
-                    return sum + (item.stake * item.return);
-                }, 0);
-                
-                const realAverageOdds = totalStake > 0 ? (numerator / (totalStake * totalStake)).toFixed(2) : '---';
-                
-                let strategy = { zone: 'unknown', color: 'gray', message: '', emoji: '' };
-                const oddsValue = parseFloat(realAverageOdds);
-                
-                if (!isNaN(oddsValue)) {
-                    if (oddsValue < 1.5) {
-                        strategy = { zone: 'danger', color: 'red', bgColor: 'bg-red-50', borderColor: 'border-red-300', textColor: 'text-red-800', emoji: '⚠️', message: '危険：安すぎます。見送るか点数を絞ってください。' };
-                    } else if (oddsValue < 3.0) {
-                        strategy = { zone: 'optimal', color: 'emerald', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-300', textColor: 'text-emerald-800', emoji: '🔥', message: '推奨：バランス最適。効率よく資産を増やせるラインです。' };
-                    } else {
-                        strategy = { zone: 'aggressive', color: 'orange', bgColor: 'bg-orange-50', borderColor: 'border-orange-300', textColor: 'text-orange-800', emoji: '⚡', message: '攻撃：穴狙い専用。連敗リスクが高い領域です。' };
-                    }
-                }
-                return { totalStake, realAverageOdds, count: betList.length, strategy };
+                return { totalStake, count: betList.length };
             }, [calculatedData, betList]);
 
             const effectiveOddsBets = useMemo(() => {
@@ -1969,13 +1950,8 @@
                                         <div className="flex flex-col justify-between">
                                             <div className="flex justify-between text-sm mb-1"><span className="text-gray-600">買い目合計:</span><span className="font-bold">{stats.count} 点</span></div>
                                             <div className="flex justify-between text-sm mb-1"><span className="text-gray-600">投資総額:</span><span className={`font-bold ${stats.totalStake > (totalBudget === '' ? 0 : parseInt(totalBudget)) ? 'text-red-500' : 'text-emerald-600'}`}>{stats.totalStake.toLocaleString()} 円</span></div>
-                                            <div className="flex justify-between text-sm"><span className="text-gray-600">実質平均オッズ:</span><span className="font-bold bg-gray-100 px-2 rounded">{stats.realAverageOdds} 倍</span></div>
                                         </div>
                                     </div>
-
-                                    {stats.strategy && stats.strategy.zone !== 'unknown' && (
-                                        <div className={`mt-3 p-3 rounded-lg border-l-4 ${stats.strategy.bgColor} ${stats.strategy.borderColor}`}><div className="flex items-start gap-2"><span className="text-lg">{stats.strategy.emoji}</span><div className="flex-1"><p className={`text-sm font-bold ${stats.strategy.textColor}`}>{stats.strategy.message}</p></div></div></div>
-                                    )}
 
                                     <EffectiveOddsPanel bets={effectiveOddsBets} />
 
