@@ -2696,7 +2696,7 @@
                                     </div>
                                     <div className="col-span-2 sm:col-span-3">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Lightbulb size={12} /> 根拠</label>
-                                        <div className="basis-buttons grid grid-cols-3 gap-3">
+                                        <div className="basis-buttons grid grid-cols-3 gap-3 w-full">
                                             {ORDERED_REASON_TAGS.map((tag) => {
                                                 const isActive = raceMeta.strategy === tag.value;
 
@@ -2706,9 +2706,9 @@
                                                         type="button"
                                                         onClick={() => handleStrategyClick(tag.value)}
                                                         className={
-                                                            'pill-button text-sm font-semibold min-w-[120px] h-12 w-full flex items-center justify-center whitespace-nowrap ' +
+                                                            'w-full py-3 rounded-full text-[15px] font-semibold border transition shadow-sm flex items-center justify-center whitespace-nowrap ' +
                                                             (isActive
-                                                                ? 'pill-active bg-sky-600 text-white border-sky-600'
+                                                                ? 'bg-sky-600 text-white border-sky-600 shadow-md'
                                                                 : 'bg-white text-sky-700 border-sky-300 hover:bg-sky-50')
                                                         }
                                                     >
