@@ -292,6 +292,9 @@
 
         const ALL_COURSES = ['札幌', '函館', '福島', '新潟', '東京', '中山', '中京', '京都', '阪神', '小倉'];
         const MAX_RACES_PER_DAY = 12;
+        const RACE_NUMBERS = Array.from({ length: MAX_RACES_PER_DAY }, (_, i) => i + 1);
+        const TOP_RACE_NUMBERS = RACE_NUMBERS.slice(0, 6);
+        const BOTTOM_RACE_NUMBERS = RACE_NUMBERS.slice(6);
 
         const getReasonLabel = (value) => {
             const item = REASON_TAGS.find((t) => t.value === value);
@@ -1428,6 +1431,26 @@
 
             const handleStrategyClick = (value) => {
                 setRaceMeta(prev => ({ ...prev, strategy: value }));
+            };
+
+            const renderRaceButton = (num) => {
+                const isActive = raceMeta.raceNum === num;
+
+                return (
+                    <button
+                        key={num}
+                        type="button"
+                        onClick={() => handleMetaChange('raceNum', num)}
+                        className={
+                            'pill-button race-number-button text-sm font-semibold flex-1 min-w-[56px] ' +
+                            (isActive
+                                ? 'pill-active bg-emerald-600 text-white border-emerald-600'
+                                : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50')
+                        }
+                    >
+                        {num}R
+                    </button>
+                );
             };
 
             // Nagashi
@@ -2600,26 +2623,13 @@
                                                 <div className="text-xs font-semibold text-gray-600 mb-2">
                                                     レース番号
                                                 </div>
-                                            <div className="flex flex-wrap gap-3">
-                                                {Array.from({ length: MAX_RACES_PER_DAY }, (_, i) => i + 1).map((num) => {
-                                                    const isActive = raceMeta.raceNum === num;
-
-                                                    return (
-                                                        <button
-                                                                key={num}
-                                                                type="button"
-                                                                onClick={() => handleMetaChange('raceNum', num)}
-                                                                className={
-                                                                    'pill-button race-number-button text-sm font-semibold ' +
-                                                                    (isActive
-                                                                        ? 'pill-active bg-emerald-600 text-white border-emerald-600'
-                                                                        : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50')
-                                                                }
-                                                            >
-                                                                {num}R
-                                                            </button>
-                                                        );
-                                                    })}
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex justify-between gap-2">
+                                                        {TOP_RACE_NUMBERS.map(renderRaceButton)}
+                                                    </div>
+                                                    <div className="flex justify-between gap-2">
+                                                        {BOTTOM_RACE_NUMBERS.map(renderRaceButton)}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
