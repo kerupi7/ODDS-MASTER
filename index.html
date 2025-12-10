@@ -83,9 +83,20 @@
             transform: scale(0.97);
         }
 
-        .pill-button.pill-active {
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35), 0 10px 18px rgba(0, 0, 0, 0.1);
-        }
+            .pill-button.pill-active {
+                box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35), 0 10px 18px rgba(0, 0, 0, 0.1);
+            }
+
+            .race-number-button {
+                width: 60px;
+                height: 60px;
+                min-width: 60px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                white-space: nowrap;
+            }
 
         .card-section {
             padding: 18px;
@@ -154,6 +165,12 @@
 
             .pill-button.pill-active {
                 box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.45), inset 0 0 0 1px rgba(16, 185, 129, 0.55);
+            }
+
+            .race-number-button {
+                width: 56px;
+                height: 56px;
+                min-width: 56px;
             }
 
             h1, h2, h3, h4 {
@@ -2543,7 +2560,7 @@
                                                                 type="button"
                                                                 onClick={() => handleMetaChange('raceNum', num)}
                                                                 className={
-                                                                    'pill-button text-sm font-semibold ' +
+                                                                    'pill-button race-number-button text-sm font-semibold ' +
                                                                     (isActive
                                                                         ? 'pill-active bg-emerald-600 text-white border-emerald-600'
                                                                         : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50')
