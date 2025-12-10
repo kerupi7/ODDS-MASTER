@@ -89,9 +89,29 @@
             font-weight: 800;
         }
 
+        .odds-header {
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            margin-right: calc(50% - 50vw);
+            background-color: #047857;
+            color: #ffffff;
+            padding: 0;
+            border-radius: 0;
+        }
+
+        .odds-header-inner {
+            max-width: 768px;
+            margin: 0 auto;
+            padding: 16px 20px;
+        }
+
         @media (max-width: 600px) {
             .mobile-shell {
                 padding: 12px;
+            }
+
+            .odds-header-inner {
+                padding: 14px 16px;
             }
 
             .app-main {
@@ -2263,8 +2283,8 @@
                         <HelpOverlay onClose={() => setShowHelp(false)} />
                     )}
 
-                    <header className="bg-emerald-700 text-white p-4 sticky top-0 z-30 shadow-md">
-                        <div className="max-w-3xl mx-auto flex justify-between items-center relative">
+                    <header className="odds-header sticky top-0 z-30 shadow-md text-white">
+                        <div className="odds-header-inner flex justify-between items-center relative">
                             <h1 className="text-xl font-bold flex items-center gap-2"><Icons.Calculator size={20} /> ODDS MASTER</h1>
                             <div className="flex items-center">
                                 <button
