@@ -88,8 +88,8 @@
         }
 
         .basis-buttons {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 12px;
         }
 
@@ -264,6 +264,12 @@
             { value: 'paddock', label: 'パドック' },
             { value: 'pace', label: '展開' }
         ];
+
+        const REASON_ORDER = ['matchup', 'data', 'intuition', 'odds', 'paddock', 'pace'];
+
+        const ORDERED_REASON_TAGS = REASON_ORDER
+            .map((value) => REASON_TAGS.find((tag) => tag.value === value))
+            .filter(Boolean);
 
         // --- Confidence Definitions ---
         const CONFIDENCES = {
@@ -2660,8 +2666,8 @@
                                     </div>
                                     <div className="col-span-2 sm:col-span-3">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Lightbulb size={12} /> 根拠</label>
-                                        <div className="basis-buttons">
-                                            {REASON_TAGS.map((tag) => {
+                                        <div className="basis-buttons grid grid-cols-3 gap-3">
+                                            {ORDERED_REASON_TAGS.map((tag) => {
                                                 const isActive = raceMeta.strategy === tag.value;
 
                                                 return (
@@ -2670,7 +2676,7 @@
                                                         type="button"
                                                         onClick={() => handleStrategyClick(tag.value)}
                                                         className={
-                                                            'pill-button text-sm font-semibold min-w-[120px] h-12 flex items-center justify-center whitespace-nowrap ' +
+                                                            'pill-button text-sm font-semibold min-w-[120px] h-12 w-full flex items-center justify-center whitespace-nowrap ' +
                                                             (isActive
                                                                 ? 'pill-active bg-sky-600 text-white border-sky-600'
                                                                 : 'bg-white text-sky-700 border-sky-300 hover:bg-sky-50')
