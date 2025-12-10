@@ -75,7 +75,18 @@
             white-space: nowrap;
         }
 
-        .confidence-buttons,
+        .confidence-buttons {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 12px;
+        }
+
+        .confidence-buttons .pill-button {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
         .basis-buttons {
             display: flex;
             flex-wrap: wrap;
@@ -2605,7 +2616,7 @@
                                                         type="button"
                                                         onClick={() => handleConfidenceClick(level.value)}
                                                         className={
-                                                            'pill-button text-sm font-semibold min-w-[120px] h-12 flex items-center justify-center whitespace-nowrap ' +
+                                                            'pill-button text-sm font-semibold h-12 flex-1 min-w-0 flex items-center justify-center whitespace-nowrap ' +
                                                             (isActive
                                                                 ? 'pill-active bg-amber-500 text-white border-amber-500'
                                                                 : 'bg-white text-amber-700 border-amber-300 hover:bg-amber-50')
