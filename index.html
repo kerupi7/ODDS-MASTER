@@ -2285,7 +2285,7 @@
 
             // MAIN RENDER
             return (
-                <div className="min-h-screen bg-slate-50 text-slate-900 pb-24">
+                <div className="w-full min-h-screen bg-slate-50 text-slate-900 pb-24">
                     {/* (Omitted: Modals and Header remain same) */}
                     {showOddsConfirm && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
@@ -2353,7 +2353,7 @@
                     )}
 
                     <header className="w-full bg-white border-b border-slate-200 sticky top-0 z-30">
-                        <div className="flex justify-between items-center relative px-4 py-3 sm:px-6">
+                        <div className="flex justify-between items-center relative px-3 py-3 sm:px-4">
                             <h1 className="text-xl font-bold flex items-center gap-2 text-emerald-700"><Icons.Calculator size={20} /> ODDS MASTER</h1>
                             <div className="flex items-center">
                                 <button
@@ -2396,8 +2396,8 @@
                     </header>
 
                     {currentView === 'calculator' && (
-                        <main className="w-full max-w-screen-lg mx-auto px-4 sm:px-6 pt-4 pb-10 app-main">
-                            <section className="w-full bg-white border-b border-slate-200 px-4 py-4 sm:px-6">
+                        <main className="w-full px-3 sm:px-4 pt-4 pb-10 app-main">
+                            <section className="w-full bg-white border-b border-slate-200 px-3 py-4 sm:px-4">
                                 <button onClick={() => setShowBankroll(!showBankroll)} className="w-full p-3 flex items-center justify-between bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 transition-all">
                                     <div className="flex items-center gap-2"><Icons.TrendingUp size={20} /><span className="font-bold">Today's Bankroll</span><span className="text-xs bg-white/20 px-2 py-0.5 rounded">{bankrollStatus.profit >= 0 ? '+' : ''}{bankrollStatus.profit.toLocaleString()}円</span></div>
                                     {showBankroll ? <Icons.ChevronUp size={20} /> : <Icons.ChevronDown size={20} />}
@@ -2504,7 +2504,7 @@
                                 )}
                             </section>
 
-                            <section className="w-full bg-white border-b border-slate-200 px-4 py-5 sm:px-6">
+                            <section className="w-full bg-white border-b border-slate-200 px-3 py-5 sm:px-4">
                                 <div className="grid grid-cols-2 sm:grid-cols-12 gap-3">
                                     <div className="col-span-2 sm:col-span-3">
                                         <label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.Calendar size={12} /> 日付</label>
@@ -2671,8 +2671,8 @@
                             </section>
 
                             <section className="w-full bg-white border-b border-slate-200 relative">
-                                <div className="px-4 sm:px-6 py-3 bg-gray-50 border-b flex justify-between items-center"><h2 className="font-bold text-gray-700 section-title flex items-center gap-2"><Icons.Settings size={18}/> 買い目作成</h2><button onClick={clearSelection} className="text-xs text-gray-500 hover:text-red-500 underline">選択クリア</button></div>
-                                <div className="px-4 sm:px-6 py-4 space-y-3 border-b border-gray-100">
+                                <div className="px-3 sm:px-4 py-3 bg-gray-50 border-b flex justify-between items-center"><h2 className="font-bold text-gray-700 section-title flex items-center gap-2"><Icons.Settings size={18}/> 買い目作成</h2><button onClick={clearSelection} className="text-xs text-gray-500 hover:text-red-500 underline">選択クリア</button></div>
+                                <div className="px-3 sm:px-4 py-4 space-y-3 border-b border-gray-100">
                                     <div className="flex flex-col sm:flex-row gap-3">
                                         <div className="flex-1">
                                             <label className="block text-xs font-bold text-gray-500 mb-1">式別</label>
@@ -2703,7 +2703,7 @@
                                         <div className="flex-1"><label className="block text-xs font-bold text-gray-500 mb-1">方式</label><div className="flex bg-gray-200 rounded p-1 voting-toggle">{!isSingleHorseBet && (<><button onClick={() => setVotingMode('nagashi')} className={`flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded transition-all ${votingMode === 'nagashi' ? 'bg-white text-emerald-700 shadow font-bold' : 'text-gray-500'}`}><Icons.GitMerge size={14} className="rotate-90" /> 流し</button><button onClick={() => setVotingMode('formation')} className={`flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded transition-all ${votingMode === 'formation' ? 'bg-white text-emerald-700 shadow font-bold' : 'text-gray-500'}`}><Icons.Layers size={14} /> フォーメ</button></>)}<button onClick={() => setVotingMode('box')} className={`flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded transition-all ${votingMode === 'box' ? 'bg-white text-emerald-700 shadow font-bold' : 'text-gray-500'}`}><Icons.CheckSquare size={14} /> {isSingleHorseBet ? '通常' : 'BOX'}</button></div></div>
                                     </div>
                                 </div>
-                                <div className="px-4 sm:px-6 py-4">
+                                <div className="px-3 sm:px-4 py-4">
                                     {votingMode === 'box' && (<><div className="mb-2 text-xs text-center text-gray-500">{isSingleHorseBet ? '馬を選択してください（複数選択可）' : 'ボックス買いする馬を選択してください'}</div><div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">{Array.from({ length: horseCount }, (_, i) => i + 1).map(num => { const isSelected = boxHorses.includes(num); return renderHorseButton(num, isSelected, 'bg-emerald-600 border-emerald-700', () => toggleBoxHorse(num)); })}</div></>)}
                                     {votingMode === 'nagashi' && !isSingleHorseBet && (<><div className="mb-2 text-xs text-center text-gray-500">軸(ピンク)1頭 → 相手(青)を選択</div><div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">{Array.from({ length: horseCount }, (_, i) => i + 1).map(num => { const isAxis = axisHorse === num; const isOpp = opponentHorses.includes(num); const color = isAxis ? 'bg-pink-500 border-pink-600' : 'bg-blue-500 border-blue-600'; return renderHorseButton(num, isAxis || isOpp, color, () => handleNagashiClick(num)); })}</div></>)}
                                     {votingMode === 'formation' && !isSingleHorseBet && (
@@ -2714,14 +2714,14 @@
                                         </div>
                                     )}
                                 </div>
-                                <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t flex flex-col items-center">
+                                <div className="px-3 sm:px-4 py-4 bg-gray-50 border-t flex flex-col items-center">
                                     <div className="text-sm font-bold text-gray-700 mb-2">現在の選択: <span className="text-emerald-600 text-lg">{previewCombinations.length}</span> 点</div>
                                     <button onClick={addBetsToList} disabled={previewCombinations.length === 0} className={`w-full sm:w-auto px-8 py-3 rounded-full font-bold flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95 ${previewCombinations.length > 0 ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}><Icons.PlusCircle size={20} /> 下のリストに追加</button>
                                 </div>
                             </section>
 
                             {betList.length > 0 && (
-                                <section className="w-full bg-white border-b border-slate-200 px-4 py-5 sm:px-6 border-l-4 border-yellow-400">
+                                <section className="w-full bg-white border-b border-slate-200 px-3 py-5 sm:px-4 border-l-4 border-yellow-400">
                                     <div className="mb-4 flex items-center gap-4 pb-3 border-b">
                                         <span className="text-xs font-bold text-gray-500 uppercase">入力モード:</span>
                                         <div className="flex gap-3">
@@ -2960,7 +2960,7 @@
                     )}
 
                     {currentView === 'history' && (
-                        <main className="w-full max-w-screen-lg mx-auto px-4 sm:px-6 pt-4 pb-10 app-main">
+                        <main className="w-full px-3 sm:px-4 pt-4 pb-10 app-main">
                             <div className="flex items-center gap-2 mb-4"><button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button><h2 className="text-xl font-bold text-gray-700">買い目</h2></div>
                             {savedHistory.length === 0 ? (<div className="w-full text-center py-12 text-gray-400 bg-white border border-dashed border-gray-200"><Icons.History className="mx-auto mb-2 opacity-50" size={48} /><p>保存された買い目はありません</p></div>) : (
                                 <div className="flex flex-col">
@@ -2973,7 +2973,7 @@
                                         const confidence = CONFIDENCES[confidenceKey] || CONFIDENCES.A;
 
                                         return (
-                                            <div key={entry.id} className="w-full bg-white border-b border-slate-200 px-4 py-4 sm:px-6 border-l-4 border-blue-500 last:border-b-0">
+                                            <div key={entry.id} className="w-full bg-white border-b border-slate-200 px-3 py-4 sm:px-4 border-l-4 border-blue-500 last:border-b-0">
                                                 <div className="flex justify-between items-start mb-3">
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-2 mb-1">
@@ -3003,7 +3003,7 @@
                     )}
 
                     {currentView === 'results' && (
-                        <main className="w-full max-w-screen-lg mx-auto px-4 sm:px-6 pt-4 pb-10 app-main">
+                        <main className="w-full px-3 sm:px-4 pt-4 pb-10 app-main">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
                                     <button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button>
@@ -3018,11 +3018,11 @@
                             </div>
                             {resultHistory.length === 0 ? (<div className="w-full text-center py-12 text-gray-400 bg-white border border-dashed border-gray-200"><Icons.BarChart className="mx-auto mb-2 opacity-50" size={48} /><p>まだ的中判定の記録がありません</p><p className="text-xs mt-1">レースの結果を入力して記録を蓄積しましょう</p></div>) : (
                                 <div className="flex flex-col">
-                                    <div className="w-full bg-white border-b border-slate-200 px-4 py-5 sm:px-6"><h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.TrendingUp size={18} /> 全体成績</h3><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 p-3 rounded"><div className="text-xs text-blue-600 mb-1">総レース数</div><div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div></div><div className="bg-green-50 p-3 rounded"><div className="text-xs text-green-600 mb-1">的中率</div><div className="text-2xl font-bold text-green-900">{resultHistory.length > 0 ? ((resultHistory.filter(r => r.winCount > 0).length / resultHistory.length) * 100).toFixed(1) : 0}%</div></div><div className="bg-purple-50 p-3 rounded"><div className="text-xs text-purple-600 mb-1">総投資額</div><div className="text-2xl font-bold text-purple-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円</div></div><div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div><div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>{resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円</div></div><div className="bg-yellow-50 p-3 rounded col-span-2"><div className="text-xs text-yellow-600 mb-1">回収率</div><div className="text-2xl font-bold text-yellow-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0) > 0 ? ((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1) : 0}%</div></div></div></div>
+                                    <div className="w-full bg-white border-b border-slate-200 px-3 py-5 sm:px-4"><h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.TrendingUp size={18} /> 全体成績</h3><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 p-3 rounded"><div className="text-xs text-blue-600 mb-1">総レース数</div><div className="text-2xl font-bold text-blue-900">{resultHistory.length}</div></div><div className="bg-green-50 p-3 rounded"><div className="text-xs text-green-600 mb-1">的中率</div><div className="text-2xl font-bold text-green-900">{resultHistory.length > 0 ? ((resultHistory.filter(r => r.winCount > 0).length / resultHistory.length) * 100).toFixed(1) : 0}%</div></div><div className="bg-purple-50 p-3 rounded"><div className="text-xs text-purple-600 mb-1">総投資額</div><div className="text-2xl font-bold text-purple-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0).toLocaleString()}円</div></div><div className={`p-3 rounded ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><div className={`text-xs mb-1 ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>総収支</div><div className={`text-2xl font-bold ${resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>{resultHistory.reduce((sum, r) => sum + r.profit, 0) >= 0 ? '+' : ''}{resultHistory.reduce((sum, r) => sum + r.profit, 0).toLocaleString()}円</div></div><div className="bg-yellow-50 p-3 rounded col-span-2"><div className="text-xs text-yellow-600 mb-1">回収率</div><div className="text-2xl font-bold text-yellow-900">{resultHistory.reduce((sum, r) => sum + r.totalInvested, 0) > 0 ? ((resultHistory.reduce((sum, r) => sum + r.totalReturn, 0) / resultHistory.reduce((sum, r) => sum + r.totalInvested, 0)) * 100).toFixed(1) : 0}%</div></div></div></div>
                                     <ZoneStatsPanel records={resultHistory} />
 
                                     {/* 根拠別成績 (Added Section) */}
-                                    <div className="w-full bg-white border-b border-slate-200 px-4 py-5 sm:px-6">
+                                    <div className="w-full bg-white border-b border-slate-200 px-3 py-5 sm:px-4">
                                         <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Lightbulb size={18} /> 根拠別成績</h3>
                                         <div className="space-y-2">
                                             {Object.entries(resultHistory.reduce((acc, r) => {
@@ -3066,7 +3066,7 @@
                                     </div>
 
                                     {/* 自信度別成績 (New) */}
-                                    <div className="w-full bg-white border-b border-slate-200 px-4 py-5 sm:px-6">
+                                    <div className="w-full bg-white border-b border-slate-200 px-3 py-5 sm:px-4">
                                         <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Star size={18} /> 自信度別成績</h3>
                                         <div className="space-y-2">
                                             {Object.entries(resultHistory.reduce((acc, r) => {
@@ -3315,7 +3315,7 @@
                             const confidence = CONFIDENCES[editingResultData.confidence] || CONFIDENCES.A;
 
                             return (
-                                <main className="w-full max-w-screen-lg mx-auto px-4 sm:px-6 pt-4 pb-10 app-main">
+                                <main className="w-full px-3 sm:px-4 pt-4 pb-10 app-main">
                                     <div className="flex items-center gap-2 mb-4">
                                         <button onClick={() => { setEditingResultData(null); setCurrentView('results'); }} className="p-2 bg-white rounded-full shadow hover:bg-gray-100">
                                             <Icons.ArrowLeft size={20} className="text-gray-600" />
@@ -3323,7 +3323,7 @@
                                         <h2 className="text-xl font-bold text-gray-700">結果を編集</h2>
                                     </div>
 
-                                    <div className="w-full bg-white border border-slate-200 px-4 py-5 sm:px-6">
+                                    <div className="w-full bg-white border border-slate-200 px-3 py-5 sm:px-4">
                                         <div className="mb-4">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className="font-bold text-xl text-gray-800">{editingResultData.place} {editingResultData.raceNum}R</span>
@@ -3444,7 +3444,7 @@
                     })()}
 
                     {currentView === 'courseData' && (
-                        <main className="w-full max-w-screen-lg mx-auto px-4 sm:px-6 pt-4 pb-10 app-main">
+                        <main className="w-full px-3 sm:px-4 pt-4 pb-10 app-main">
                             <div className="flex items-center gap-2 mb-4"><button onClick={() => setCurrentView('calculator')} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button><h2 className="text-xl font-bold text-gray-700">コースデータ</h2></div>
 
                             {Object.keys(courseData).length === 0 ? (
