@@ -2302,7 +2302,7 @@
                     const baseLabel = bet.label || `#${index + 1}`;
                     const typeName = getTypeName ? getTypeName(bet.type) : '';
                     if (!typeName) return baseLabel;
-                    if (bet.type === 'tansho' || bet.type === 'fukusho') return `${typeName} ${baseLabel}番`;
+                    if (bet.type === 'tansho' || bet.type === 'fukusho') return `${typeName} ${baseLabel}`;
                     return `${typeName} ${baseLabel}`;
                 };
 
