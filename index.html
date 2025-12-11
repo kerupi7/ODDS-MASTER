@@ -2185,6 +2185,33 @@
                 }));
             }, [calculatedData]);
 
+            // 着順パターンで買い目が的中するかを判定するヘルパー関数
+            const checkWinForPattern = (bet, r1, r2, r3) => {
+                const ids = bet.ids.map(id => parseInt(id));
+
+                switch (bet.type) {
+                    case 'tansho':
+                        return ids[0] === r1;
+                    case 'fukusho':
+                        return ids[0] === r1 || ids[0] === r2 || ids[0] === r3;
+                    case 'wide':
+                        const winners = [r1, r2, r3];
+                        return winners.includes(ids[0]) && winners.includes(ids[1]);
+                    case 'umaren':
+                        const umarenWinners = [r1, r2];
+                        return umarenWinners.includes(ids[0]) && umarenWinners.includes(ids[1]);
+                    case 'umatan':
+                        return (ids[0] === r1 && ids[1] === r2);
+                    case 'sanrenpuku':
+                        const sanrenWinners = [r1, r2, r3];
+                        return sanrenWinners.includes(ids[0]) && sanrenWinners.includes(ids[1]) && sanrenWinners.includes(ids[2]);
+                    case 'sanrentan':
+                        return (ids[0] === r1 && ids[1] === r2 && ids[2] === r3);
+                    default:
+                        return false;
+                }
+            };
+
             const runWhatIfSimulation = () => {
                 if (calculatedData.length === 0) {
                     setWhatIfResult(null);
@@ -2203,8 +2230,71 @@
                     return `${typeName} ${baseLabel}`;
                 };
 
+                // 買い目に含まれるすべての馬番号を収集
+                const involvedHorses = new Set();
+                betList.forEach(bet => {
+                    bet.ids.forEach(id => involvedHorses.add(parseInt(id)));
+                });
+                const horsesList = Array.from(involvedHorses).sort((a, b) => a - b);
+
+                // 着順パターンを生成してシミュレート
                 let minProfit = Infinity;
                 let maxProfit = -Infinity;
+
+                // 計算量を抑えるため、関連する馬だけでパターンを生成
+                // 最大100パターンまでに制限
+                const maxPatterns = 100;
+                let patternCount = 0;
+
+                const generatePatterns = () => {
+                    const patterns = [];
+                    // 買い目に含まれる馬の組み合わせを優先的に試す
+                    for (let i = 0; i < horsesList.length && patternCount < maxPatterns; i++) {
+                        for (let j = 0; j < horsesList.length && patternCount < maxPatterns; j++) {
+                            if (i === j) continue;
+                            for (let k = 0; k < horsesList.length && patternCount < maxPatterns; k++) {
+                                if (k === i || k === j) continue;
+                                patterns.push([horsesList[i], horsesList[j], horsesList[k]]);
+                                patternCount++;
+                            }
+                        }
+                    }
+                    return patterns;
+                };
+
+                const patterns = generatePatterns();
+
+                // 各着順パターンで的中判定と利益計算
+                patterns.forEach(([r1, r2, r3]) => {
+                    let totalPayout = 0;
+
+                    calculatedData.forEach(bet => {
+                        const originalBet = betList.find(b => b.key === bet.key);
+                        if (!originalBet) return;
+
+                        const isWin = checkWinForPattern(originalBet, r1, r2, r3);
+                        if (isWin) {
+                            const amount = Number(bet.stake) || 0;
+                            const originalOdds = Number(bet.odds) || 0;
+                            const simulatedOdds = Math.max(1.0, originalOdds * (1 - rate));
+                            totalPayout += simulatedOdds * amount;
+                        }
+                    });
+
+                    const profit = totalPayout - totalStake;
+                    if (totalPayout > 0) { // 少なくとも1つ的中した場合のみ考慮
+                        if (profit < minProfit) minProfit = profit;
+                        if (profit > maxProfit) maxProfit = profit;
+                    }
+                });
+
+                // 的中がない場合のパターンも考慮
+                if (minProfit === Infinity) {
+                    minProfit = -totalStake;
+                    maxProfit = -totalStake;
+                }
+
+                // 個別の買い目詳細（表示用）
                 let losersCount = 0;
                 let winnersCount = 0;
                 let breakevenCount = 0;
@@ -2216,9 +2306,6 @@
                     const payout = simulatedOdds * amount;
                     const rawProfit = payout - totalStake;
                     const profit = Math.abs(rawProfit) <= 1 ? 0 : Math.round(rawProfit);
-
-                    if (rawProfit < minProfit) minProfit = rawProfit;
-                    if (rawProfit > maxProfit) maxProfit = rawProfit;
 
                     if (profit < 0) losersCount += 1;
                     else if (profit > 0) winnersCount += 1;
@@ -2244,8 +2331,8 @@
                 setWhatIfResult({
                     rate: whatIfRate,
                     totalStake,
-                    minProfit,
-                    maxProfit,
+                    minProfit: Math.round(minProfit),
+                    maxProfit: Math.round(maxProfit),
                     details,
                     losersCount,
                     winnersCount,
