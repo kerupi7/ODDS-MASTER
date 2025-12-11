@@ -2235,30 +2235,31 @@
                 betList.forEach(bet => {
                     bet.ids.forEach(id => involvedHorses.add(parseInt(id)));
                 });
-                const horsesList = Array.from(involvedHorses).sort((a, b) => a - b);
+                const involvedHorsesList = Array.from(involvedHorses).sort((a, b) => a - b);
 
                 // 着順パターンを生成してシミュレート
                 let minProfit = Infinity;
                 let maxProfit = -Infinity;
 
-                // 計算量を抑えるため、関連する馬だけでパターンを生成
-                // 最大100パターンまでに制限
-                const maxPatterns = 100;
-                let patternCount = 0;
+                // 全頭数の配列を生成（1から頭数まで）
+                const allHorses = Array.from({ length: horseCount }, (_, i) => i + 1);
 
+                // 計算量を抑えるため、買い目に関連する馬を優先的にパターン生成
                 const generatePatterns = () => {
                     const patterns = [];
-                    // 買い目に含まれる馬の組み合わせを優先的に試す
-                    for (let i = 0; i < horsesList.length && patternCount < maxPatterns; i++) {
-                        for (let j = 0; j < horsesList.length && patternCount < maxPatterns; j++) {
+
+                    // まず、買い目に含まれる馬の組み合わせを全て試す
+                    for (let i = 0; i < involvedHorsesList.length; i++) {
+                        for (let j = 0; j < involvedHorsesList.length; j++) {
                             if (i === j) continue;
-                            for (let k = 0; k < horsesList.length && patternCount < maxPatterns; k++) {
-                                if (k === i || k === j) continue;
-                                patterns.push([horsesList[i], horsesList[j], horsesList[k]]);
-                                patternCount++;
+                            // 3着は全馬から選択
+                            for (let k = 1; k <= horseCount; k++) {
+                                if (k === involvedHorsesList[i] || k === involvedHorsesList[j]) continue;
+                                patterns.push([involvedHorsesList[i], involvedHorsesList[j], k]);
                             }
                         }
                     }
+
                     return patterns;
                 };
 
