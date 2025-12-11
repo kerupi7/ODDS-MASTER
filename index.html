@@ -1242,12 +1242,13 @@
                 note: ''
             });
 
-            const [horseCount, setHorseCount] = useState(18); 
+            const [horseCount, setHorseCount] = useState(18);
             const [betType, setBetType] = useState('tansho');
-            const [votingMode, setVotingMode] = useState('box'); 
-            
-            const [axisHorse, setAxisHorse] = useState(null); 
-            const [opponentHorses, setOpponentHorses] = useState([]); 
+            const [votingMode, setVotingMode] = useState('box');
+
+            const [axisHorses, setAxisHorses] = useState([]);
+            const [axisCount, setAxisCount] = useState(1); // 1 or 2 for sanrenpuku/sanrentan nagashi
+            const [opponentHorses, setOpponentHorses] = useState([]);
             const [formation, setFormation] = useState({ first: [], second: [], third: [] });
             const [boxHorses, setBoxHorses] = useState([]);
 
@@ -1466,14 +1467,20 @@
 
             // Nagashi
             const handleNagashiClick = (number) => {
-                if (axisHorse === number) {
-                    setAxisHorse(null);
+                // Check if it's already an axis horse
+                if (axisHorses.includes(number)) {
+                    setAxisHorses(prev => prev.filter(h => h !== number));
                 } else if (opponentHorses.includes(number)) {
+                    // Remove from opponent horses
                     setOpponentHorses(prev => prev.filter(h => h !== number));
                 } else {
-                    if (axisHorse === null) {
-                        setAxisHorse(number);
+                    // Add new selection
+                    const maxAxisCount = (betType === 'sanrenpuku' || betType === 'sanrentan') ? axisCount : 1;
+                    if (axisHorses.length < maxAxisCount) {
+                        // Add to axis horses
+                        setAxisHorses(prev => [...prev, number].sort((a, b) => a - b));
                     } else {
+                        // Add to opponent horses
                         setOpponentHorses(prev => [...prev, number].sort((a, b) => a - b));
                     }
                 }
@@ -1504,7 +1511,7 @@
 
             // Clears
             const clearSelection = () => {
-                setAxisHorse(null);
+                setAxisHorses([]);
                 setOpponentHorses([]);
                 setFormation({ first: [], second: [], third: [] });
                 setBoxHorses([]);
@@ -1536,6 +1543,9 @@
                 } else {
                     setVotingMode('nagashi');
                 }
+                // Reset axis count to 1 when switching bet types
+                setAxisCount(1);
+                clearSelection();
             };
 
             // Reset input fields (Reusable function)
@@ -1736,36 +1746,74 @@
                         }
                     }
                 } else if (votingMode === 'nagashi') {
-                    if (!axisHorse || opponentHorses.length === 0) return [];
+                    if (axisHorses.length === 0 || opponentHorses.length === 0) return [];
+                    const axes = [...axisHorses];
                     const opps = [...opponentHorses];
 
                     if (betType === 'umaren' || betType === 'wide') {
+                        // These only support 1 axis
+                        if (axes.length !== 1) return [];
                         opps.forEach(opp => {
-                            const combo = sortNums([axisHorse, opp]);
+                            const combo = sortNums([axes[0], opp]);
                             combos.push({ ids: combo, key: `${betType}:${combo.join('-')}`, label: combo.join('-'), type: betType });
                         });
                     } else if (betType === 'umatan') {
+                        // Only support 1 axis
+                        if (axes.length !== 1) return [];
                         opps.forEach(opp => {
-                            const combo = [axisHorse, opp];
+                            const combo = [axes[0], opp];
                             combos.push({ ids: combo, key: `${betType}:${combo.join('>')}`, label: combo.join('>'), type: betType });
                         });
                     } else if (betType === 'sanrenpuku') {
-                        if (opps.length < 2) return [];
-                        for (let i = 0; i < opps.length; i++) {
-                            for (let j = i + 1; j < opps.length; j++) {
-                                const raw = [axisHorse, opps[i], opps[j]];
+                        if (axes.length === 1) {
+                            // 1-axis: need at least 2 opponents
+                            if (opps.length < 2) return [];
+                            for (let i = 0; i < opps.length; i++) {
+                                for (let j = i + 1; j < opps.length; j++) {
+                                    const raw = [axes[0], opps[i], opps[j]];
+                                    const sorted = sortNums(raw);
+                                    combos.push({ ids: sorted, key: `${betType}:${sorted.join('-')}`, label: sorted.join('-'), type: betType });
+                                }
+                            }
+                        } else if (axes.length === 2) {
+                            // 2-axis: need at least 1 opponent
+                            if (opps.length < 1) return [];
+                            opps.forEach(opp => {
+                                const raw = [axes[0], axes[1], opp];
                                 const sorted = sortNums(raw);
                                 combos.push({ ids: sorted, key: `${betType}:${sorted.join('-')}`, label: sorted.join('-'), type: betType });
-                            }
+                            });
                         }
                     } else if (betType === 'sanrentan') {
-                        if (opps.length < 2) return [];
-                        for (let i = 0; i < opps.length; i++) {
-                            for (let j = 0; j < opps.length; j++) {
-                                if (i === j) continue;
-                                const combo = [axisHorse, opps[i], opps[j]];
-                                combos.push({ ids: combo, key: `${betType}:${combo.join('>')}`, label: combo.join('>'), type: betType });
+                        if (axes.length === 1) {
+                            // 1-axis: need at least 2 opponents
+                            if (opps.length < 2) return [];
+                            for (let i = 0; i < opps.length; i++) {
+                                for (let j = 0; j < opps.length; j++) {
+                                    if (i === j) continue;
+                                    const combo = [axes[0], opps[i], opps[j]];
+                                    combos.push({ ids: combo, key: `${betType}:${combo.join('>')}`, label: combo.join('>'), type: betType });
+                                }
                             }
+                        } else if (axes.length === 2) {
+                            // 2-axis: need at least 1 opponent
+                            // Generate all permutations of 2 axis + 1 opponent
+                            if (opps.length < 1) return [];
+                            const allHorses = [...axes, ...opps];
+                            opps.forEach(opp => {
+                                // All permutations of axes[0], axes[1], opp
+                                const perms = [
+                                    [axes[0], axes[1], opp],
+                                    [axes[0], opp, axes[1]],
+                                    [axes[1], axes[0], opp],
+                                    [axes[1], opp, axes[0]],
+                                    [opp, axes[0], axes[1]],
+                                    [opp, axes[1], axes[0]]
+                                ];
+                                perms.forEach(combo => {
+                                    combos.push({ ids: combo, key: `${betType}:${combo.join('>')}`, label: combo.join('>'), type: betType });
+                                });
+                            });
                         }
                     }
                 } else if (votingMode === 'formation') {
@@ -1826,7 +1874,7 @@
                 }
 
                 return combos;
-            }, [axisHorse, opponentHorses, formation, boxHorses, betType, votingMode]);
+            }, [axisHorses, axisCount, opponentHorses, formation, boxHorses, betType, votingMode]);
 
             const addBetsToList = () => {
                 if (previewCombinations.length === 0) return;
@@ -2857,7 +2905,39 @@
                                 </div>
                                 <div className="px-3 sm:px-4 py-4">
                                     {votingMode === 'box' && (<><div className="mb-2 text-xs text-center text-gray-500">{isSingleHorseBet ? '馬を選択してください（複数選択可）' : 'ボックス買いする馬を選択してください'}</div><div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">{Array.from({ length: horseCount }, (_, i) => i + 1).map(num => { const isSelected = boxHorses.includes(num); return renderHorseButton(num, isSelected, 'bg-emerald-600 border-emerald-700', () => toggleBoxHorse(num)); })}</div></>)}
-                                    {votingMode === 'nagashi' && !isSingleHorseBet && (<><div className="mb-2 text-xs text-center text-gray-500">軸(ピンク)1頭 → 相手(青)を選択</div><div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">{Array.from({ length: horseCount }, (_, i) => i + 1).map(num => { const isAxis = axisHorse === num; const isOpp = opponentHorses.includes(num); const color = isAxis ? 'bg-pink-500 border-pink-600' : 'bg-blue-500 border-blue-600'; return renderHorseButton(num, isAxis || isOpp, color, () => handleNagashiClick(num)); })}</div></>)}
+                                    {votingMode === 'nagashi' && !isSingleHorseBet && (
+                                        <>
+                                            {(betType === 'sanrenpuku' || betType === 'sanrentan') && (
+                                                <div className="mb-3 flex justify-center">
+                                                    <div className="inline-flex bg-gray-200 rounded p-1">
+                                                        <button
+                                                            onClick={() => { setAxisCount(1); clearSelection(); }}
+                                                            className={`px-4 py-1.5 text-xs rounded transition-all ${axisCount === 1 ? 'bg-white text-pink-700 shadow font-bold' : 'text-gray-500'}`}
+                                                        >
+                                                            1軸
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setAxisCount(2); clearSelection(); }}
+                                                            className={`px-4 py-1.5 text-xs rounded transition-all ${axisCount === 2 ? 'bg-white text-pink-700 shadow font-bold' : 'text-gray-500'}`}
+                                                        >
+                                                            2軸
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="mb-2 text-xs text-center text-gray-500">
+                                                軸(ピンク){(betType === 'sanrenpuku' || betType === 'sanrentan') ? axisCount : 1}頭 → 相手(青)を選択
+                                            </div>
+                                            <div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">
+                                                {Array.from({ length: horseCount }, (_, i) => i + 1).map(num => {
+                                                    const isAxis = axisHorses.includes(num);
+                                                    const isOpp = opponentHorses.includes(num);
+                                                    const color = isAxis ? 'bg-pink-500 border-pink-600' : 'bg-blue-500 border-blue-600';
+                                                    return renderHorseButton(num, isAxis || isOpp, color, () => handleNagashiClick(num));
+                                                })}
+                                            </div>
+                                        </>
+                                    )}
                                     {votingMode === 'formation' && !isSingleHorseBet && (
                                         <div className="space-y-4">
                                             <div><div className="flex items-center gap-2 mb-1"><span className="bg-pink-100 text-pink-800 text-xs font-bold px-2 py-0.5 rounded border border-pink-200">{getRowLabel(1, betType)}</span></div><div className="grid grid-cols-9 gap-1">{Array.from({ length: horseCount }, (_, i) => i + 1).map(num => renderHorseButton(num, formation.first.includes(num), 'bg-pink-500 border-pink-600', () => toggleFormationHorse('first', num)))}</div></div>
