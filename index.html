@@ -1786,20 +1786,30 @@
                         }
                     } else if (betType === 'sanrentan') {
                         if (axes.length === 1) {
-                            // 1-axis: need at least 2 opponents
+                            // 1-axis multi: need at least 2 opponents
+                            // Generate all permutations of axis + 2 opponents
                             if (opps.length < 2) return [];
                             for (let i = 0; i < opps.length; i++) {
-                                for (let j = 0; j < opps.length; j++) {
-                                    if (i === j) continue;
-                                    const combo = [axes[0], opps[i], opps[j]];
-                                    combos.push({ ids: combo, key: `${betType}:${combo.join('>')}`, label: combo.join('>'), type: betType });
+                                for (let j = i + 1; j < opps.length; j++) {
+                                    // All permutations of axes[0], opps[i], opps[j]
+                                    const horses = [axes[0], opps[i], opps[j]];
+                                    const perms = [
+                                        [horses[0], horses[1], horses[2]],
+                                        [horses[0], horses[2], horses[1]],
+                                        [horses[1], horses[0], horses[2]],
+                                        [horses[1], horses[2], horses[0]],
+                                        [horses[2], horses[0], horses[1]],
+                                        [horses[2], horses[1], horses[0]]
+                                    ];
+                                    perms.forEach(combo => {
+                                        combos.push({ ids: combo, key: `${betType}:${combo.join('>')}`, label: combo.join('>'), type: betType });
+                                    });
                                 }
                             }
                         } else if (axes.length === 2) {
-                            // 2-axis: need at least 1 opponent
-                            // Generate all permutations of 2 axis + 1 opponent
+                            // 2-axis multi: need at least 1 opponent
+                            // Generate all permutations of 2 axes + 1 opponent
                             if (opps.length < 1) return [];
-                            const allHorses = [...axes, ...opps];
                             opps.forEach(opp => {
                                 // All permutations of axes[0], axes[1], opp
                                 const perms = [
