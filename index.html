@@ -2610,7 +2610,7 @@
                                                     )}
                                                     {weekendDates.map((wd) => {
                                                         const isActive = raceMeta.date === wd.key;
-                                                        const label = `${wd.key.slice(5)}（${wd.label}）`;
+                                                        const label = `${wd.key.slice(5).replace('-', '/')}（${wd.label}）`;
 
                                                         return (
                                                             <button
