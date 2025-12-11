@@ -525,6 +525,7 @@
             BookOpen: (props) => <IconBase {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconBase>,
             BarChart: (props) => <IconBase {...props}><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></IconBase>,
             TrendingUp: (props) => <IconBase {...props}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></IconBase>,
+            TrendingDown: (props) => <IconBase {...props}><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></IconBase>,
             ChevronDown: (props) => <IconBase {...props}><path d="m6 9 6 6 6-6"/></IconBase>,
             ChevronUp: (props) => <IconBase {...props}><path d="m18 15-6-6-6 6"/></IconBase>,
             Award: (props) => <IconBase {...props}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></IconBase>,
@@ -2835,38 +2836,70 @@
                                             )}
                                         </div>
 
-                                        <div className="flex flex-col justify-between">
-                                            <div className="flex justify-between text-sm mb-1"><span className="text-gray-600">買い目合計:</span><span className="font-bold">{stats.count} 点</span></div>
-                                            <div className="flex justify-between text-sm mb-1"><span className="text-gray-600">投資総額:</span><span className={`font-bold ${stats.totalStake > (totalBudget === '' ? 0 : parseInt(totalBudget)) ? 'text-red-500' : 'text-emerald-600'}`}>{stats.totalStake.toLocaleString()} 円</span></div>
+                                        {/* 買い目合計・投資総額カード */}
+                                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200 shadow-sm">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <Icons.FileText size={18} className="text-blue-600" />
+                                                <h4 className="font-bold text-gray-800 text-sm">購入情報サマリー</h4>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="bg-white rounded-md p-3 shadow-sm">
+                                                    <div className="text-xs text-gray-500 mb-1">買い目合計</div>
+                                                    <div className="text-xl font-bold text-gray-800">{stats.count} <span className="text-sm font-normal text-gray-600">点</span></div>
+                                                </div>
+                                                <div className="bg-white rounded-md p-3 shadow-sm">
+                                                    <div className="text-xs text-gray-500 mb-1">投資総額</div>
+                                                    <div className={`text-xl font-bold ${stats.totalStake > (totalBudget === '' ? 0 : parseInt(totalBudget)) ? 'text-red-500' : 'text-emerald-600'}`}>
+                                                        {stats.totalStake.toLocaleString()} <span className="text-sm font-normal text-gray-600">円</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <EffectiveOddsPanel bets={effectiveOddsBets} />
 
-                                    <div className="mt-3 flex items-center gap-2">
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            max="90"
-                                            value={whatIfRate}
-                                            onChange={(e) => setWhatIfRate(Number(e.target.value))}
-                                            className="w-20 px-2 py-1 border rounded text-sm"
-                                        />
-                                        <span className="text-sm">％オッズが下がった場合の損益を見る</span>
+                                    {/* オッズ下落シミュレーションカード */}
+                                    <div className="mt-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-4 border border-amber-300 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Icons.AlertCircle size={18} className="text-amber-600" />
+                                            <h4 className="font-bold text-gray-800 text-sm">オッズ下落時シミュレーション</h4>
+                                        </div>
+
+                                        <div className="bg-white rounded-md p-3 mb-3 shadow-sm">
+                                            <div className="flex items-center gap-3">
+                                                <label className="text-sm text-gray-700 font-medium">下落率:</label>
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max="90"
+                                                        value={whatIfRate}
+                                                        onChange={(e) => setWhatIfRate(Number(e.target.value))}
+                                                        className="w-20 px-3 py-2 border border-gray-300 rounded-md text-sm font-bold text-center focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
+                                                    />
+                                                    <span className="text-sm text-gray-600 font-medium">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleWhatIfToggle}
+                                            aria-expanded={showWhatIfResult}
+                                            className={`w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md ${showWhatIfResult ? 'ring-2 ring-amber-400 ring-offset-2' : ''}`}
+                                        >
+                                            <Icons.TrendingDown size={16} />
+                                            {showWhatIfResult ? '結果を非表示' : `${whatIfRate}%下落時の損益を計算`}
+                                            {showWhatIfResult ? <Icons.ChevronUp size={16} /> : <Icons.ChevronDown size={16} />}
+                                        </button>
+
+                                        {showWhatIfResult && (
+                                            <div className="mt-3">
+                                                <WhatIfResultPanel result={whatIfResult} />
+                                            </div>
+                                        )}
                                     </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={handleWhatIfToggle}
-                                        aria-expanded={showWhatIfResult}
-                                        className={`mt-2 w-full bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold py-2 rounded-lg border border-amber-300 flex items-center justify-center gap-2 transition-colors ${showWhatIfResult ? 'ring-2 ring-amber-200' : ''}`}
-                                    >
-                                        <Icons.AlertCircle size={14} />
-                                        オッズが {whatIfRate}% 下がった場合の損益をシミュレーション
-                                        {showWhatIfResult ? <Icons.ChevronUp size={14} /> : <Icons.ChevronDown size={14} />}
-                                    </button>
-
-                                    {showWhatIfResult && <WhatIfResultPanel result={whatIfResult} />}
 
                                     <div className="mt-4 flex gap-2">
                                         <button onClick={() => { setAllocationMode('profit'); setCustomStakes({}); }} className={`flex-1 text-xs py-2 rounded border ${allocationMode === 'profit' ? 'bg-emerald-100 border-emerald-500 text-emerald-800 font-bold' : 'bg-white text-gray-600'}`}>払戻均等 (利益確保){budgetInputMode === 'target' && <span className="block text-[10px] text-emerald-600 mt-0.5">目標利益モード使用中</span>}</button>
