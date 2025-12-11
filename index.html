@@ -753,12 +753,16 @@
 
                     <div className="flex justify-between">
                         <span>最悪利益（当たり時）</span>
-                        <span className="font-mono">{result.minProfit.toLocaleString()}円</span>
+                        <span className={`font-mono font-bold ${result.minProfit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                            {result.minProfit >= 0 ? '+' : ''}{result.minProfit.toLocaleString()}円
+                        </span>
                     </div>
 
                     <div className="flex justify-between mt-1">
                         <span>最大利益（当たり時）</span>
-                        <span className="font-mono">{result.maxProfit.toLocaleString()}円</span>
+                        <span className={`font-mono font-bold ${result.maxProfit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                            {result.maxProfit >= 0 ? '+' : ''}{result.maxProfit.toLocaleString()}円
+                        </span>
                     </div>
 
                     {result.details && result.details.length > 0 && (
