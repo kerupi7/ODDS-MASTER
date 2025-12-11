@@ -1248,6 +1248,7 @@
 
             const [axisHorses, setAxisHorses] = useState([]);
             const [axisCount, setAxisCount] = useState(1); // 1 or 2 for sanrenpuku/sanrentan nagashi
+            const [umatanMulti, setUmatanMulti] = useState(false); // Multi mode for umatan nagashi
             const [opponentHorses, setOpponentHorses] = useState([]);
             const [formation, setFormation] = useState({ first: [], second: [], third: [] });
             const [boxHorses, setBoxHorses] = useState([]);
@@ -1543,8 +1544,9 @@
                 } else {
                     setVotingMode('nagashi');
                 }
-                // Reset axis count to 1 when switching bet types
+                // Reset axis count and umatan multi mode when switching bet types
                 setAxisCount(1);
+                setUmatanMulti(false);
                 clearSelection();
             };
 
@@ -1758,17 +1760,23 @@
                             combos.push({ ids: combo, key: `${betType}:${combo.join('-')}`, label: combo.join('-'), type: betType });
                         });
                     } else if (betType === 'umatan') {
-                        // 1-axis multi: generate both permutations (axis>opponent and opponent>axis)
+                        // Only support 1 axis
                         if (axes.length !== 1) return [];
                         opps.forEach(opp => {
-                            // Multi format: generate all permutations of axis and opponent
-                            const perms = [
-                                [axes[0], opp],
-                                [opp, axes[0]]
-                            ];
-                            perms.forEach(combo => {
+                            if (umatanMulti) {
+                                // Multi format: generate both permutations (axis>opponent and opponent>axis)
+                                const perms = [
+                                    [axes[0], opp],
+                                    [opp, axes[0]]
+                                ];
+                                perms.forEach(combo => {
+                                    combos.push({ ids: combo, key: `${betType}:${combo.join('>')}`, label: combo.join('>'), type: betType });
+                                });
+                            } else {
+                                // Normal format: only axis>opponent
+                                const combo = [axes[0], opp];
                                 combos.push({ ids: combo, key: `${betType}:${combo.join('>')}`, label: combo.join('>'), type: betType });
-                            });
+                            }
                         });
                     } else if (betType === 'sanrenpuku') {
                         if (axes.length === 1) {
@@ -2923,6 +2931,24 @@
                                     {votingMode === 'box' && (<><div className="mb-2 text-xs text-center text-gray-500">{isSingleHorseBet ? '馬を選択してください（複数選択可）' : 'ボックス買いする馬を選択してください'}</div><div className="grid grid-cols-6 sm:grid-cols-9 gap-1.5">{Array.from({ length: horseCount }, (_, i) => i + 1).map(num => { const isSelected = boxHorses.includes(num); return renderHorseButton(num, isSelected, 'bg-emerald-600 border-emerald-700', () => toggleBoxHorse(num)); })}</div></>)}
                                     {votingMode === 'nagashi' && !isSingleHorseBet && (
                                         <>
+                                            {betType === 'umatan' && (
+                                                <div className="mb-3 flex justify-center">
+                                                    <div className="inline-flex bg-gray-200 rounded p-1">
+                                                        <button
+                                                            onClick={() => { setUmatanMulti(false); clearSelection(); }}
+                                                            className={`px-4 py-1.5 text-xs rounded transition-all ${!umatanMulti ? 'bg-white text-pink-700 shadow font-bold' : 'text-gray-500'}`}
+                                                        >
+                                                            通常
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setUmatanMulti(true); clearSelection(); }}
+                                                            className={`px-4 py-1.5 text-xs rounded transition-all ${umatanMulti ? 'bg-white text-pink-700 shadow font-bold' : 'text-gray-500'}`}
+                                                        >
+                                                            マルチ
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                             {(betType === 'sanrenpuku' || betType === 'sanrentan') && (
                                                 <div className="mb-3 flex justify-center">
                                                     <div className="inline-flex bg-gray-200 rounded p-1">
