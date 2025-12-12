@@ -1058,7 +1058,7 @@
                             </div>
                             <div>
                                 <h4 className="text-sm font-bold text-gray-800">{courseName}</h4>
-                                <p className="text-xs text-gray-500 truncate max-w-[200px]">{data.overview}</p>
+                                {data.overview && <p className="text-xs text-gray-500 truncate max-w-[200px]">{data.overview}</p>}
                             </div>
                         </div>
                         <div>
@@ -1155,7 +1155,7 @@
                                     {data.frame && (
                                         <div className="bg-white p-3 rounded border border-gray-200">
                                         <h5 className="text-xs font-bold text-gray-500 mb-3 uppercase flex items-center gap-1">
-                                            <Icons.Grid size={14} /> 枠順傾向
+                                            <Icons.Layers size={14} /> 枠順傾向
                                         </h5>
 
                                         {/* 枠番ビジュアル表示 */}
