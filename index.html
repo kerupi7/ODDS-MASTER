@@ -1193,7 +1193,11 @@
                                                             {frame}枠
                                                         </div>
                                                         {statusIcon && (
-                                                            <div className="absolute -top-1 -right-1 text-xs">
+                                                            <div className="absolute -top-2 -right-2 w-6 h-6 flex items-center justify-center rounded-full shadow-lg text-sm font-bold"
+                                                                style={{
+                                                                    backgroundColor: statusIcon === '◎' ? '#10b981' : statusIcon === '✕' ? '#ef4444' : '#f59e0b',
+                                                                    color: 'white'
+                                                                }}>
                                                                 {statusIcon}
                                                             </div>
                                                         )}
