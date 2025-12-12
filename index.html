@@ -1058,7 +1058,7 @@
                             </div>
                             <div>
                                 <h4 className="text-sm font-bold text-gray-800">{courseName}</h4>
-                                <p className="text-xs text-gray-500 truncate max-w-[200px]">{data.overview}</p>
+                                {data.overview && <p className="text-xs text-gray-500 truncate max-w-[200px]">{data.overview}</p>}
                             </div>
                         </div>
                         <div>
