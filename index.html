@@ -1070,27 +1070,77 @@
                         <div className="p-4 pt-0 border-t border-gray-100 bg-gray-50/50">
                             <div className="space-y-4 mt-3">
                                 
-                                <div className="bg-white p-3 rounded border border-gray-200">
-                                    <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase flex items-center gap-1">
-                                        <Icons.Info size={12} /> コース特徴
+                                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border-2 border-gray-200 shadow-sm">
+                                    <h5 className="text-sm font-bold text-gray-700 mb-3 uppercase flex items-center gap-2">
+                                        <div className="p-1 bg-gray-600 rounded-full">
+                                            <Icons.Info size={14} className="text-white" />
+                                        </div>
+                                        コース特徴
                                     </h5>
-                                    <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
-                                        {data.features.map((f, i) => <li key={i}>{f}</li>)}
+                                    <ul className="text-sm text-gray-700 space-y-2">
+                                        {data.features.map((f, i) => (
+                                            <li key={i} className="flex items-start gap-2 bg-white p-2 rounded-lg border border-gray-200">
+                                                <span className="text-gray-500 font-bold mt-0.5">▸</span>
+                                                <span className="flex-1">{f}</span>
+                                            </li>
+                                        ))}
                                     </ul>
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="bg-white p-3 rounded border border-gray-200">
-                                        <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase">脚質傾向</h5>
-                                        <div className="space-y-2 text-sm">
+                                        <h5 className="text-xs font-bold text-gray-500 mb-3 uppercase flex items-center gap-1">
+                                            <Icons.TrendingUp size={14} /> 脚質傾向
+                                        </h5>
+                                        <div className="space-y-3 text-sm">
                                             {Object.entries(data.style).map(([key, val]) => {
                                                 const label = { escape: '逃げ', lead: '先行', chase: '差し', late: '追込' }[key];
+                                                const icon = { escape: '🏃', lead: '🐎', chase: '⚡', late: '🔥' }[key];
+                                                const returnVal = val.return ? parseFloat(val.return.replace('%', '')) : 0;
+                                                const winVal = val.win ? parseFloat(val.win.replace('%', '')) : 0;
+                                                const placeVal = val.place ? parseFloat(val.place.replace('%', '')) : 0;
+
+                                                // 回収率に基づく色分け（100%を基準）
+                                                let barColor = 'bg-gray-300';
+                                                let textColor = 'text-gray-600';
+                                                if (returnVal >= 150) {
+                                                    barColor = 'bg-gradient-to-r from-emerald-400 to-emerald-600';
+                                                    textColor = 'text-emerald-700';
+                                                } else if (returnVal >= 100) {
+                                                    barColor = 'bg-gradient-to-r from-blue-400 to-blue-600';
+                                                    textColor = 'text-blue-700';
+                                                } else if (returnVal >= 80) {
+                                                    barColor = 'bg-gradient-to-r from-yellow-400 to-yellow-600';
+                                                    textColor = 'text-yellow-700';
+                                                } else if (returnVal > 0) {
+                                                    barColor = 'bg-gradient-to-r from-red-400 to-red-600';
+                                                    textColor = 'text-red-700';
+                                                }
+
                                                 return (
-                                                    <div key={key} className="flex justify-between border-b border-gray-100 pb-1 last:border-0">
-                                                        <span className="font-semibold text-gray-600">{label}</span>
-                                                        <div className="text-right">
-                                                            {val.return && <span className="text-emerald-600 font-bold mr-2">回{val.return}</span>}
-                                                            {val.note && <span className="text-xs text-gray-400">{val.note}</span>}
+                                                    <div key={key} className="border-b border-gray-100 pb-2 last:border-0">
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className={`font-bold ${textColor} flex items-center gap-1`}>
+                                                                <span>{icon}</span>
+                                                                <span>{label}</span>
+                                                            </span>
+                                                            <div className="text-right text-xs">
+                                                                {val.return && <span className={`font-bold ${textColor}`}>回収率 {val.return}</span>}
+                                                                {val.trend && <span className="ml-2 text-gray-500">({val.trend})</span>}
+                                                            </div>
+                                                        </div>
+                                                        {returnVal > 0 && (
+                                                            <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className={`h-full ${barColor} transition-all duration-500 rounded-full`}
+                                                                    style={{ width: `${Math.min(returnVal / 2, 100)}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex gap-3 mt-1 text-xs text-gray-600">
+                                                            {winVal > 0 && <span>勝率: {val.win}</span>}
+                                                            {placeVal > 0 && <span>複勝: {val.place}</span>}
+                                                            {val.note && <span className="text-gray-400 italic">{val.note}</span>}
                                                         </div>
                                                     </div>
                                                 );
@@ -1099,62 +1149,185 @@
                                     </div>
 
                                     <div className="bg-white p-3 rounded border border-gray-200">
-                                        <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase">枠順傾向</h5>
-                                        <div className="space-y-2 text-sm">
-                                            <div className="text-emerald-700"><span className="font-bold">◎</span> {data.frame.good}</div>
-                                            <div className="text-orange-600"><span className="font-bold">▲</span> {data.frame.bad}</div>
-                                            <div className="text-red-600"><span className="font-bold">✕</span> {data.frame.worst}</div>
+                                        <h5 className="text-xs font-bold text-gray-500 mb-3 uppercase flex items-center gap-1">
+                                            <Icons.Grid size={14} /> 枠順傾向
+                                        </h5>
+
+                                        {/* 枠番ビジュアル表示 */}
+                                        <div className="grid grid-cols-4 gap-2 mb-3">
+                                            {[1, 2, 3, 4, 5, 6, 7, 8].map(frame => {
+                                                // 枠番の色（実際の競馬の枠色）
+                                                const frameColors = {
+                                                    1: 'bg-white border-2 border-gray-800 text-gray-800',
+                                                    2: 'bg-black text-white',
+                                                    3: 'bg-red-600 text-white',
+                                                    4: 'bg-blue-600 text-white',
+                                                    5: 'bg-yellow-400 text-gray-900',
+                                                    6: 'bg-green-600 text-white',
+                                                    7: 'bg-orange-500 text-white',
+                                                    8: 'bg-pink-400 text-gray-900'
+                                                };
+
+                                                // 有利/不利の判定（データから推測）
+                                                let statusIcon = '';
+                                                let statusColor = '';
+                                                if (data.frame.good.includes(`${frame}枠`) || (frame === 8 && data.frame.good.includes('外枠')) || (frame >= 6 && data.frame.good.includes('外枠'))) {
+                                                    statusIcon = '◎';
+                                                    statusColor = 'ring-2 ring-emerald-500';
+                                                } else if (data.frame.worst.includes(`${frame}枠`) || (frame <= 2 && data.frame.worst.includes('内枠'))) {
+                                                    statusIcon = '✕';
+                                                    statusColor = 'ring-2 ring-red-500';
+                                                } else if (data.frame.bad.includes(`${frame}枠`)) {
+                                                    statusIcon = '▲';
+                                                    statusColor = 'ring-2 ring-yellow-500';
+                                                }
+
+                                                return (
+                                                    <div key={frame} className="relative">
+                                                        <div className={`${frameColors[frame]} ${statusColor} rounded-lg p-2 text-center font-bold text-sm shadow-sm`}>
+                                                            {frame}枠
+                                                        </div>
+                                                        {statusIcon && (
+                                                            <div className="absolute -top-1 -right-1 text-xs">
+                                                                {statusIcon}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* 詳細説明 */}
+                                        <div className="space-y-2 text-xs border-t border-gray-100 pt-2">
+                                            <div className="flex items-start gap-2 text-emerald-700 bg-emerald-50 p-2 rounded">
+                                                <span className="font-bold text-base">◎</span>
+                                                <span className="flex-1">{data.frame.good}</span>
+                                            </div>
+                                            {data.frame.bad && (
+                                                <div className="flex items-start gap-2 text-orange-600 bg-orange-50 p-2 rounded">
+                                                    <span className="font-bold text-base">▲</span>
+                                                    <span className="flex-1">{data.frame.bad}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-start gap-2 text-red-600 bg-red-50 p-2 rounded">
+                                                <span className="font-bold text-base">✕</span>
+                                                <span className="flex-1">{data.frame.worst}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="bg-white p-3 rounded border border-gray-200">
-                                    <h5 className="text-xs font-bold text-gray-500 mb-2 uppercase">血統傾向</h5>
-                                    <div className="flex flex-wrap gap-2 mb-2">
-                                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">好走:</span>
-                                        {data.blood.good.map((b, i) => <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">{b}</span>)}
-                                    </div>
-                                    {data.blood.bad.length > 0 && (
+                                    <h5 className="text-xs font-bold text-gray-500 mb-3 uppercase flex items-center gap-1">
+                                        <Icons.Award size={14} /> 血統傾向
+                                    </h5>
+
+                                    {/* 好走血統 */}
+                                    <div className="mb-3">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full flex items-center gap-1">
+                                                <span>🏆</span> 好走血統
+                                            </span>
+                                            <span className="text-xs text-gray-400">({data.blood.good.length})</span>
+                                        </div>
                                         <div className="flex flex-wrap gap-2">
-                                            <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded">不振:</span>
-                                            {data.blood.bad.map((b, i) => <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">{b}</span>)}
+                                            {data.blood.good.map((b, i) => (
+                                                <span key={i} className="text-xs bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-lg text-emerald-800 font-semibold shadow-sm hover:shadow-md transition-shadow">
+                                                    {b}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 不振血統 */}
+                                    {data.blood.bad.length > 0 && (
+                                        <div className="border-t border-gray-100 pt-3">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full flex items-center gap-1">
+                                                    <span>⚠️</span> 不振血統
+                                                </span>
+                                                <span className="text-xs text-gray-400">({data.blood.bad.length})</span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {data.blood.bad.map((b, i) => (
+                                                    <span key={i} className="text-xs bg-gradient-to-r from-red-50 to-red-100 border border-red-300 px-3 py-1.5 rounded-lg text-red-800 font-semibold shadow-sm hover:shadow-md transition-shadow">
+                                                        {b}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div className="bg-blue-50 p-3 rounded border border-blue-100">
-                                        <h5 className="text-xs font-bold text-blue-700 mb-1 flex items-center gap-1"><Icons.CheckCircle size={12}/> 軸のポイント</h5>
-                                        <ul className="text-xs text-blue-900 space-y-1">
-                                            {data.axis.map((t, i) => <li key={i}>・{t}</li>)}
+                                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border-2 border-blue-200 shadow-sm">
+                                        <h5 className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2">
+                                            <div className="p-1 bg-blue-500 rounded-full">
+                                                <Icons.CheckCircle size={14} className="text-white" />
+                                            </div>
+                                            軸のポイント
+                                        </h5>
+                                        <ul className="text-xs text-blue-900 space-y-1.5">
+                                            {data.axis.map((t, i) => (
+                                                <li key={i} className="flex items-start gap-2">
+                                                    <span className="text-blue-500 font-bold mt-0.5">✓</span>
+                                                    <span className="flex-1">{t}</span>
+                                                </li>
+                                            ))}
                                         </ul>
                                     </div>
-                                    <div className="bg-yellow-50 p-3 rounded border border-yellow-100">
-                                        <h5 className="text-xs font-bold text-yellow-700 mb-1 flex items-center gap-1"><Icons.AlertCircle size={12}/> 穴のポイント</h5>
-                                        <ul className="text-xs text-yellow-900 space-y-1">
-                                            {data.hole.map((t, i) => <li key={i}>・{t}</li>)}
+                                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg border-2 border-yellow-200 shadow-sm">
+                                        <h5 className="text-sm font-bold text-yellow-800 mb-2 flex items-center gap-2">
+                                            <div className="p-1 bg-yellow-500 rounded-full">
+                                                <Icons.AlertCircle size={14} className="text-white" />
+                                            </div>
+                                            穴のポイント
+                                        </h5>
+                                        <ul className="text-xs text-yellow-900 space-y-1.5">
+                                            {data.hole.map((t, i) => (
+                                                <li key={i} className="flex items-start gap-2">
+                                                    <span className="text-yellow-600 font-bold mt-0.5">◆</span>
+                                                    <span className="flex-1">{t}</span>
+                                                </li>
+                                            ))}
                                         </ul>
                                     </div>
                                 </div>
 
                                 {data.tips && data.tips.length > 0 && (
-                                    <div className="bg-emerald-50 p-3 rounded border border-emerald-100">
-                                        <h5 className="text-xs font-bold text-emerald-700 mb-1 flex items-center gap-1">
-                                            <Icons.Lightbulb size={12}/> 攻略のヒント (Tips)
+                                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-lg border-2 border-emerald-200 shadow-sm">
+                                        <h5 className="text-sm font-bold text-emerald-800 mb-2 flex items-center gap-2">
+                                            <div className="p-1 bg-emerald-500 rounded-full">
+                                                <Icons.Lightbulb size={14} className="text-white" />
+                                            </div>
+                                            攻略のヒント
                                         </h5>
-                                        <ul className="text-xs text-emerald-900 space-y-1">
-                                            {data.tips.map((t, i) => <li key={i}>・{t}</li>)}
+                                        <ul className="text-xs text-emerald-900 space-y-1.5">
+                                            {data.tips.map((t, i) => (
+                                                <li key={i} className="flex items-start gap-2">
+                                                    <span className="text-emerald-600 font-bold mt-0.5">💡</span>
+                                                    <span className="flex-1">{t}</span>
+                                                </li>
+                                            ))}
                                         </ul>
                                     </div>
                                 )}
 
                                 {data.avoid && data.avoid.length > 0 && (
-                                    <div className="bg-red-50 p-3 rounded border border-red-100">
-                                        <h5 className="text-xs font-bold text-red-700 mb-1 flex items-center gap-1">
-                                            <Icons.Ban size={12}/> 消しのポイント (Avoid)
+                                    <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border-2 border-red-200 shadow-sm">
+                                        <h5 className="text-sm font-bold text-red-800 mb-2 flex items-center gap-2">
+                                            <div className="p-1 bg-red-500 rounded-full">
+                                                <Icons.Ban size={14} className="text-white" />
+                                            </div>
+                                            消しのポイント
                                         </h5>
-                                        <ul className="text-xs text-red-900 space-y-1">
-                                            {data.avoid.map((t, i) => <li key={i}>・{t}</li>)}
+                                        <ul className="text-xs text-red-900 space-y-1.5">
+                                            {data.avoid.map((t, i) => (
+                                                <li key={i} className="flex items-start gap-2">
+                                                    <span className="text-red-600 font-bold mt-0.5">✕</span>
+                                                    <span className="flex-1">{t}</span>
+                                                </li>
+                                            ))}
                                         </ul>
                                     </div>
                                 )}
