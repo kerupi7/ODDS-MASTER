@@ -2596,7 +2596,7 @@
                     const originalOdds = Number(bet.odds) || 0;
                     const simulatedOdds = Math.max(1.0, originalOdds * (1 - rate));
                     const payout = simulatedOdds * amount;
-                    const rawProfit = payout - amount;
+                    const rawProfit = payout - totalStake;
                     const profit = Math.abs(rawProfit) <= 1 ? 0 : Math.round(rawProfit);
 
                     if (profit < 0) losersCount += 1;
