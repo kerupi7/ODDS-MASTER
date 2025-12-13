@@ -1781,6 +1781,7 @@
                     data: {
                         betList: [...betList],
                         oddsData: { ...oddsData },
+                        customStakes: { ...customStakes },
                         totalBudget,
                         allocationMode
                     },
@@ -1814,9 +1815,10 @@
                     setRaceMeta({ ...entry.meta });
                     setBetList([...entry.data.betList]);
                     setOddsData({ ...entry.data.oddsData });
+                    setCustomStakes({ ...(entry.data.customStakes || {}) });
                     setTotalBudget(entry.data.totalBudget || 10000);
                     setAllocationMode(entry.data.allocationMode || 'profit');
-                    
+
                     // Set editing ID to enable overwrite on save
                     setEditingId(entry.id);
                     
@@ -2335,6 +2337,7 @@
                     originalData: {
                         betList: [...betList],
                         oddsData: { ...oddsData },
+                        customStakes: { ...customStakes },
                         totalBudget,
                         allocationMode
                     }
