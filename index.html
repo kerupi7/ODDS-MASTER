@@ -2347,7 +2347,14 @@
                 const updatedResults = [...resultHistory, resultRecord];
                 setResultHistory(updatedResults);
                 localStorage.setItem('jra_odds_results', JSON.stringify(updatedResults));
-                
+
+                // 的中判定後、買い目保存から該当レースを削除
+                if (editingId) {
+                    const newHistory = savedHistory.filter(item => item.id !== editingId);
+                    setSavedHistory(newHistory);
+                    localStorage.setItem('jra_odds_history', JSON.stringify(newHistory));
+                }
+
                 // 共通のリセット処理
                 const resetGameState = () => {
                     setShowResultInput(false);
