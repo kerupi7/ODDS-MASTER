@@ -460,12 +460,12 @@
         async function loadSchedule2026() {
             if (window.__schedule2026Cache) return window.__schedule2026Cache;
             try {
-                const res = await fetch('./jra_schedule_2026.json');
+                const res = await fetch('./jra_schedule_2025.json');
                 const data = await res.json();
                 window.__schedule2026Cache = data;
                 return data;
             } catch (e) {
-                console.error('Failed to load schedule 2026', e);
+                console.error('Failed to load schedule 2025', e);
                 window.__schedule2026Cache = {};
                 return {};
             }
