@@ -1514,12 +1514,44 @@
             
             // 外部ファイル読み込み
             useEffect(() => {
-                fetch('course-data.json')
+                fetch('odds_master_kyoto_all_courses.json')
                     .then(res => {
                         if (!res.ok) throw new Error("File not found");
                         return res.json();
                     })
-                    .then(data => setCourseData(data))
+                    .then(data => {
+                        // odds_master_kyoto_all_courses.json の構造を既存の構造に変換
+                        if (data.courses && Array.isArray(data.courses)) {
+                            const converted = {};
+                            const venueName = data.venue || '京都';
+                            converted[venueName] = {};
+
+                            data.courses.forEach(courseItem => {
+                                const { course, layer1, layer2, layer3 } = courseItem;
+                                const courseName = `${course.surface}${course.distance_m}m${course.track ? course.track : ''}`;
+
+                                converted[venueName][courseName] = {
+                                    course: courseName,
+                                    overview: layer1?.axis || '',
+                                    features: layer3?.rationale || [],
+                                    axis: layer1?.axis ? [layer1.axis] : [],
+                                    avoid: [
+                                        ...(layer1?.ng ? [layer1.ng] : []),
+                                        ...(layer2?.cautions || [])
+                                    ],
+                                    tips: [
+                                        ...(layer1?.exception ? [layer1.exception] : []),
+                                        ...(layer2?.stable || [])
+                                    ]
+                                };
+                            });
+
+                            setCourseData(converted);
+                        } else {
+                            // course-data.json のような既存の構造の場合はそのまま使用
+                            setCourseData(data);
+                        }
+                    })
                     .catch(err => console.log('JSON読み込み失敗（手動アップロードしてください）', err));
             }, []);
 
@@ -1580,7 +1612,39 @@
                 reader.onload = (e) => {
                     try {
                         const json = JSON.parse(e.target.result);
-                        setCourseData(json);
+
+                        // odds_master_kyoto_all_courses.json の構造を既存の構造に変換
+                        if (json.courses && Array.isArray(json.courses)) {
+                            const converted = {};
+                            const venueName = json.venue || '京都';
+                            converted[venueName] = {};
+
+                            json.courses.forEach(courseItem => {
+                                const { course, layer1, layer2, layer3 } = courseItem;
+                                const courseName = `${course.surface}${course.distance_m}m${course.track ? course.track : ''}`;
+
+                                converted[venueName][courseName] = {
+                                    course: courseName,
+                                    overview: layer1?.axis || '',
+                                    features: layer3?.rationale || [],
+                                    axis: layer1?.axis ? [layer1.axis] : [],
+                                    avoid: [
+                                        ...(layer1?.ng ? [layer1.ng] : []),
+                                        ...(layer2?.cautions || [])
+                                    ],
+                                    tips: [
+                                        ...(layer1?.exception ? [layer1.exception] : []),
+                                        ...(layer2?.stable || [])
+                                    ]
+                                };
+                            });
+
+                            setCourseData(converted);
+                        } else {
+                            // course-data.json のような既存の構造の場合はそのまま使用
+                            setCourseData(json);
+                        }
+
                         showToast('コースデータを読み込みました', 'success');
                     } catch (err) {
                         showToast('JSONの形式が正しくありません', 'error');
