@@ -475,7 +475,8 @@
         async function loadSchedule2026() {
             if (window.__schedule2026Cache) return window.__schedule2026Cache;
             try {
-                const res = await fetch('./jra_schedule_2026.json');
+                // キャッシュバスティング: タイムスタンプを追加して常に最新版を取得
+                const res = await fetch('./jra_schedule_2026.json?v=' + Date.now());
                 const data = await res.json();
                 window.__schedule2026Cache = data;
                 return data;
