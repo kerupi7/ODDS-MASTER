@@ -1,0 +1,492 @@
+{
+  "venue": "京都",
+  "updated": "2026-01-06",
+  "courses": [
+    {
+      "course": {
+        "name": "京都",
+        "surface": "芝",
+        "distance_m": 1200,
+        "track": "内回り"
+      },
+      "layer1": {
+        "axis": "先行＋距離短縮(1400m組)",
+        "ng": "8枠｜中1週以内",
+        "exception": "7枠×前走1〜3人気"
+      },
+      "layer2": {
+        "stable": [
+          "ロードカナロア産駒×3人気以内",
+          "坂井瑠星×先行"
+        ],
+        "cautions": [
+          "1枠単独軸は危険",
+          "大型馬(480kg↑)",
+          "追込脚質",
+          "距離延長組(1000m等)"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "7枠：勝11.8%/複32.2%",
+          "追込：勝約1%/連対3.5%",
+          "坂井瑠星：勝20%超/複40%超",
+          "直線328m(平坦)",
+          "3角：急な下り坂→前が止まりにくい",
+          "初角まで約320m＋スパイラルカーブ→外枠距離ロス大"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "芝",
+        "distance_m": 1400,
+        "track": "内回り"
+      },
+      "layer1": {
+        "axis": "3枠×先行",
+        "ng": "8枠×(牝馬or逃げ)",
+        "exception": "1〜2枠×ディープ産駒"
+      },
+      "layer2": {
+        "stable": [
+          "1枠×前走同距離(1400m)"
+        ],
+        "cautions": [
+          "牝馬460kg↑×上位人気",
+          "追込×人気薄"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "8枠：勝1.4–4.5%/単回3–26%",
+          "3枠：勝17.8%/複42.2%/単回200%超",
+          "逃げ：勝約8%",
+          "先行：勝13%/複36%",
+          "追込：勝0.6–0.9%/複約3%",
+          "直線328m(平坦)",
+          "3角：高低差3.1m"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "芝",
+        "distance_m": 1400,
+        "track": "外回り"
+      },
+      "layer1": {
+        "axis": "500kg↑×5〜8枠",
+        "ng": "前走4角9番手↓｜種牡馬20歳↑産駒",
+        "exception": "馬体重減×3〜8枠"
+      },
+      "layer2": {
+        "stable": [
+          "ディープ系・ハーツ系×差し"
+        ],
+        "cautions": [
+          "1人気×1〜2枠",
+          "距離延長(1200m↓から)"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "500kg↑×5〜8枠：回収率130%超",
+          "1枠：勝約5–6%",
+          "種牡馬20歳↑産駒：回収率70%未満",
+          "直線約400m",
+          "3角：急なアップダウン(淀の坂)"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "芝",
+        "distance_m": 1600,
+        "track": "外回り"
+      },
+      "layer1": {
+        "axis": "川田or坂井瑠星×先行〜好位",
+        "ng": "15週↑休明×追込",
+        "exception": "イスラボニータ産駒｜距離短縮"
+      },
+      "layer2": {
+        "stable": [
+          "8枠×上がり上位の差し馬"
+        ],
+        "cautions": [
+          "3枠",
+          "エピファネイア・キズナ産駒×人気",
+          "距離延長(1400m↓)×逃げ先行"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "川田：勝32.3%/複61.3%",
+          "坂井瑠星：勝20.5%/複36.4%",
+          "イスラボニータ産駒：勝60%超/単回300%超",
+          "距離短縮×1〜6枠：回収率110%超",
+          "3枠：勝1.0–3.1%",
+          "8枠：複約30%(全枠最高)",
+          "初角まで約700m"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "芝",
+        "distance_m": 1600,
+        "track": "内回り"
+      },
+      "layer1": {
+        "axis": "川田or西村淳也×先行",
+        "ng": "1〜2枠×追込",
+        "exception": "5〜7枠×6〜9人気×牡馬"
+      },
+      "layer2": {
+        "stable": [
+          "キズナ・エピファネイア産駒×2〜3歳戦"
+        ],
+        "cautions": [
+          "1人気×牝馬",
+          "母父ディープ×7〜8枠"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "1〜2枠：勝4–5%/回収50–60%",
+          "追込：勝1%未満/複約6%",
+          "川田：勝43%/複78%",
+          "西村淳也：複40%超/単回100%超",
+          "5〜6枠：単回100%超",
+          "6〜9人気：回収113–165%",
+          "1人気：勝26–28%",
+          "牝馬1人気：勝24.1%/牡馬32.4%",
+          "キズナ：複39%/エピファネイア：複35%",
+          "キズナ2歳戦：複50%",
+          "母父ディープ×7〜8枠：(0-1-0-19)",
+          "直線328m(平坦)"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "芝",
+        "distance_m": 1800,
+        "track": "外回り"
+      },
+      "layer1": {
+        "axis": "川田×2人気以内×先行",
+        "ng": "1枠×(人気薄or追込)",
+        "exception": "前走1600m延長×3〜6枠"
+      },
+      "layer2": {
+        "stable": [
+          "ディープ系・エピファネイア産駒×差し"
+        ],
+        "cautions": [
+          "単騎逃げ×昇級戦",
+          "8人気↓×変わり身要素なし"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "川田：勝37–44%/連対50%超",
+          "川田×先行：単回118%",
+          "初角まで約900m",
+          "3角：淀の坂(上り下り)",
+          "直線：平坦"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "芝",
+        "distance_m": 2000,
+        "track": "内回り"
+      },
+      "layer1": {
+        "axis": "川田×先行×1〜4人気",
+        "ng": "追込×4角後方",
+        "exception": "馬体−4kg↑×1〜4枠｜2200m↑短縮×同格以上"
+      },
+      "layer2": {
+        "stable": [
+          "ハービンジャー・ルーラーシップ産駒",
+          "武豊×差し"
+        ],
+        "cautions": [
+          "距離延長(1800m↓)×8枠",
+          "1勝クラス↑×460kg未満",
+          "10人気↓"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "川田：勝30%超/複70%超",
+          "馬体減×内枠：単回100%超",
+          "武豊×差し×3人気以内：複90%近い",
+          "直線約328m",
+          "3角：高低差3.1m"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "芝",
+        "distance_m": 2200,
+        "track": "外回り"
+      },
+      "layer1": {
+        "axis": "1人気×(1枠or8枠)",
+        "ng": "混合戦牝馬×過剰人気",
+        "exception": "前走出遅れ×(10週↑or距離短縮)"
+      },
+      "layer2": {
+        "stable": [
+          "差し×キズナ・ハーツクライ系"
+        ],
+        "cautions": [
+          "前走1人気×コース適性未証明",
+          "4枠×逃げ先行"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "牝馬(混合戦)：勝5.0%/牡馬9.4%",
+          "1人気：勝40%超/複60–70%超",
+          "前走出遅れ：回収率100%超",
+          "初角まで約400m",
+          "3角：淀の坂(上り下り)",
+          "直線：平坦"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "芝",
+        "distance_m": 2400,
+        "track": "外回り"
+      },
+      "layer1": {
+        "axis": "1〜3人気×先行",
+        "ng": "追込×2桁人気",
+        "exception": "2600m↑短縮×1〜4枠"
+      },
+      "layer2": {
+        "stable": [
+          "偶数馬番×(浜中/川田/藤岡佑/和田竜)"
+        ],
+        "cautions": [
+          "8枠×4人気↓",
+          "420kg未満×道悪"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "追込：勝1.3%/複1.9%",
+          "10人気↓：勝0.0–0.8%",
+          "1人気：複75–80%",
+          "距離短縮：単回125%",
+          "偶数馬番：複34.5%/奇数20.3%",
+          "Sペース率71%",
+          "初角まで約600m"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "ダート",
+        "distance_m": 1200
+      },
+      "layer1": {
+        "axis": "6〜8枠×逃げ先行",
+        "ng": "追込(4角後方)",
+        "exception": "前走6人気↓→今回1〜2人気"
+      },
+      "layer2": {
+        "stable": [
+          "520kg↑×1勝クラス↑"
+        ],
+        "cautions": [
+          "2枠・5枠×ハナ取れない馬",
+          "10人気↓×強調材料なし"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "追込：勝1.4–1.6%/複5%台",
+          "逃げ：複50%超",
+          "前走6人気↓→今回1〜2人気：単回135%",
+          "5枠：単回40–50%台",
+          "520kg↑×1勝クラス↑：複35%前後",
+          "10人気↓：勝0.7%/連対0.8–1.9%",
+          "直線：平坦"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "ダート",
+        "distance_m": 1400
+      },
+      "layer1": {
+        "axis": "坂井瑠星×逃げ先行",
+        "ng": "ホッコータルマエ産駒",
+        "exception": "1〜2枠×良馬場"
+      },
+      "layer2": {
+        "stable": [
+          "キンカメ系(ロードカナロア除)×道悪"
+        ],
+        "cautions": [
+          "1人気×新馬戦",
+          "追込×多頭数"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "ホッコータルマエ産駒：0-0-0-36",
+          "坂井瑠星：勝25.3%/連対38.4%/複47.5%",
+          "坂井瑠星：単回133–146%",
+          "1枠(良馬場)：複30%近い",
+          "新馬戦逃げ：勝30.0%",
+          "母父キンカメ：良複15%/道悪複37%",
+          "追込：勝1.0%",
+          "芝スタート",
+          "直線：平坦"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "ダート",
+        "distance_m": 1800
+      },
+      "layer1": {
+        "axis": "シニスターミニスター×3歳↓×先行",
+        "ng": "440kg未満×1〜4枠",
+        "exception": "キズナ・ミッキーアイル×距離短縮"
+      },
+      "layer2": {
+        "stable": [
+          "1人気牝馬",
+          "Cデムーロ・川田"
+        ],
+        "cautions": [
+          "1人気8枠時の1〜4枠馬",
+          "5歳↑シニスターミニスター産駒"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "シニスターミニスター：勝16.5%/複37.8%",
+          "逃げ：複約45%",
+          "キズナ・ミッキーアイル×距離短縮：連対34.1%/複48.8%",
+          "1人気牝馬：勝41.7%/複70%",
+          "Cデムーロ：複61.4%",
+          "川田：複45.6%",
+          "初角まで約286m",
+          "3角：淀の坂"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    },
+    {
+      "course": {
+        "name": "京都",
+        "surface": "ダート",
+        "distance_m": 1900
+      },
+      "layer1": {
+        "axis": "先行×(1枠or3〜6枠)",
+        "ng": "6歳↑×前走敗退｜前走4角大外｜追込",
+        "exception": "前走芝×1〜4枠｜3歳×古馬混合｜ドレフォン×下級条件"
+      },
+      "layer2": {
+        "stable": [
+          "ホッコータルマエ産駒×中穴",
+          "3勝クラス↑×差し"
+        ],
+        "cautions": [
+          "8枠×人気馬",
+          "距離短縮(2100m↑から)",
+          "460kg未満",
+          "道悪×1枠"
+        ]
+      },
+      "layer3": {
+        "rationale": [
+          "追込：勝1.2–1.3%",
+          "先行：勝17–19%",
+          "前走芝×内枠：単回100%超",
+          "3歳×古馬混合：回収率100%超",
+          "3角：長い上り坂",
+          "直線：平坦"
+        ]
+      },
+      "constraints_check": {
+        "no_new_conditions_added": true,
+        "no_betting_tips_or_picks": true
+      }
+    }
+  ]
+}
