@@ -1498,7 +1498,7 @@
             
             // 外部ファイル読み込み
             useEffect(() => {
-                fetch('course-data.json')
+                fetch('odds_master_kyoto_all_courses.json')
                     .then(res => {
                         if (!res.ok) throw new Error("File not found");
                         return res.json();
