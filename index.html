@@ -1498,63 +1498,66 @@
             
             // 外部ファイル読み込み
             useEffect(() => {
-                // まずcourse-data.jsonを試す
+                var allCourseData = {};
+
+                // course-data.jsonを読み込む
                 fetch('course-data.json')
-                    .then(res => {
+                    .then(function(res) {
                         if (!res.ok) throw new Error("course-data.json not found");
                         return res.json();
                     })
-                    .then(data => {
-                        console.log('course-data.json読み込み成功');
-                        setCourseData(data);
+                    .then(function(data) {
+                        console.log('course-data.json読み込み成功', Object.keys(data));
+                        allCourseData = data;
+
+                        // 次にodds_master_kyoto_all_courses.jsonを読み込む
+                        return fetch('odds_master_kyoto_all_courses.json');
                     })
-                    .catch(err => {
-                        console.log('course-data.json読み込み失敗、odds_master_kyoto_all_courses.jsonを試します', err);
-                        // course-data.jsonが失敗したらodds_master_kyoto_all_courses.jsonを試す
-                        fetch('odds_master_kyoto_all_courses.json')
-                            .then(res => {
-                                if (!res.ok) throw new Error("File not found");
-                                return res.json();
-                            })
-                            .then(data => {
-                                console.log('odds_master_kyoto_all_courses.json読み込み成功', data);
-                                // odds_master_kyoto_all_courses.json の構造を既存の構造に変換
-                                if (data.courses && Array.isArray(data.courses)) {
-                                    const converted = {};
-                                    const venueName = data.venue || '京都';
-                                    converted[venueName] = {};
+                    .then(function(res) {
+                        if (!res.ok) throw new Error("odds_master_kyoto_all_courses.json not found");
+                        return res.json();
+                    })
+                    .then(function(data) {
+                        console.log('odds_master_kyoto_all_courses.json読み込み成功');
 
-                                    data.courses.forEach(function(courseItem) {
-                                        const course = courseItem.course;
-                                        const layer1 = courseItem.layer1;
-                                        const layer2 = courseItem.layer2;
-                                        const layer3 = courseItem.layer3;
-                                        const trackPart = course.track ? course.track : '';
-                                        const courseName = course.surface + course.distance_m + 'm' + trackPart;
+                        // odds_master_kyoto_all_courses.json の構造を既存の構造に変換
+                        if (data.courses && Array.isArray(data.courses)) {
+                            var venueName = data.venue || '京都';
+                            allCourseData[venueName] = {};
 
-                                        const ngArray = layer1 && layer1.ng ? [layer1.ng] : [];
-                                        const cautionsArray = layer2 && layer2.cautions ? layer2.cautions : [];
-                                        const exceptionArray = layer1 && layer1.exception ? [layer1.exception] : [];
-                                        const stableArray = layer2 && layer2.stable ? layer2.stable : [];
+                            data.courses.forEach(function(courseItem) {
+                                var course = courseItem.course;
+                                var layer1 = courseItem.layer1;
+                                var layer2 = courseItem.layer2;
+                                var layer3 = courseItem.layer3;
+                                var trackPart = course.track ? course.track : '';
+                                var courseName = course.surface + course.distance_m + 'm' + trackPart;
 
-                                        converted[venueName][courseName] = {
-                                            course: courseName,
-                                            overview: (layer1 && layer1.axis) ? layer1.axis : '',
-                                            features: (layer3 && layer3.rationale) ? layer3.rationale : [],
-                                            axis: (layer1 && layer1.axis) ? [layer1.axis] : [],
-                                            avoid: ngArray.concat(cautionsArray),
-                                            tips: exceptionArray.concat(stableArray)
-                                        };
-                                    });
+                                var ngArray = layer1 && layer1.ng ? [layer1.ng] : [];
+                                var cautionsArray = layer2 && layer2.cautions ? layer2.cautions : [];
+                                var exceptionArray = layer1 && layer1.exception ? [layer1.exception] : [];
+                                var stableArray = layer2 && layer2.stable ? layer2.stable : [];
 
-                                    console.log('変換完了', converted);
-                                    setCourseData(converted);
-                                } else {
-                                    // course-data.json のような既存の構造の場合はそのまま使用
-                                    setCourseData(data);
-                                }
-                            })
-                            .catch(err => console.log('JSON読み込み失敗（手動アップロードしてください）', err));
+                                allCourseData[venueName][courseName] = {
+                                    course: courseName,
+                                    overview: (layer1 && layer1.axis) ? layer1.axis : '',
+                                    features: (layer3 && layer3.rationale) ? layer3.rationale : [],
+                                    axis: (layer1 && layer1.axis) ? [layer1.axis] : [],
+                                    avoid: ngArray.concat(cautionsArray),
+                                    tips: exceptionArray.concat(stableArray)
+                                };
+                            });
+
+                            console.log('京都コースデータ変換完了、全競馬場:', Object.keys(allCourseData));
+                            setCourseData(allCourseData);
+                        }
+                    })
+                    .catch(function(err) {
+                        console.log('京都データ読み込み失敗、既存データのみ使用', err);
+                        // 京都データがなくても既存データは使う
+                        if (Object.keys(allCourseData).length > 0) {
+                            setCourseData(allCourseData);
+                        }
                     });
             }, []);
 
