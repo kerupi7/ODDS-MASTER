@@ -3077,7 +3077,11 @@
                                                     )}
                                                     {weekendDates.map((wd) => {
                                                         const isActive = raceMeta.date === wd.key;
-                                                        const label = `${wd.key.slice(5).replace('-', '/')}（${wd.label}）`;
+                                                        // 日付からゼロパディングを削除 (例: "2026-01-10" → "1/10")
+                                                        const dateParts = wd.key.split('-');
+                                                        const month = parseInt(dateParts[1]);
+                                                        const day = parseInt(dateParts[2]);
+                                                        const label = `${month}/${day}（${wd.label}）`;
 
                                                         return (
                                                             <button
