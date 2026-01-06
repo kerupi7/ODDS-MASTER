@@ -1498,45 +1498,64 @@
             
             // 外部ファイル読み込み
             useEffect(() => {
-                fetch('odds_master_kyoto_all_courses.json')
+                // まずcourse-data.jsonを試す
+                fetch('course-data.json')
                     .then(res => {
-                        if (!res.ok) throw new Error("File not found");
+                        if (!res.ok) throw new Error("course-data.json not found");
                         return res.json();
                     })
                     .then(data => {
-                        // odds_master_kyoto_all_courses.json の構造を既存の構造に変換
-                        if (data.courses && Array.isArray(data.courses)) {
-                            const converted = {};
-                            const venueName = data.venue || '京都';
-                            converted[venueName] = {};
-
-                            data.courses.forEach(courseItem => {
-                                const { course, layer1, layer2, layer3 } = courseItem;
-                                const courseName = `${course.surface}${course.distance_m}m${course.track ? course.track : ''}`;
-
-                                converted[venueName][courseName] = {
-                                    course: courseName,
-                                    overview: layer1?.axis || '',
-                                    features: layer3?.rationale || [],
-                                    axis: layer1?.axis ? [layer1.axis] : [],
-                                    avoid: [
-                                        ...(layer1?.ng ? [layer1.ng] : []),
-                                        ...(layer2?.cautions || [])
-                                    ],
-                                    tips: [
-                                        ...(layer1?.exception ? [layer1.exception] : []),
-                                        ...(layer2?.stable || [])
-                                    ]
-                                };
-                            });
-
-                            setCourseData(converted);
-                        } else {
-                            // course-data.json のような既存の構造の場合はそのまま使用
-                            setCourseData(data);
-                        }
+                        console.log('course-data.json読み込み成功');
+                        setCourseData(data);
                     })
-                    .catch(err => console.log('JSON読み込み失敗（手動アップロードしてください）', err));
+                    .catch(err => {
+                        console.log('course-data.json読み込み失敗、odds_master_kyoto_all_courses.jsonを試します', err);
+                        // course-data.jsonが失敗したらodds_master_kyoto_all_courses.jsonを試す
+                        fetch('odds_master_kyoto_all_courses.json')
+                            .then(res => {
+                                if (!res.ok) throw new Error("File not found");
+                                return res.json();
+                            })
+                            .then(data => {
+                                console.log('odds_master_kyoto_all_courses.json読み込み成功', data);
+                                // odds_master_kyoto_all_courses.json の構造を既存の構造に変換
+                                if (data.courses && Array.isArray(data.courses)) {
+                                    const converted = {};
+                                    const venueName = data.venue || '京都';
+                                    converted[venueName] = {};
+
+                                    data.courses.forEach(function(courseItem) {
+                                        const course = courseItem.course;
+                                        const layer1 = courseItem.layer1;
+                                        const layer2 = courseItem.layer2;
+                                        const layer3 = courseItem.layer3;
+                                        const trackPart = course.track ? course.track : '';
+                                        const courseName = course.surface + course.distance_m + 'm' + trackPart;
+
+                                        const ngArray = layer1 && layer1.ng ? [layer1.ng] : [];
+                                        const cautionsArray = layer2 && layer2.cautions ? layer2.cautions : [];
+                                        const exceptionArray = layer1 && layer1.exception ? [layer1.exception] : [];
+                                        const stableArray = layer2 && layer2.stable ? layer2.stable : [];
+
+                                        converted[venueName][courseName] = {
+                                            course: courseName,
+                                            overview: (layer1 && layer1.axis) ? layer1.axis : '',
+                                            features: (layer3 && layer3.rationale) ? layer3.rationale : [],
+                                            axis: (layer1 && layer1.axis) ? [layer1.axis] : [],
+                                            avoid: ngArray.concat(cautionsArray),
+                                            tips: exceptionArray.concat(stableArray)
+                                        };
+                                    });
+
+                                    console.log('変換完了', converted);
+                                    setCourseData(converted);
+                                } else {
+                                    // course-data.json のような既存の構造の場合はそのまま使用
+                                    setCourseData(data);
+                                }
+                            })
+                            .catch(err => console.log('JSON読み込み失敗（手動アップロードしてください）', err));
+                    });
             }, []);
 
             useEffect(() => {
@@ -1603,23 +1622,26 @@
                             const venueName = json.venue || '京都';
                             converted[venueName] = {};
 
-                            json.courses.forEach(courseItem => {
-                                const { course, layer1, layer2, layer3 } = courseItem;
-                                const courseName = `${course.surface}${course.distance_m}m${course.track ? course.track : ''}`;
+                            json.courses.forEach(function(courseItem) {
+                                const course = courseItem.course;
+                                const layer1 = courseItem.layer1;
+                                const layer2 = courseItem.layer2;
+                                const layer3 = courseItem.layer3;
+                                const trackPart = course.track ? course.track : '';
+                                const courseName = course.surface + course.distance_m + 'm' + trackPart;
+
+                                const ngArray = layer1 && layer1.ng ? [layer1.ng] : [];
+                                const cautionsArray = layer2 && layer2.cautions ? layer2.cautions : [];
+                                const exceptionArray = layer1 && layer1.exception ? [layer1.exception] : [];
+                                const stableArray = layer2 && layer2.stable ? layer2.stable : [];
 
                                 converted[venueName][courseName] = {
                                     course: courseName,
-                                    overview: layer1?.axis || '',
-                                    features: layer3?.rationale || [],
-                                    axis: layer1?.axis ? [layer1.axis] : [],
-                                    avoid: [
-                                        ...(layer1?.ng ? [layer1.ng] : []),
-                                        ...(layer2?.cautions || [])
-                                    ],
-                                    tips: [
-                                        ...(layer1?.exception ? [layer1.exception] : []),
-                                        ...(layer2?.stable || [])
-                                    ]
+                                    overview: (layer1 && layer1.axis) ? layer1.axis : '',
+                                    features: (layer3 && layer3.rationale) ? layer3.rationale : [],
+                                    axis: (layer1 && layer1.axis) ? [layer1.axis] : [],
+                                    avoid: ngArray.concat(cautionsArray),
+                                    tips: exceptionArray.concat(stableArray)
                                 };
                             });
 
