@@ -414,7 +414,22 @@
 
         function getBaseSaturday(today = new Date()) {
             const day = today.getDay(); // 0:日,1:月,2:火,3:水,4:木,5:金,6:土
-            const diffToSaturday = (6 - day + 7) % 7;
+            let diffToSaturday;
+
+            if (day === 0) {
+                // 日曜日の場合、前日の土曜日
+                diffToSaturday = -1;
+            } else if (day === 1) {
+                // 月曜日の場合、2日前の土曜日
+                diffToSaturday = -2;
+            } else if (day === 6) {
+                // 土曜日の場合、当日
+                diffToSaturday = 0;
+            } else {
+                // 火〜金は次の土曜日
+                diffToSaturday = 6 - day;
+            }
+
             const base = new Date(today);
             base.setDate(today.getDate() + diffToSaturday);
             return base;
@@ -460,7 +475,8 @@
         async function loadSchedule2026() {
             if (window.__schedule2026Cache) return window.__schedule2026Cache;
             try {
-                const res = await fetch('./jra_schedule_2026.json');
+                // キャッシュバスティング: タイムスタンプを追加して常に最新版を取得
+                const res = await fetch('./jra_schedule_2026.json?v=' + Date.now());
                 const data = await res.json();
                 window.__schedule2026Cache = data;
                 return data;
