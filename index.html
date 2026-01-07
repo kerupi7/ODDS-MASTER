@@ -1108,20 +1108,22 @@
                                                 <Icons.TrendingUp size={14} /> 脚質傾向
                                             </h5>
                                             <div className="space-y-3 text-sm">
-                                                {Object.entries(data.style).map(function(entry) {
+                                                {Object.entries(data.style).filter(function(entry) {
+                                                    var val = entry[1];
+                                                    return val && typeof val === 'object';
+                                                }).map(function(entry) {
                                                 var key = entry[0];
                                                 var val = entry[1];
-                                                if (!val || typeof val !== 'object') return null;
 
-                                                const label = { escape: '逃げ', lead: '先行', chase: '差し', late: '追込' }[key];
-                                                const icon = { escape: '🏃', lead: '🐎', chase: '⚡', late: '🔥' }[key];
-                                                const returnVal = val.return ? parseFloat(val.return.replace('%', '')) : 0;
-                                                const winVal = val.win ? parseFloat(val.win.replace('%', '')) : 0;
-                                                const placeVal = val.place ? parseFloat(val.place.replace('%', '')) : 0;
+                                                var label = { escape: '逃げ', lead: '先行', chase: '差し', late: '追込' }[key];
+                                                var icon = { escape: '🏃', lead: '🐎', chase: '⚡', late: '🔥' }[key];
+                                                var returnVal = val.return ? parseFloat(val.return.replace('%', '')) : 0;
+                                                var winVal = val.win ? parseFloat(val.win.replace('%', '')) : 0;
+                                                var placeVal = val.place ? parseFloat(val.place.replace('%', '')) : 0;
 
                                                 // 回収率に基づく色分け（100%を基準）
-                                                let barColor = 'bg-gray-300';
-                                                let textColor = 'text-gray-600';
+                                                var barColor = 'bg-gray-300';
+                                                var textColor = 'text-gray-600';
                                                 if (returnVal >= 150) {
                                                     barColor = 'bg-gradient-to-r from-emerald-400 to-emerald-600';
                                                     textColor = 'text-emerald-700';
@@ -1139,20 +1141,20 @@
                                                 return (
                                                     <div key={key} className="border-b border-gray-100 pb-2 last:border-0">
                                                         <div className="flex justify-between items-center mb-1">
-                                                            <span className={`font-bold ${textColor} flex items-center gap-1`}>
+                                                            <span className={'font-bold ' + textColor + ' flex items-center gap-1'}>
                                                                 <span>{icon}</span>
                                                                 <span>{label}</span>
                                                             </span>
                                                             <div className="text-right text-xs">
-                                                                {val.return && <span className={`font-bold ${textColor}`}>回収率 {val.return}</span>}
+                                                                {val.return && <span className={'font-bold ' + textColor}>回収率 {val.return}</span>}
                                                                 {val.trend && <span className="ml-2 text-gray-500">({val.trend})</span>}
                                                             </div>
                                                         </div>
                                                         {returnVal > 0 && (
                                                             <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
                                                                 <div
-                                                                    className={`h-full ${barColor} transition-all duration-500 rounded-full`}
-                                                                    style={{ width: `${Math.min(returnVal / 2, 100)}%` }}
+                                                                    className={'h-full ' + barColor + ' transition-all duration-500 rounded-full'}
+                                                                    style={{ width: Math.min(returnVal / 2, 100) + '%' }}
                                                                 ></div>
                                                             </div>
                                                         )}
@@ -1178,7 +1180,7 @@
                                         <div className="grid grid-cols-4 gap-2 mb-3">
                                             {[1, 2, 3, 4, 5, 6, 7, 8].map(function(frame) {
                                                 // 枠番の色（実際の競馬の枠色）
-                                                const frameColors = {
+                                                var frameColors = {
                                                     1: 'bg-white border-2 border-gray-800 text-gray-800',
                                                     2: 'bg-black text-white',
                                                     3: 'bg-red-600 text-white',
@@ -1190,22 +1192,23 @@
                                                 };
 
                                                 // 有利/不利の判定（データから推測）
-                                                let statusIcon = '';
-                                                let statusColor = '';
-                                                if (data.frame.good && (data.frame.good.includes(`${frame}枠`) || (frame === 8 && data.frame.good.includes('外枠')) || (frame >= 6 && data.frame.good.includes('外枠')))) {
+                                                var statusIcon = '';
+                                                var statusColor = '';
+                                                var frameText = frame + '枠';
+                                                if (data.frame.good && (data.frame.good.includes(frameText) || (frame === 8 && data.frame.good.includes('外枠')) || (frame >= 6 && data.frame.good.includes('外枠')))) {
                                                     statusIcon = '◎';
                                                     statusColor = 'ring-2 ring-emerald-500';
-                                                } else if (data.frame.worst && (data.frame.worst.includes(`${frame}枠`) || (frame <= 2 && data.frame.worst.includes('内枠')))) {
+                                                } else if (data.frame.worst && (data.frame.worst.includes(frameText) || (frame <= 2 && data.frame.worst.includes('内枠')))) {
                                                     statusIcon = '✕';
                                                     statusColor = 'ring-2 ring-red-500';
-                                                } else if (data.frame.bad && data.frame.bad.includes(`${frame}枠`)) {
+                                                } else if (data.frame.bad && data.frame.bad.includes(frameText)) {
                                                     statusIcon = '▲';
                                                     statusColor = 'ring-2 ring-yellow-500';
                                                 }
 
                                                 return (
                                                     <div key={frame} className="relative">
-                                                        <div className={`${frameColors[frame]} ${statusColor} rounded-lg p-2 text-center font-bold text-sm shadow-sm`}>
+                                                        <div className={frameColors[frame] + ' ' + statusColor + ' rounded-lg p-2 text-center font-bold text-sm shadow-sm'}>
                                                             {frame}枠
                                                         </div>
                                                         {statusIcon && (
