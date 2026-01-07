@@ -1080,6 +1080,29 @@
         // Course Accordion Component
         const CourseAccordion = ({ courseName, data }) => {
             const [isOpen, setIsOpen] = React.useState(false);
+            const safeData = (data && typeof data === 'object') ? data : {};
+            const normalizeList = (value) => {
+                if (!Array.isArray(value)) return [];
+                return value.map((item) => {
+                    if (typeof item === 'string') return item;
+                    if (typeof item === 'number') return String(item);
+                    if (item && typeof item === 'object') {
+                        if (typeof item.text === 'string') return item.text;
+                        if (typeof item.label === 'string') return item.label;
+                        try {
+                            return JSON.stringify(item);
+                        } catch (e) {
+                            return null;
+                        }
+                    }
+                    return null;
+                }).filter((item) => item);
+            };
+            const features = normalizeList(safeData.features);
+            const axis = normalizeList(safeData.axis);
+            const hole = normalizeList(safeData.hole);
+            const tips = normalizeList(safeData.tips);
+            const avoid = normalizeList(safeData.avoid);
 
             return (
                 <div className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
@@ -1093,7 +1116,7 @@
                             </div>
                             <div>
                                 <h4 className="text-sm font-bold text-gray-800">{courseName}</h4>
-                                {data.overview && <p className="text-xs text-gray-500 truncate max-w-[200px]">{data.overview}</p>}
+                                {safeData.overview && <p className="text-xs text-gray-500 truncate max-w-[200px]">{safeData.overview}</p>}
                             </div>
                         </div>
                         <div>
@@ -1105,7 +1128,7 @@
                         <div className="p-4 pt-0 border-t border-gray-100 bg-gray-50/50">
                             <div className="space-y-4 mt-3">
                                 
-                                {data.features && Array.isArray(data.features) && data.features.length > 0 && (
+                                {features.length > 0 && (
                                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border-2 border-gray-200 shadow-sm">
                                         <h5 className="text-sm font-bold text-gray-700 mb-3 uppercase flex items-center gap-2">
                                             <div className="p-1 bg-gray-600 rounded-full">
@@ -1114,7 +1137,7 @@
                                             コース特徴
                                         </h5>
                                         <ul className="text-sm text-gray-700 space-y-2">
-                                            {data.features.map((f, i) => (
+                                            {features.map((f, i) => (
                                                 <li key={i} className="flex items-start gap-2 bg-white p-2 rounded-lg border border-gray-200">
                                                     <span className="text-gray-500 font-bold mt-0.5">▸</span>
                                                     <span className="flex-1">{f}</span>
@@ -1125,13 +1148,13 @@
                                 )}
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {data.style && typeof data.style === 'object' && Object.keys(data.style).length > 0 && (
+                                    {safeData.style && typeof safeData.style === 'object' && Object.keys(safeData.style).length > 0 && (
                                         <div className="bg-white p-3 rounded border border-gray-200">
                                             <h5 className="text-xs font-bold text-gray-500 mb-3 uppercase flex items-center gap-1">
                                                 <Icons.TrendingUp size={14} /> 脚質傾向
                                             </h5>
                                             <div className="space-y-3 text-sm">
-                                                {Object.entries(data.style).filter(function(entry) {
+                                                {Object.entries(safeData.style).filter(function(entry) {
                                                     var val = entry[1];
                                                     return val && typeof val === 'object';
                                                 }).map(function(entry) {
@@ -1193,7 +1216,7 @@
                                     </div>
                                 )}
 
-                                    {data.frame && typeof data.frame === 'object' && (
+                                    {safeData.frame && typeof safeData.frame === 'object' && (
                                         <div className="bg-white p-3 rounded border border-gray-200">
                                         <h5 className="text-xs font-bold text-gray-500 mb-3 uppercase flex items-center gap-1">
                                             <Icons.Layers size={14} /> 枠順傾向
@@ -1218,13 +1241,16 @@
                                                 var statusIcon = '';
                                                 var statusColor = '';
                                                 var frameText = frame + '枠';
-                                                if (data.frame.good && (data.frame.good.includes(frameText) || (frame === 8 && data.frame.good.includes('外枠')) || (frame >= 6 && data.frame.good.includes('外枠')))) {
+                                                var hasInclude = function(value, text) {
+                                                    return value && typeof value.includes === 'function' && value.includes(text);
+                                                };
+                                                if (hasInclude(safeData.frame.good, frameText) || (frame === 8 && hasInclude(safeData.frame.good, '外枠')) || (frame >= 6 && hasInclude(safeData.frame.good, '外枠'))) {
                                                     statusIcon = '◎';
                                                     statusColor = 'ring-2 ring-emerald-500';
-                                                } else if (data.frame.worst && (data.frame.worst.includes(frameText) || (frame <= 2 && data.frame.worst.includes('内枠')))) {
+                                                } else if (hasInclude(safeData.frame.worst, frameText) || (frame <= 2 && hasInclude(safeData.frame.worst, '内枠'))) {
                                                     statusIcon = '✕';
                                                     statusColor = 'ring-2 ring-red-500';
-                                                } else if (data.frame.bad && data.frame.bad.includes(frameText)) {
+                                                } else if (hasInclude(safeData.frame.bad, frameText)) {
                                                     statusIcon = '▲';
                                                     statusColor = 'ring-2 ring-yellow-500';
                                                 }
@@ -1250,22 +1276,22 @@
 
                                         {/* 詳細説明 */}
                                         <div className="space-y-2 text-xs border-t border-gray-100 pt-2">
-                                            {data.frame.good && (
+                                            {safeData.frame.good && (
                                                 <div className="flex items-start gap-2 text-emerald-700 bg-emerald-50 p-2 rounded">
                                                     <span className="font-bold text-base">◎</span>
-                                                    <span className="flex-1">{data.frame.good}</span>
+                                                    <span className="flex-1">{safeData.frame.good}</span>
                                                 </div>
                                             )}
-                                            {data.frame.bad && (
+                                            {safeData.frame.bad && (
                                                 <div className="flex items-start gap-2 text-orange-600 bg-orange-50 p-2 rounded">
                                                     <span className="font-bold text-base">▲</span>
-                                                    <span className="flex-1">{data.frame.bad}</span>
+                                                    <span className="flex-1">{safeData.frame.bad}</span>
                                                 </div>
                                             )}
-                                            {data.frame.worst && (
+                                            {safeData.frame.worst && (
                                                 <div className="flex items-start gap-2 text-red-600 bg-red-50 p-2 rounded">
                                                     <span className="font-bold text-base">✕</span>
-                                                    <span className="flex-1">{data.frame.worst}</span>
+                                                    <span className="flex-1">{safeData.frame.worst}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -1273,23 +1299,23 @@
                                 )}
                                 </div>
 
-                                {data.blood && typeof data.blood === 'object' && (
+                                {safeData.blood && typeof safeData.blood === 'object' && (
                                     <div className="bg-white p-3 rounded border border-gray-200">
                                     <h5 className="text-xs font-bold text-gray-500 mb-3 uppercase flex items-center gap-1">
                                         <Icons.Award size={14} /> 血統傾向
                                     </h5>
 
                                     {/* 好走血統 */}
-                                    {data.blood.good && Array.isArray(data.blood.good) && data.blood.good.length > 0 && (
+                                    {safeData.blood.good && Array.isArray(safeData.blood.good) && safeData.blood.good.length > 0 && (
                                         <div className="mb-3">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full flex items-center gap-1">
                                                     <span>🏆</span> 好走血統
                                                 </span>
-                                                <span className="text-xs text-gray-400">({data.blood.good.length})</span>
+                                                <span className="text-xs text-gray-400">({safeData.blood.good.length})</span>
                                             </div>
                                             <div className="flex flex-wrap gap-2">
-                                                {data.blood.good.map((b, i) => (
+                                                {safeData.blood.good.map((b, i) => (
                                                     <span key={i} className="text-xs bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-lg text-emerald-800 font-semibold shadow-sm hover:shadow-md transition-shadow">
                                                         {b}
                                                     </span>
@@ -1299,16 +1325,16 @@
                                     )}
 
                                     {/* 不振血統 */}
-                                    {data.blood.bad && Array.isArray(data.blood.bad) && data.blood.bad.length > 0 && (
-                                        <div className={`${data.blood.good && Array.isArray(data.blood.good) && data.blood.good.length > 0 ? 'border-t border-gray-100 pt-3' : ''}`}>
+                                    {safeData.blood.bad && Array.isArray(safeData.blood.bad) && safeData.blood.bad.length > 0 && (
+                                        <div className={`${safeData.blood.good && Array.isArray(safeData.blood.good) && safeData.blood.good.length > 0 ? 'border-t border-gray-100 pt-3' : ''}`}>
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full flex items-center gap-1">
                                                     <span>⚠️</span> 不振血統
                                                 </span>
-                                                <span className="text-xs text-gray-400">({data.blood.bad.length})</span>
+                                                <span className="text-xs text-gray-400">({safeData.blood.bad.length})</span>
                                             </div>
                                             <div className="flex flex-wrap gap-2">
-                                                {data.blood.bad.map((b, i) => (
+                                                {safeData.blood.bad.map((b, i) => (
                                                     <span key={i} className="text-xs bg-gradient-to-r from-red-50 to-red-100 border border-red-300 px-3 py-1.5 rounded-lg text-red-800 font-semibold shadow-sm hover:shadow-md transition-shadow">
                                                         {b}
                                                     </span>
@@ -1319,9 +1345,9 @@
                                 </div>
                             )}
 
-                                {((data.axis && Array.isArray(data.axis) && data.axis.length > 0) || (data.hole && Array.isArray(data.hole) && data.hole.length > 0)) && (
+                                {((axis.length > 0) || (hole.length > 0)) && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {data.axis && Array.isArray(data.axis) && data.axis.length > 0 && (
+                                        {axis.length > 0 && (
                                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border-2 border-blue-200 shadow-sm">
                                                 <h5 className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2">
                                                     <div className="p-1 bg-blue-500 rounded-full">
@@ -1330,7 +1356,7 @@
                                                     軸のポイント
                                                 </h5>
                                                 <ul className="text-xs text-blue-900 space-y-1.5">
-                                                    {data.axis.map((t, i) => (
+                                                    {axis.map((t, i) => (
                                                         <li key={i} className="flex items-start gap-2">
                                                             <span className="text-blue-500 font-bold mt-0.5">✓</span>
                                                             <span className="flex-1">{t}</span>
@@ -1339,7 +1365,7 @@
                                                 </ul>
                                             </div>
                                         )}
-                                        {data.hole && Array.isArray(data.hole) && data.hole.length > 0 && (
+                                        {hole.length > 0 && (
                                             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg border-2 border-yellow-200 shadow-sm">
                                                 <h5 className="text-sm font-bold text-yellow-800 mb-2 flex items-center gap-2">
                                                     <div className="p-1 bg-yellow-500 rounded-full">
@@ -1348,7 +1374,7 @@
                                                     穴のポイント
                                                 </h5>
                                                 <ul className="text-xs text-yellow-900 space-y-1.5">
-                                                    {data.hole.map((t, i) => (
+                                                    {hole.map((t, i) => (
                                                         <li key={i} className="flex items-start gap-2">
                                                             <span className="text-yellow-600 font-bold mt-0.5">◆</span>
                                                             <span className="flex-1">{t}</span>
@@ -1360,7 +1386,7 @@
                                     </div>
                                 )}
 
-                                {data.tips && Array.isArray(data.tips) && data.tips.length > 0 && (
+                                {tips.length > 0 && (
                                     <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-lg border-2 border-emerald-200 shadow-sm">
                                         <h5 className="text-sm font-bold text-emerald-800 mb-2 flex items-center gap-2">
                                             <div className="p-1 bg-emerald-500 rounded-full">
@@ -1369,7 +1395,7 @@
                                             攻略のヒント
                                         </h5>
                                         <ul className="text-xs text-emerald-900 space-y-1.5">
-                                            {data.tips.map((t, i) => (
+                                            {tips.map((t, i) => (
                                                 <li key={i} className="flex items-start gap-2">
                                                     <span className="text-emerald-600 font-bold mt-0.5">💡</span>
                                                     <span className="flex-1">{t}</span>
@@ -1379,7 +1405,7 @@
                                     </div>
                                 )}
 
-                                {data.avoid && Array.isArray(data.avoid) && data.avoid.length > 0 && (
+                                {avoid.length > 0 && (
                                     <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border-2 border-red-200 shadow-sm">
                                         <h5 className="text-sm font-bold text-red-800 mb-2 flex items-center gap-2">
                                             <div className="p-1 bg-red-500 rounded-full">
@@ -1388,7 +1414,7 @@
                                             消しのポイント
                                         </h5>
                                         <ul className="text-xs text-red-900 space-y-1.5">
-                                            {data.avoid.map((t, i) => (
+                                            {avoid.map((t, i) => (
                                                 <li key={i} className="flex items-start gap-2">
                                                     <span className="text-red-600 font-bold mt-0.5">✕</span>
                                                     <span className="flex-1">{t}</span>
