@@ -1498,32 +1498,20 @@
             
             // 外部ファイル読み込み
             useEffect(() => {
-                var allCourseData = {};
-
-                // course-data.jsonを読み込む
-                fetch('course-data.json')
-                    .then(function(res) {
-                        if (!res.ok) throw new Error("course-data.json not found");
-                        return res.json();
-                    })
-                    .then(function(data) {
-                        console.log('course-data.json読み込み成功', Object.keys(data));
-                        allCourseData = data;
-
-                        // 次にodds_master_kyoto_all_courses.jsonを読み込む
-                        return fetch('odds_master_kyoto_all_courses.json');
-                    })
+                // odds_master_kyoto_all_courses.jsonを読み込む
+                fetch('odds_master_kyoto_all_courses.json')
                     .then(function(res) {
                         if (!res.ok) throw new Error("odds_master_kyoto_all_courses.json not found");
                         return res.json();
                     })
                     .then(function(data) {
-                        console.log('odds_master_kyoto_all_courses.json読み込み成功');
+                        console.log('odds_master_kyoto_all_courses.json読み込み成功', data);
 
                         // odds_master_kyoto_all_courses.json の構造を既存の構造に変換
                         if (data.courses && Array.isArray(data.courses)) {
+                            var converted = {};
                             var venueName = data.venue || '京都';
-                            allCourseData[venueName] = {};
+                            converted[venueName] = {};
 
                             data.courses.forEach(function(courseItem) {
                                 var course = courseItem.course;
@@ -1538,7 +1526,7 @@
                                 var exceptionArray = layer1 && layer1.exception ? [layer1.exception] : [];
                                 var stableArray = layer2 && layer2.stable ? layer2.stable : [];
 
-                                allCourseData[venueName][courseName] = {
+                                converted[venueName][courseName] = {
                                     course: courseName,
                                     overview: (layer1 && layer1.axis) ? layer1.axis : '',
                                     features: (layer3 && layer3.rationale) ? layer3.rationale : [],
@@ -1548,16 +1536,15 @@
                                 };
                             });
 
-                            console.log('京都コースデータ変換完了、全競馬場:', Object.keys(allCourseData));
-                            setCourseData(allCourseData);
+                            console.log('コースデータ変換完了:', Object.keys(converted));
+                            setCourseData(converted);
+                        } else {
+                            // 既存の構造の場合はそのまま使用
+                            setCourseData(data);
                         }
                     })
                     .catch(function(err) {
-                        console.log('京都データ読み込み失敗、既存データのみ使用', err);
-                        // 京都データがなくても既存データは使う
-                        if (Object.keys(allCourseData).length > 0) {
-                            setCourseData(allCourseData);
-                        }
+                        console.log('JSON読み込み失敗（手動アップロードしてください）', err);
                     });
             }, []);
 
