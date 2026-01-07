@@ -803,11 +803,6 @@
             const [isOpen, setIsOpen] = React.useState(false);
             const courseCount = Object.keys(courses).length;
 
-            // デバッグ：競馬場とコース一覧を確認
-            console.log('PlaceAccordion - 競馬場:', place);
-            console.log('PlaceAccordion - コース数:', courseCount);
-            console.log('PlaceAccordion - コース一覧:', Object.keys(courses));
-
             return (
                 <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
                     <button
@@ -1051,17 +1046,10 @@
         const CourseAccordion = ({ courseName, data }) => {
             const [isOpen, setIsOpen] = React.useState(false);
 
-            // デバッグ：コースデータを確認
-            console.log('CourseAccordion - コース名:', courseName);
-            console.log('CourseAccordion - データ:', data);
-
             return (
                 <div className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
                     <button
-                        onClick={() => {
-                            console.log('クリック - コース:', courseName, 'isOpen:', !isOpen);
-                            setIsOpen(!isOpen);
-                        }}
+                        onClick={() => setIsOpen(!isOpen)}
                         className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
                     >
                         <div className="flex items-center gap-3">
@@ -1082,7 +1070,7 @@
                         <div className="p-4 pt-0 border-t border-gray-100 bg-gray-50/50">
                             <div className="space-y-4 mt-3">
                                 
-                                {data.features && data.features.length > 0 && (
+                                {data.features && Array.isArray(data.features) && data.features.length > 0 && (
                                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border-2 border-gray-200 shadow-sm">
                                         <h5 className="text-sm font-bold text-gray-700 mb-3 uppercase flex items-center gap-2">
                                             <div className="p-1 bg-gray-600 rounded-full">
@@ -1524,8 +1512,6 @@
                         return res.json();
                     })
                     .then(function(data) {
-                        console.log('odds_master_kyoto_all_courses.json読み込み成功', data);
-
                         // odds_master_kyoto_all_courses.json の構造を既存の構造に変換
                         if (data.courses && Array.isArray(data.courses)) {
                             var converted = {};
@@ -1544,16 +1530,6 @@
                                 var courseStructure = courseItem.course_structure;
                                 var positiveFactors = courseItem.positive_factors;
                                 var negativeFactors = courseItem.negative_factors;
-
-                                // デバッグ：最初のコースの詳細を確認
-                                if (index === 0) {
-                                    console.log('最初のコースアイテム:', courseItem);
-                                    console.log('  course:', course);
-                                    console.log('  layer1:', layer1);
-                                    console.log('  courseStructure:', courseStructure);
-                                    console.log('  positiveFactors:', positiveFactors);
-                                    console.log('  negativeFactors:', negativeFactors);
-                                }
 
                                 var trackPart = course.track ? course.track : '';
                                 var courseName = course.surface + course.distance_m + 'm' + trackPart;
@@ -1619,14 +1595,7 @@
                                     avoid: avoidArray,
                                     tips: tipsArray
                                 };
-
-                                // デバッグ：最初のコースの変換結果を確認
-                                if (index === 0) {
-                                    console.log('変換結果:', converted[venueName][courseName]);
-                                }
                             });
-
-                            console.log('コースデータ変換完了:', Object.keys(converted));
                             setCourseData(converted);
                         } else {
                             // 既存の構造の場合はそのまま使用
