@@ -1525,11 +1525,21 @@
                             var venueName = data.venue || '京都';
                             converted[venueName] = {};
 
-                            data.courses.forEach(function(courseItem) {
+                            data.courses.forEach(function(courseItem, index) {
                                 var course = courseItem.course;
                                 var layer1 = courseItem.layer1;
                                 var layer2 = courseItem.layer2;
                                 var layer3 = courseItem.layer3;
+
+                                // デバッグ：最初のコースの詳細を確認
+                                if (index === 0) {
+                                    console.log('最初のコースアイテム:', courseItem);
+                                    console.log('  course:', course);
+                                    console.log('  layer1:', layer1);
+                                    console.log('  layer2:', layer2);
+                                    console.log('  layer3:', layer3);
+                                }
+
                                 var trackPart = course.track ? course.track : '';
                                 var courseName = course.surface + course.distance_m + 'm' + trackPart;
 
@@ -1537,6 +1547,12 @@
                                 var cautionsArray = layer2 && layer2.cautions ? layer2.cautions : [];
                                 var exceptionArray = layer1 && layer1.exception ? [layer1.exception] : [];
                                 var stableArray = layer2 && layer2.stable ? layer2.stable : [];
+
+                                if (index === 0) {
+                                    console.log('  ngArray:', ngArray);
+                                    console.log('  cautionsArray:', cautionsArray);
+                                    console.log('  axis:', layer1 && layer1.axis ? [layer1.axis] : []);
+                                }
 
                                 converted[venueName][courseName] = {
                                     course: courseName,
@@ -1546,6 +1562,11 @@
                                     avoid: ngArray.concat(cautionsArray),
                                     tips: exceptionArray.concat(stableArray)
                                 };
+
+                                // デバッグ：最初のコースの変換結果を確認
+                                if (index === 0) {
+                                    console.log('変換結果:', converted[venueName][courseName]);
+                                }
                             });
 
                             console.log('コースデータ変換完了:', Object.keys(converted));
