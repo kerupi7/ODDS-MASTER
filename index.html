@@ -1562,40 +1562,90 @@
 
                             data.courses.forEach(function(courseItem, index) {
                                 var course = courseItem.course;
+
+                                // 2つの異なる構造に対応
+                                // 構造1: layer1, layer2, layer3
+                                // 構造2: course_structure, positive_factors, negative_factors
                                 var layer1 = courseItem.layer1;
                                 var layer2 = courseItem.layer2;
                                 var layer3 = courseItem.layer3;
+                                var courseStructure = courseItem.course_structure;
+                                var positiveFactors = courseItem.positive_factors;
+                                var negativeFactors = courseItem.negative_factors;
 
                                 // デバッグ：最初のコースの詳細を確認
                                 if (index === 0) {
                                     console.log('最初のコースアイテム:', courseItem);
                                     console.log('  course:', course);
                                     console.log('  layer1:', layer1);
-                                    console.log('  layer2:', layer2);
-                                    console.log('  layer3:', layer3);
+                                    console.log('  courseStructure:', courseStructure);
+                                    console.log('  positiveFactors:', positiveFactors);
+                                    console.log('  negativeFactors:', negativeFactors);
                                 }
 
                                 var trackPart = course.track ? course.track : '';
                                 var courseName = course.surface + course.distance_m + 'm' + trackPart;
 
-                                var ngArray = layer1 && layer1.ng ? [layer1.ng] : [];
-                                var cautionsArray = layer2 && layer2.cautions ? layer2.cautions : [];
-                                var exceptionArray = layer1 && layer1.exception ? [layer1.exception] : [];
-                                var stableArray = layer2 && layer2.stable ? layer2.stable : [];
+                                // 構造1 (layer1/2/3) の処理
+                                var overviewText = '';
+                                var featuresArray = [];
+                                var axisArray = [];
+                                var avoidArray = [];
+                                var tipsArray = [];
 
-                                if (index === 0) {
-                                    console.log('  ngArray:', ngArray);
-                                    console.log('  cautionsArray:', cautionsArray);
-                                    console.log('  axis:', layer1 && layer1.axis ? [layer1.axis] : []);
+                                if (layer1 || layer2 || layer3) {
+                                    // layer構造
+                                    overviewText = (layer1 && layer1.axis) ? layer1.axis : '';
+                                    featuresArray = (layer3 && layer3.rationale) ? layer3.rationale : [];
+                                    axisArray = (layer1 && layer1.axis) ? [layer1.axis] : [];
+
+                                    var ngArray = layer1 && layer1.ng ? [layer1.ng] : [];
+                                    var cautionsArray = layer2 && layer2.cautions ? layer2.cautions : [];
+                                    var exceptionArray = layer1 && layer1.exception ? [layer1.exception] : [];
+                                    var stableArray = layer2 && layer2.stable ? layer2.stable : [];
+
+                                    avoidArray = ngArray.concat(cautionsArray);
+                                    tipsArray = exceptionArray.concat(stableArray);
+                                } else if (courseStructure || positiveFactors || negativeFactors) {
+                                    // course_structure/positive_factors/negative_factors構造
+                                    overviewText = (courseStructure && courseStructure.overview) ? courseStructure.overview : '';
+
+                                    // featuresはcourse_structureの全フィールドから生成
+                                    if (courseStructure) {
+                                        featuresArray = [];
+                                        if (courseStructure.overview) featuresArray.push(courseStructure.overview);
+                                        // 他のフィールドも追加可能
+                                    }
+
+                                    // positive_factorsからaxisとtipsを生成
+                                    if (positiveFactors) {
+                                        if (positiveFactors.single && Array.isArray(positiveFactors.single)) {
+                                            axisArray = positiveFactors.single;
+                                        }
+                                        if (positiveFactors.composite && Array.isArray(positiveFactors.composite)) {
+                                            tipsArray = positiveFactors.composite;
+                                        }
+                                    }
+
+                                    // negative_factorsからavoidを生成
+                                    if (negativeFactors) {
+                                        avoidArray = [];
+                                        if (negativeFactors.single && Array.isArray(negativeFactors.single)) {
+                                            avoidArray = avoidArray.concat(negativeFactors.single);
+                                        }
+                                        if (negativeFactors.composite && Array.isArray(negativeFactors.composite)) {
+                                            avoidArray = avoidArray.concat(negativeFactors.composite);
+                                        }
+                                    }
                                 }
 
                                 converted[venueName][courseName] = {
                                     course: courseName,
-                                    overview: (layer1 && layer1.axis) ? layer1.axis : '',
-                                    features: (layer3 && layer3.rationale) ? layer3.rationale : [],
-                                    axis: (layer1 && layer1.axis) ? [layer1.axis] : [],
-                                    avoid: ngArray.concat(cautionsArray),
-                                    tips: exceptionArray.concat(stableArray)
+                                    overview: overviewText,
+                                    features: featuresArray,
+                                    axis: axisArray,
+                                    avoid: avoidArray,
+                                    tips: tipsArray
                                 };
 
                                 // デバッグ：最初のコースの変換結果を確認
@@ -1676,30 +1726,77 @@
 
                         // odds_master_kyoto_all_courses.json の構造を既存の構造に変換
                         if (json.courses && Array.isArray(json.courses)) {
-                            const converted = {};
-                            const venueName = json.venue || '京都';
+                            var converted = {};
+                            var venueName = json.venue || '京都';
                             converted[venueName] = {};
 
                             json.courses.forEach(function(courseItem) {
-                                const course = courseItem.course;
-                                const layer1 = courseItem.layer1;
-                                const layer2 = courseItem.layer2;
-                                const layer3 = courseItem.layer3;
-                                const trackPart = course.track ? course.track : '';
-                                const courseName = course.surface + course.distance_m + 'm' + trackPart;
+                                var course = courseItem.course;
+                                var layer1 = courseItem.layer1;
+                                var layer2 = courseItem.layer2;
+                                var layer3 = courseItem.layer3;
+                                var courseStructure = courseItem.course_structure;
+                                var positiveFactors = courseItem.positive_factors;
+                                var negativeFactors = courseItem.negative_factors;
 
-                                const ngArray = layer1 && layer1.ng ? [layer1.ng] : [];
-                                const cautionsArray = layer2 && layer2.cautions ? layer2.cautions : [];
-                                const exceptionArray = layer1 && layer1.exception ? [layer1.exception] : [];
-                                const stableArray = layer2 && layer2.stable ? layer2.stable : [];
+                                var trackPart = course.track ? course.track : '';
+                                var courseName = course.surface + course.distance_m + 'm' + trackPart;
+
+                                var overviewText = '';
+                                var featuresArray = [];
+                                var axisArray = [];
+                                var avoidArray = [];
+                                var tipsArray = [];
+
+                                if (layer1 || layer2 || layer3) {
+                                    // layer構造
+                                    overviewText = (layer1 && layer1.axis) ? layer1.axis : '';
+                                    featuresArray = (layer3 && layer3.rationale) ? layer3.rationale : [];
+                                    axisArray = (layer1 && layer1.axis) ? [layer1.axis] : [];
+
+                                    var ngArray = layer1 && layer1.ng ? [layer1.ng] : [];
+                                    var cautionsArray = layer2 && layer2.cautions ? layer2.cautions : [];
+                                    var exceptionArray = layer1 && layer1.exception ? [layer1.exception] : [];
+                                    var stableArray = layer2 && layer2.stable ? layer2.stable : [];
+
+                                    avoidArray = ngArray.concat(cautionsArray);
+                                    tipsArray = exceptionArray.concat(stableArray);
+                                } else if (courseStructure || positiveFactors || negativeFactors) {
+                                    // course_structure/positive_factors/negative_factors構造
+                                    overviewText = (courseStructure && courseStructure.overview) ? courseStructure.overview : '';
+
+                                    if (courseStructure) {
+                                        featuresArray = [];
+                                        if (courseStructure.overview) featuresArray.push(courseStructure.overview);
+                                    }
+
+                                    if (positiveFactors) {
+                                        if (positiveFactors.single && Array.isArray(positiveFactors.single)) {
+                                            axisArray = positiveFactors.single;
+                                        }
+                                        if (positiveFactors.composite && Array.isArray(positiveFactors.composite)) {
+                                            tipsArray = positiveFactors.composite;
+                                        }
+                                    }
+
+                                    if (negativeFactors) {
+                                        avoidArray = [];
+                                        if (negativeFactors.single && Array.isArray(negativeFactors.single)) {
+                                            avoidArray = avoidArray.concat(negativeFactors.single);
+                                        }
+                                        if (negativeFactors.composite && Array.isArray(negativeFactors.composite)) {
+                                            avoidArray = avoidArray.concat(negativeFactors.composite);
+                                        }
+                                    }
+                                }
 
                                 converted[venueName][courseName] = {
                                     course: courseName,
-                                    overview: (layer1 && layer1.axis) ? layer1.axis : '',
-                                    features: (layer3 && layer3.rationale) ? layer3.rationale : [],
-                                    axis: (layer1 && layer1.axis) ? [layer1.axis] : [],
-                                    avoid: ngArray.concat(cautionsArray),
-                                    tips: exceptionArray.concat(stableArray)
+                                    overview: overviewText,
+                                    features: featuresArray,
+                                    axis: axisArray,
+                                    avoid: avoidArray,
+                                    tips: tipsArray
                                 };
                             });
 
