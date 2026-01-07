@@ -803,6 +803,11 @@
             const [isOpen, setIsOpen] = React.useState(false);
             const courseCount = Object.keys(courses).length;
 
+            // デバッグ：競馬場とコース一覧を確認
+            console.log('PlaceAccordion - 競馬場:', place);
+            console.log('PlaceAccordion - コース数:', courseCount);
+            console.log('PlaceAccordion - コース一覧:', Object.keys(courses));
+
             return (
                 <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
                     <button
@@ -1045,11 +1050,18 @@
         // Course Accordion Component
         const CourseAccordion = ({ courseName, data }) => {
             const [isOpen, setIsOpen] = React.useState(false);
-            
+
+            // デバッグ：コースデータを確認
+            console.log('CourseAccordion - コース名:', courseName);
+            console.log('CourseAccordion - データ:', data);
+
             return (
                 <div className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
                     <button
-                        onClick={() => setIsOpen(!isOpen)}
+                        onClick={() => {
+                            console.log('クリック - コース:', courseName, 'isOpen:', !isOpen);
+                            setIsOpen(!isOpen);
+                        }}
                         className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
                     >
                         <div className="flex items-center gap-3">
