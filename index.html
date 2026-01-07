@@ -1167,7 +1167,7 @@
                         <div className="p-4 pt-0 border-t border-gray-100 bg-gray-50/50">
                             <div className="space-y-4 mt-3">
                                 
-                                {features.length > 0 && (
+                                {!courseStructure && features.length > 0 && (
                                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border-2 border-gray-200 shadow-sm">
                                         <h5 className="text-sm font-bold text-gray-700 mb-3 uppercase flex items-center gap-2">
                                             <div className="p-1 bg-gray-600 rounded-full">
@@ -1411,7 +1411,7 @@
                                 </div>
                             )}
 
-                                {((axis.length > 0) || (hole.length > 0)) && (
+                                {!singlePositive && !singleNegative && ((axis.length > 0) || (hole.length > 0)) && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {axis.length > 0 && (
                                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border-2 border-blue-200 shadow-sm">
@@ -1452,7 +1452,7 @@
                                     </div>
                                 )}
 
-                                {tips.length > 0 && (
+                                {!singlePositive && tips.length > 0 && (
                                     <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-lg border-2 border-emerald-200 shadow-sm">
                                         <h5 className="text-sm font-bold text-emerald-800 mb-2 flex items-center gap-2">
                                             <div className="p-1 bg-emerald-500 rounded-full">
@@ -1471,7 +1471,7 @@
                                     </div>
                                 )}
 
-                                {avoid.length > 0 && (
+                                {!singleNegative && avoid.length > 0 && (
                                     <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border-2 border-red-200 shadow-sm">
                                         <h5 className="text-sm font-bold text-red-800 mb-2 flex items-center gap-2">
                                             <div className="p-1 bg-red-500 rounded-full">
