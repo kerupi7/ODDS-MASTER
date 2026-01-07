@@ -1102,13 +1102,17 @@
                                 )}
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {data.style && (
+                                    {data.style && typeof data.style === 'object' && Object.keys(data.style).length > 0 && (
                                         <div className="bg-white p-3 rounded border border-gray-200">
                                             <h5 className="text-xs font-bold text-gray-500 mb-3 uppercase flex items-center gap-1">
                                                 <Icons.TrendingUp size={14} /> 脚質傾向
                                             </h5>
                                             <div className="space-y-3 text-sm">
-                                                {Object.entries(data.style).map(([key, val]) => {
+                                                {Object.entries(data.style).map(function(entry) {
+                                                var key = entry[0];
+                                                var val = entry[1];
+                                                if (!val || typeof val !== 'object') return null;
+
                                                 const label = { escape: '逃げ', lead: '先行', chase: '差し', late: '追込' }[key];
                                                 const icon = { escape: '🏃', lead: '🐎', chase: '⚡', late: '🔥' }[key];
                                                 const returnVal = val.return ? parseFloat(val.return.replace('%', '')) : 0;
@@ -1164,7 +1168,7 @@
                                     </div>
                                 )}
 
-                                    {data.frame && (
+                                    {data.frame && typeof data.frame === 'object' && (
                                         <div className="bg-white p-3 rounded border border-gray-200">
                                         <h5 className="text-xs font-bold text-gray-500 mb-3 uppercase flex items-center gap-1">
                                             <Icons.Layers size={14} /> 枠順傾向
@@ -1172,7 +1176,7 @@
 
                                         {/* 枠番ビジュアル表示 */}
                                         <div className="grid grid-cols-4 gap-2 mb-3">
-                                            {[1, 2, 3, 4, 5, 6, 7, 8].map(frame => {
+                                            {[1, 2, 3, 4, 5, 6, 7, 8].map(function(frame) {
                                                 // 枠番の色（実際の競馬の枠色）
                                                 const frameColors = {
                                                     1: 'bg-white border-2 border-gray-800 text-gray-800',
@@ -1243,14 +1247,14 @@
                                 )}
                                 </div>
 
-                                {data.blood && (
+                                {data.blood && typeof data.blood === 'object' && (
                                     <div className="bg-white p-3 rounded border border-gray-200">
                                     <h5 className="text-xs font-bold text-gray-500 mb-3 uppercase flex items-center gap-1">
                                         <Icons.Award size={14} /> 血統傾向
                                     </h5>
 
                                     {/* 好走血統 */}
-                                    {data.blood.good && data.blood.good.length > 0 && (
+                                    {data.blood.good && Array.isArray(data.blood.good) && data.blood.good.length > 0 && (
                                         <div className="mb-3">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full flex items-center gap-1">
@@ -1269,8 +1273,8 @@
                                     )}
 
                                     {/* 不振血統 */}
-                                    {data.blood.bad && data.blood.bad.length > 0 && (
-                                        <div className={`${data.blood.good && data.blood.good.length > 0 ? 'border-t border-gray-100 pt-3' : ''}`}>
+                                    {data.blood.bad && Array.isArray(data.blood.bad) && data.blood.bad.length > 0 && (
+                                        <div className={`${data.blood.good && Array.isArray(data.blood.good) && data.blood.good.length > 0 ? 'border-t border-gray-100 pt-3' : ''}`}>
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full flex items-center gap-1">
                                                     <span>⚠️</span> 不振血統
@@ -1289,9 +1293,9 @@
                                 </div>
                             )}
 
-                                {(data.axis || data.hole) && (
+                                {((data.axis && Array.isArray(data.axis) && data.axis.length > 0) || (data.hole && Array.isArray(data.hole) && data.hole.length > 0)) && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {data.axis && data.axis.length > 0 && (
+                                        {data.axis && Array.isArray(data.axis) && data.axis.length > 0 && (
                                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border-2 border-blue-200 shadow-sm">
                                                 <h5 className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2">
                                                     <div className="p-1 bg-blue-500 rounded-full">
@@ -1309,7 +1313,7 @@
                                                 </ul>
                                             </div>
                                         )}
-                                        {data.hole && data.hole.length > 0 && (
+                                        {data.hole && Array.isArray(data.hole) && data.hole.length > 0 && (
                                             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg border-2 border-yellow-200 shadow-sm">
                                                 <h5 className="text-sm font-bold text-yellow-800 mb-2 flex items-center gap-2">
                                                     <div className="p-1 bg-yellow-500 rounded-full">
@@ -1330,7 +1334,7 @@
                                     </div>
                                 )}
 
-                                {data.tips && data.tips.length > 0 && (
+                                {data.tips && Array.isArray(data.tips) && data.tips.length > 0 && (
                                     <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-lg border-2 border-emerald-200 shadow-sm">
                                         <h5 className="text-sm font-bold text-emerald-800 mb-2 flex items-center gap-2">
                                             <div className="p-1 bg-emerald-500 rounded-full">
@@ -1349,7 +1353,7 @@
                                     </div>
                                 )}
 
-                                {data.avoid && data.avoid.length > 0 && (
+                                {data.avoid && Array.isArray(data.avoid) && data.avoid.length > 0 && (
                                     <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border-2 border-red-200 shadow-sm">
                                         <h5 className="text-sm font-bold text-red-800 mb-2 flex items-center gap-2">
                                             <div className="p-1 bg-red-500 rounded-full">
