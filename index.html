@@ -1562,7 +1562,9 @@
                                     if (courseStructure) {
                                         featuresArray = [];
                                         if (courseStructure.overview) featuresArray.push(courseStructure.overview);
-                                        // 他のフィールドも追加可能
+                                        if (courseStructure.elevation) featuresArray.push(courseStructure.elevation);
+                                        if (courseStructure.running_flow) featuresArray.push(courseStructure.running_flow);
+                                        if (courseStructure.style_bias) featuresArray.push(courseStructure.style_bias);
                                     }
 
                                     // positive_factorsからaxisとtipsを生成
