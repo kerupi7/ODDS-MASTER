@@ -1821,8 +1821,16 @@
                                 var positiveFactors = courseItem.positive_factors;
                                 var negativeFactors = courseItem.negative_factors;
 
-                                var trackPart = course.track ? course.track : '';
-                                var courseName = course.surface + course.distance_m + 'm' + trackPart;
+                                // course.nameを使用（例：「京都芝1400m（内回り）」）
+                                // course.nameがない場合は従来の方法で生成
+                                var courseName;
+                                if (course.name) {
+                                    // course.nameから「京都」を削除して使用（データ構造のキーとして使用）
+                                    courseName = course.name.replace(/^京都/, '');
+                                } else {
+                                    var trackPart = course.track ? course.track : '';
+                                    courseName = course.surface + course.distance_m + 'm' + trackPart;
+                                }
 
                                 // 構造1 (layer1/2/3) の処理
                                 var overviewText = '';
@@ -2005,8 +2013,16 @@
                                 var positiveFactors = courseItem.positive_factors;
                                 var negativeFactors = courseItem.negative_factors;
 
-                                var trackPart = course.track ? course.track : '';
-                                var courseName = course.surface + course.distance_m + 'm' + trackPart;
+                                // course.nameを使用（例：「京都芝1400m（内回り）」）
+                                // course.nameがない場合は従来の方法で生成
+                                var courseName;
+                                if (course.name) {
+                                    // course.nameから「京都」を削除して使用（データ構造のキーとして使用）
+                                    courseName = course.name.replace(/^京都/, '');
+                                } else {
+                                    var trackPart = course.track ? course.track : '';
+                                    courseName = course.surface + course.distance_m + 'm' + trackPart;
+                                }
 
                                 var overviewText = '';
                                 var featuresArray = [];
