@@ -1295,12 +1295,23 @@
                                                     軸のポイント
                                                 </h5>
                                                 <ul className="text-xs text-blue-900 space-y-1.5">
-                                                    {data.axis.map((t, i) => (
-                                                        <li key={i} className="flex items-start gap-2">
-                                                            <span className="text-blue-500 font-bold mt-0.5">✓</span>
-                                                            <span className="flex-1">{t}</span>
-                                                        </li>
-                                                    ))}
+                                                    {data.axis.map(function(t, i) {
+                                                        var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                        return (
+                                                            <li key={i} className="flex items-start gap-2">
+                                                                <span className="text-blue-500 font-bold mt-0.5">✓</span>
+                                                                <span className="flex-1">
+                                                                    {isObject ? (
+                                                                        <span>
+                                                                            {t.condition && <strong>{t.condition}</strong>}
+                                                                            {t.condition && t.reason && '：'}
+                                                                            {t.reason}
+                                                                        </span>
+                                                                    ) : t}
+                                                                </span>
+                                                            </li>
+                                                        );
+                                                    })}
                                                 </ul>
                                             </div>
                                         )}
@@ -1334,17 +1345,91 @@
                                             攻略のヒント
                                         </h5>
                                         <ul className="text-xs text-emerald-900 space-y-1.5">
-                                            {data.tips.map((t, i) => (
-                                                <li key={i} className="flex items-start gap-2">
-                                                    <span className="text-emerald-600 font-bold mt-0.5">💡</span>
-                                                    <span className="flex-1">{t}</span>
-                                                </li>
-                                            ))}
+                                            {data.tips.map(function(t, i) {
+                                                var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                return (
+                                                    <li key={i} className="flex items-start gap-2">
+                                                        <span className="text-emerald-600 font-bold mt-0.5">💡</span>
+                                                        <span className="flex-1">
+                                                            {isObject ? (
+                                                                <span>
+                                                                    {t.condition && <strong>{t.condition}</strong>}
+                                                                    {t.condition && t.reason && '：'}
+                                                                    {t.reason}
+                                                                </span>
+                                                            ) : t}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
                                         </ul>
                                     </div>
                                 )}
 
-                                {data.avoid && Array.isArray(data.avoid) && data.avoid.length > 0 && (
+                                {/* 単独条件の消しポイント */}
+                                {data.avoid_single && Array.isArray(data.avoid_single) && data.avoid_single.length > 0 && (
+                                    <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border-2 border-red-200 shadow-sm">
+                                        <h5 className="text-sm font-bold text-red-800 mb-2 flex items-center gap-2">
+                                            <div className="p-1 bg-red-500 rounded-full">
+                                                <Icons.Ban size={14} className="text-white" />
+                                            </div>
+                                            消しのポイント（単独条件）
+                                        </h5>
+                                        <ul className="text-xs text-red-900 space-y-1.5">
+                                            {data.avoid_single.map(function(t, i) {
+                                                var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                return (
+                                                    <li key={i} className="flex items-start gap-2">
+                                                        <span className="text-red-600 font-bold mt-0.5">✕</span>
+                                                        <span className="flex-1">
+                                                            {isObject ? (
+                                                                <span>
+                                                                    {t.condition && <strong>{t.condition}</strong>}
+                                                                    {t.condition && t.reason && '：'}
+                                                                    {t.reason}
+                                                                </span>
+                                                            ) : t}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {/* 複合条件の消しポイント */}
+                                {data.avoid_composite && Array.isArray(data.avoid_composite) && data.avoid_composite.length > 0 && (
+                                    <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border-2 border-red-200 shadow-sm">
+                                        <h5 className="text-sm font-bold text-red-800 mb-2 flex items-center gap-2">
+                                            <div className="p-1 bg-red-500 rounded-full">
+                                                <Icons.Ban size={14} className="text-white" />
+                                            </div>
+                                            消しのポイント（複合条件）
+                                        </h5>
+                                        <ul className="text-xs text-red-900 space-y-1.5">
+                                            {data.avoid_composite.map(function(t, i) {
+                                                var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                return (
+                                                    <li key={i} className="flex items-start gap-2">
+                                                        <span className="text-red-600 font-bold mt-0.5">✕</span>
+                                                        <span className="flex-1">
+                                                            {isObject ? (
+                                                                <span>
+                                                                    {t.condition && <strong>{t.condition}</strong>}
+                                                                    {t.condition && t.reason && '：'}
+                                                                    {t.reason}
+                                                                </span>
+                                                            ) : t}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {/* 後方互換性のため、avoid_single/avoid_compositeがない場合のみavoidを表示 */}
+                                {(!data.avoid_single && !data.avoid_composite) && data.avoid && Array.isArray(data.avoid) && data.avoid.length > 0 && (
                                     <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border-2 border-red-200 shadow-sm">
                                         <h5 className="text-sm font-bold text-red-800 mb-2 flex items-center gap-2">
                                             <div className="p-1 bg-red-500 rounded-full">
@@ -1353,12 +1438,23 @@
                                             消しのポイント
                                         </h5>
                                         <ul className="text-xs text-red-900 space-y-1.5">
-                                            {data.avoid.map((t, i) => (
-                                                <li key={i} className="flex items-start gap-2">
-                                                    <span className="text-red-600 font-bold mt-0.5">✕</span>
-                                                    <span className="flex-1">{t}</span>
-                                                </li>
-                                            ))}
+                                            {data.avoid.map(function(t, i) {
+                                                var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                return (
+                                                    <li key={i} className="flex items-start gap-2">
+                                                        <span className="text-red-600 font-bold mt-0.5">✕</span>
+                                                        <span className="flex-1">
+                                                            {isObject ? (
+                                                                <span>
+                                                                    {t.condition && <strong>{t.condition}</strong>}
+                                                                    {t.condition && t.reason && '：'}
+                                                                    {t.reason}
+                                                                </span>
+                                                            ) : t}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
                                         </ul>
                                     </div>
                                 )}
@@ -1539,6 +1635,8 @@
                                 var featuresArray = [];
                                 var axisArray = [];
                                 var avoidArray = [];
+                                var avoidSingleArray = [];
+                                var avoidCompositeArray = [];
                                 var tipsArray = [];
 
                                 if (layer1 || layer2 || layer3) {
@@ -1577,15 +1675,16 @@
                                         }
                                     }
 
-                                    // negative_factorsからavoidを生成
+                                    // negative_factorsからavoid_singleとavoid_compositeを生成
                                     if (negativeFactors) {
-                                        avoidArray = [];
                                         if (negativeFactors.single && Array.isArray(negativeFactors.single)) {
-                                            avoidArray = avoidArray.concat(negativeFactors.single);
+                                            avoidSingleArray = negativeFactors.single;
                                         }
                                         if (negativeFactors.composite && Array.isArray(negativeFactors.composite)) {
-                                            avoidArray = avoidArray.concat(negativeFactors.composite);
+                                            avoidCompositeArray = negativeFactors.composite;
                                         }
+                                        // 後方互換性のため、avoidArrayも残す
+                                        avoidArray = avoidSingleArray.concat(avoidCompositeArray);
                                     }
                                 }
 
@@ -1595,6 +1694,8 @@
                                     features: featuresArray,
                                     axis: axisArray,
                                     avoid: avoidArray,
+                                    avoid_single: avoidSingleArray,
+                                    avoid_composite: avoidCompositeArray,
                                     tips: tipsArray
                                 };
                             });
