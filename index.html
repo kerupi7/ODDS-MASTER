@@ -1683,7 +1683,16 @@
 
                                     // positive_factorsからaxisとtipsを生成
                                     if (positiveFactors) {
-                                        if (positiveFactors.single && Array.isArray(positiveFactors.single)) {
+                                        // singleがオブジェクトの場合、全てのカテゴリの配列を展開
+                                        if (positiveFactors.single && typeof positiveFactors.single === 'object' && !Array.isArray(positiveFactors.single)) {
+                                            axisArray = [];
+                                            Object.values(positiveFactors.single).forEach(function(categoryArray) {
+                                                if (Array.isArray(categoryArray)) {
+                                                    axisArray = axisArray.concat(categoryArray);
+                                                }
+                                            });
+                                        } else if (positiveFactors.single && Array.isArray(positiveFactors.single)) {
+                                            // 後方互換性：配列の場合はそのまま使用
                                             axisArray = positiveFactors.single;
                                         }
                                         if (positiveFactors.composite && Array.isArray(positiveFactors.composite)) {
@@ -1693,7 +1702,16 @@
 
                                     // negative_factorsからavoid_singleとavoid_compositeを生成
                                     if (negativeFactors) {
-                                        if (negativeFactors.single && Array.isArray(negativeFactors.single)) {
+                                        // singleがオブジェクトの場合、全てのカテゴリの配列を展開
+                                        if (negativeFactors.single && typeof negativeFactors.single === 'object' && !Array.isArray(negativeFactors.single)) {
+                                            avoidSingleArray = [];
+                                            Object.values(negativeFactors.single).forEach(function(categoryArray) {
+                                                if (Array.isArray(categoryArray)) {
+                                                    avoidSingleArray = avoidSingleArray.concat(categoryArray);
+                                                }
+                                            });
+                                        } else if (negativeFactors.single && Array.isArray(negativeFactors.single)) {
+                                            // 後方互換性：配列の場合はそのまま使用
                                             avoidSingleArray = negativeFactors.single;
                                         }
                                         if (negativeFactors.composite && Array.isArray(negativeFactors.composite)) {
