@@ -1062,6 +1062,20 @@
         const CourseAccordion = ({ courseName, data }) => {
             const [isOpen, setIsOpen] = React.useState(false);
 
+            // カテゴリ名の日本語マッピング
+            var getCategoryLabel = function(categoryKey) {
+                var labels = {
+                    'post_position': '枠順',
+                    'running_style': '脚質',
+                    'bloodline': '血統',
+                    'attributes': '馬の属性',
+                    'rotation': 'ローテーション',
+                    'human': '騎手・調教師',
+                    'popularity_odds': '人気・オッズ'
+                };
+                return labels[categoryKey] || categoryKey;
+            };
+
             return (
                 <div className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
                     <button
@@ -1310,25 +1324,60 @@
                                                     </div>
                                                     軸のポイント
                                                 </h5>
-                                                <ul className="text-xs text-blue-900 space-y-1.5">
-                                                    {data.axis.map(function(t, i) {
-                                                        var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
-                                                        return (
-                                                            <li key={i} className="flex items-start gap-2">
-                                                                <span className="text-blue-500 font-bold mt-0.5">✓</span>
-                                                                <span className="flex-1">
-                                                                    {isObject ? (
-                                                                        <span>
-                                                                            {t.condition && <strong>{t.condition}</strong>}
-                                                                            {t.condition && t.reason && '：'}
-                                                                            {t.reason}
-                                                                        </span>
-                                                                    ) : t}
-                                                                </span>
-                                                            </li>
-                                                        );
-                                                    })}
-                                                </ul>
+                                                {data.axis_categories ? (
+                                                    <div className="space-y-3">
+                                                        {Object.keys(data.axis_categories).map(function(categoryKey) {
+                                                            var categoryArray = data.axis_categories[categoryKey];
+                                                            var categoryLabel = getCategoryLabel(categoryKey);
+                                                            return (
+                                                                <div key={categoryKey}>
+                                                                    <div className="text-xs font-bold text-blue-700 mb-1.5 flex items-center gap-1">
+                                                                        <span className="bg-blue-600 text-white px-2 py-0.5 rounded">【{categoryLabel}】</span>
+                                                                    </div>
+                                                                    <ul className="text-xs text-blue-900 space-y-1.5 pl-2">
+                                                                        {categoryArray.map(function(t, i) {
+                                                                            var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                                            return (
+                                                                                <li key={i} className="flex items-start gap-2">
+                                                                                    <span className="text-blue-500 font-bold mt-0.5">✓</span>
+                                                                                    <span className="flex-1">
+                                                                                        {isObject ? (
+                                                                                            <span>
+                                                                                                {t.condition && <strong>{t.condition}</strong>}
+                                                                                                {t.condition && t.reason && '：'}
+                                                                                                {t.reason}
+                                                                                            </span>
+                                                                                        ) : t}
+                                                                                    </span>
+                                                                                </li>
+                                                                            );
+                                                                        })}
+                                                                    </ul>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <ul className="text-xs text-blue-900 space-y-1.5">
+                                                        {data.axis.map(function(t, i) {
+                                                            var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                            return (
+                                                                <li key={i} className="flex items-start gap-2">
+                                                                    <span className="text-blue-500 font-bold mt-0.5">✓</span>
+                                                                    <span className="flex-1">
+                                                                        {isObject ? (
+                                                                            <span>
+                                                                                {t.condition && <strong>{t.condition}</strong>}
+                                                                                {t.condition && t.reason && '：'}
+                                                                                {t.reason}
+                                                                            </span>
+                                                                        ) : t}
+                                                                    </span>
+                                                                </li>
+                                                            );
+                                                        })}
+                                                    </ul>
+                                                )}
                                             </div>
                                         )}
                                         {data.hole && Array.isArray(data.hole) && data.hole.length > 0 && (
@@ -1391,25 +1440,60 @@
                                             </div>
                                             消しのポイント（単独条件）
                                         </h5>
-                                        <ul className="text-xs text-red-900 space-y-1.5">
-                                            {data.avoid_single.map(function(t, i) {
-                                                var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
-                                                return (
-                                                    <li key={i} className="flex items-start gap-2">
-                                                        <span className="text-red-600 font-bold mt-0.5">✕</span>
-                                                        <span className="flex-1">
-                                                            {isObject ? (
-                                                                <span>
-                                                                    {t.condition && <strong>{t.condition}</strong>}
-                                                                    {t.condition && t.reason && '：'}
-                                                                    {t.reason}
-                                                                </span>
-                                                            ) : t}
-                                                        </span>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
+                                        {data.avoid_single_categories ? (
+                                            <div className="space-y-3">
+                                                {Object.keys(data.avoid_single_categories).map(function(categoryKey) {
+                                                    var categoryArray = data.avoid_single_categories[categoryKey];
+                                                    var categoryLabel = getCategoryLabel(categoryKey);
+                                                    return (
+                                                        <div key={categoryKey}>
+                                                            <div className="text-xs font-bold text-red-700 mb-1.5 flex items-center gap-1">
+                                                                <span className="bg-red-600 text-white px-2 py-0.5 rounded">【{categoryLabel}】</span>
+                                                            </div>
+                                                            <ul className="text-xs text-red-900 space-y-1.5 pl-2">
+                                                                {categoryArray.map(function(t, i) {
+                                                                    var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                                    return (
+                                                                        <li key={i} className="flex items-start gap-2">
+                                                                            <span className="text-red-600 font-bold mt-0.5">✕</span>
+                                                                            <span className="flex-1">
+                                                                                {isObject ? (
+                                                                                    <span>
+                                                                                        {t.condition && <strong>{t.condition}</strong>}
+                                                                                        {t.condition && t.reason && '：'}
+                                                                                        {t.reason}
+                                                                                    </span>
+                                                                                ) : t}
+                                                                            </span>
+                                                                        </li>
+                                                                    );
+                                                                })}
+                                                            </ul>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <ul className="text-xs text-red-900 space-y-1.5">
+                                                {data.avoid_single.map(function(t, i) {
+                                                    var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                    return (
+                                                        <li key={i} className="flex items-start gap-2">
+                                                            <span className="text-red-600 font-bold mt-0.5">✕</span>
+                                                            <span className="flex-1">
+                                                                {isObject ? (
+                                                                    <span>
+                                                                        {t.condition && <strong>{t.condition}</strong>}
+                                                                        {t.condition && t.reason && '：'}
+                                                                        {t.reason}
+                                                                    </span>
+                                                                ) : t}
+                                                            </span>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        )}
                                     </div>
                                 )}
 
@@ -1650,8 +1734,10 @@
                                 var overviewText = '';
                                 var featuresArray = [];
                                 var axisArray = [];
+                                var axisCategories = null;
                                 var avoidArray = [];
                                 var avoidSingleArray = [];
+                                var avoidSingleCategories = null;
                                 var avoidCompositeArray = [];
                                 var tipsArray = [];
 
@@ -1683,11 +1769,14 @@
 
                                     // positive_factorsからaxisとtipsを生成
                                     if (positiveFactors) {
-                                        // singleがオブジェクトの場合、全てのカテゴリの配列を展開
+                                        // singleがオブジェクトの場合、カテゴリ情報を保持
                                         if (positiveFactors.single && typeof positiveFactors.single === 'object' && !Array.isArray(positiveFactors.single)) {
+                                            axisCategories = {};
                                             axisArray = [];
-                                            Object.values(positiveFactors.single).forEach(function(categoryArray) {
-                                                if (Array.isArray(categoryArray)) {
+                                            Object.keys(positiveFactors.single).forEach(function(categoryKey) {
+                                                var categoryArray = positiveFactors.single[categoryKey];
+                                                if (Array.isArray(categoryArray) && categoryArray.length > 0) {
+                                                    axisCategories[categoryKey] = categoryArray;
                                                     axisArray = axisArray.concat(categoryArray);
                                                 }
                                             });
@@ -1702,11 +1791,14 @@
 
                                     // negative_factorsからavoid_singleとavoid_compositeを生成
                                     if (negativeFactors) {
-                                        // singleがオブジェクトの場合、全てのカテゴリの配列を展開
+                                        // singleがオブジェクトの場合、カテゴリ情報を保持
                                         if (negativeFactors.single && typeof negativeFactors.single === 'object' && !Array.isArray(negativeFactors.single)) {
+                                            avoidSingleCategories = {};
                                             avoidSingleArray = [];
-                                            Object.values(negativeFactors.single).forEach(function(categoryArray) {
-                                                if (Array.isArray(categoryArray)) {
+                                            Object.keys(negativeFactors.single).forEach(function(categoryKey) {
+                                                var categoryArray = negativeFactors.single[categoryKey];
+                                                if (Array.isArray(categoryArray) && categoryArray.length > 0) {
+                                                    avoidSingleCategories[categoryKey] = categoryArray;
                                                     avoidSingleArray = avoidSingleArray.concat(categoryArray);
                                                 }
                                             });
@@ -1727,8 +1819,10 @@
                                     overview: overviewText,
                                     features: featuresArray,
                                     axis: axisArray,
+                                    axis_categories: axisCategories,
                                     avoid: avoidArray,
                                     avoid_single: avoidSingleArray,
+                                    avoid_single_categories: avoidSingleCategories,
                                     avoid_composite: avoidCompositeArray,
                                     tips: tipsArray
                                 };
