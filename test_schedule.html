@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>スケジュールテスト</title>
+</head>
+<body>
+    <h1>スケジュール読み込みテスト</h1>
+    <div id="result"></div>
+    <script>
+        async function test() {
+            const result = document.getElementById('result');
+            
+            // JSONファイルを読み込み（キャッシュを無効化）
+            const res = await fetch('./jra_schedule_2026.json?' + Date.now());
+            const data = await res.json();
+            
+            result.innerHTML = '<h2>読み込み成功！</h2>';
+            result.innerHTML += '<p>エントリ数: ' + Object.keys(data).length + '</p>';
+            
+            // 2026-01-04のデータを確認
+            if (data['2026-01-04']) {
+                result.innerHTML += '<p style="color: green;">✓ 2026-01-04: ' + data['2026-01-04'].join(', ') + '</p>';
+            } else {
+                result.innerHTML += '<p style="color: red;">✗ 2026-01-04のデータなし</p>';
+            }
+            
+            // 2026-01-05のデータを確認
+            if (data['2026-01-05']) {
+                result.innerHTML += '<p style="color: green;">✓ 2026-01-05: ' + data['2026-01-05'].join(', ') + '</p>';
+            } else {
+                result.innerHTML += '<p style="color: red;">✗ 2026-01-05のデータなし</p>';
+            }
+            
+            // 今日の日付
+            const today = new Date();
+            result.innerHTML += '<p>今日: ' + today.toISOString().split('T')[0] + ' (' + ['日','月','火','水','木','金','土'][today.getDay()] + ')</p>';
+            
+            // getBaseSaturdayのテスト
+            const day = today.getDay();
+            let diffToSaturday;
+            if (day === 0) {
+                diffToSaturday = -1;
+            } else if (day === 1) {
+                diffToSaturday = -2;
+            } else if (day === 6) {
+                diffToSaturday = 0;
+            } else {
+                diffToSaturday = 6 - day;
+            }
+            const baseSat = new Date(today);
+            baseSat.setDate(today.getDate() + diffToSaturday);
+            result.innerHTML += '<p>ベース土曜日: ' + baseSat.toISOString().split('T')[0] + '</p>';
+            
+            // 今週の開催日を検索
+            result.innerHTML += '<h3>今週の開催日:</h3>';
+            const labels = ['土', '日', '月'];
+            for (let i = 0; i < 3; i++) {
+                const d = new Date(baseSat);
+                d.setDate(baseSat.getDate() + i);
+                const key = d.toISOString().split('T')[0];
+                if (data[key]) {
+                    result.innerHTML += '<p style="color: green;">✓ ' + key + ' (' + labels[i] + '): ' + data[key].join(', ') + '</p>';
+                } else {
+                    result.innerHTML += '<p style="color: gray;">✗ ' + key + ' (' + labels[i] + '): データなし</p>';
+                }
+            }
+        }
+        test();
+    </script>
+</body>
+</html>
