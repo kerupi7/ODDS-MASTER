@@ -1076,6 +1076,36 @@
                 return labels[categoryKey] || categoryKey;
             };
 
+            // 同じ文言の項目をグループ化
+            var groupSimilarItems = function(items) {
+                var groups = {};
+                var ungrouped = [];
+
+                items.forEach(function(item) {
+                    // オブジェクトの場合はスキップ（グループ化しない）
+                    if (typeof item === 'object') {
+                        ungrouped.push(item);
+                        return;
+                    }
+
+                    // 「の」で分割して共通パターンを見つける
+                    var noIndex = item.indexOf('の');
+                    if (noIndex > 0) {
+                        var prefix = item.substring(0, noIndex);
+                        var suffix = item.substring(noIndex);
+
+                        if (!groups[suffix]) {
+                            groups[suffix] = [];
+                        }
+                        groups[suffix].push(prefix);
+                    } else {
+                        ungrouped.push(item);
+                    }
+                });
+
+                return { groups: groups, ungrouped: ungrouped };
+            };
+
             return (
                 <div className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
                     <button
@@ -1335,23 +1365,55 @@
                                                                         <span className="bg-blue-600 text-white px-2 py-0.5 rounded">【{categoryLabel}】</span>
                                                                     </div>
                                                                     <ul className="text-xs text-blue-900 space-y-1.5 pl-2">
-                                                                        {categoryArray.map(function(t, i) {
-                                                                            var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
-                                                                            return (
-                                                                                <li key={i} className="flex items-start gap-2">
-                                                                                    <span className="text-blue-500 font-bold mt-0.5">✓</span>
-                                                                                    <span className="flex-1">
-                                                                                        {isObject ? (
-                                                                                            <span>
-                                                                                                {t.condition && <strong>{t.condition}</strong>}
-                                                                                                {t.condition && t.reason && '：'}
-                                                                                                {t.reason}
-                                                                                            </span>
-                                                                                        ) : t}
-                                                                                    </span>
-                                                                                </li>
-                                                                            );
-                                                                        })}
+                                                                        {(function() {
+                                                                            var grouped = groupSimilarItems(categoryArray);
+                                                                            var result = [];
+
+                                                                            // グループ化された項目を表示
+                                                                            Object.keys(grouped.groups).forEach(function(suffix) {
+                                                                                var prefixes = grouped.groups[suffix];
+                                                                                if (prefixes.length > 1) {
+                                                                                    // 複数ある場合はまとめて表示
+                                                                                    var text = prefixes.join('、') + suffix;
+                                                                                    result.push(
+                                                                                        <li key={'group-' + suffix} className="flex items-start gap-2">
+                                                                                            <span className="text-blue-500 font-bold mt-0.5">✓</span>
+                                                                                            <span className="flex-1">{text}</span>
+                                                                                        </li>
+                                                                                    );
+                                                                                } else {
+                                                                                    // 1つだけの場合はそのまま表示
+                                                                                    var text = prefixes[0] + suffix;
+                                                                                    result.push(
+                                                                                        <li key={'single-' + suffix} className="flex items-start gap-2">
+                                                                                            <span className="text-blue-500 font-bold mt-0.5">✓</span>
+                                                                                            <span className="flex-1">{text}</span>
+                                                                                        </li>
+                                                                                    );
+                                                                                }
+                                                                            });
+
+                                                                            // グループ化できなかった項目を表示
+                                                                            grouped.ungrouped.forEach(function(t, i) {
+                                                                                var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                                                result.push(
+                                                                                    <li key={'ungrouped-' + i} className="flex items-start gap-2">
+                                                                                        <span className="text-blue-500 font-bold mt-0.5">✓</span>
+                                                                                        <span className="flex-1">
+                                                                                            {isObject ? (
+                                                                                                <span>
+                                                                                                    {t.condition && <strong>{t.condition}</strong>}
+                                                                                                    {t.condition && t.reason && '：'}
+                                                                                                    {t.reason}
+                                                                                                </span>
+                                                                                            ) : t}
+                                                                                        </span>
+                                                                                    </li>
+                                                                                );
+                                                                            });
+
+                                                                            return result;
+                                                                        })()}
                                                                     </ul>
                                                                 </div>
                                                             );
@@ -1451,23 +1513,55 @@
                                                                 <span className="bg-red-600 text-white px-2 py-0.5 rounded">【{categoryLabel}】</span>
                                                             </div>
                                                             <ul className="text-xs text-red-900 space-y-1.5 pl-2">
-                                                                {categoryArray.map(function(t, i) {
-                                                                    var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
-                                                                    return (
-                                                                        <li key={i} className="flex items-start gap-2">
-                                                                            <span className="text-red-600 font-bold mt-0.5">✕</span>
-                                                                            <span className="flex-1">
-                                                                                {isObject ? (
-                                                                                    <span>
-                                                                                        {t.condition && <strong>{t.condition}</strong>}
-                                                                                        {t.condition && t.reason && '：'}
-                                                                                        {t.reason}
-                                                                                    </span>
-                                                                                ) : t}
-                                                                            </span>
-                                                                        </li>
-                                                                    );
-                                                                })}
+                                                                {(function() {
+                                                                    var grouped = groupSimilarItems(categoryArray);
+                                                                    var result = [];
+
+                                                                    // グループ化された項目を表示
+                                                                    Object.keys(grouped.groups).forEach(function(suffix) {
+                                                                        var prefixes = grouped.groups[suffix];
+                                                                        if (prefixes.length > 1) {
+                                                                            // 複数ある場合はまとめて表示
+                                                                            var text = prefixes.join('、') + suffix;
+                                                                            result.push(
+                                                                                <li key={'group-' + suffix} className="flex items-start gap-2">
+                                                                                    <span className="text-red-600 font-bold mt-0.5">✕</span>
+                                                                                    <span className="flex-1">{text}</span>
+                                                                                </li>
+                                                                            );
+                                                                        } else {
+                                                                            // 1つだけの場合はそのまま表示
+                                                                            var text = prefixes[0] + suffix;
+                                                                            result.push(
+                                                                                <li key={'single-' + suffix} className="flex items-start gap-2">
+                                                                                    <span className="text-red-600 font-bold mt-0.5">✕</span>
+                                                                                    <span className="flex-1">{text}</span>
+                                                                                </li>
+                                                                            );
+                                                                        }
+                                                                    });
+
+                                                                    // グループ化できなかった項目を表示
+                                                                    grouped.ungrouped.forEach(function(t, i) {
+                                                                        var isObject = typeof t === 'object' && t !== null && (t.condition || t.reason);
+                                                                        result.push(
+                                                                            <li key={'ungrouped-' + i} className="flex items-start gap-2">
+                                                                                <span className="text-red-600 font-bold mt-0.5">✕</span>
+                                                                                <span className="flex-1">
+                                                                                    {isObject ? (
+                                                                                        <span>
+                                                                                            {t.condition && <strong>{t.condition}</strong>}
+                                                                                            {t.condition && t.reason && '：'}
+                                                                                            {t.reason}
+                                                                                        </span>
+                                                                                    ) : t}
+                                                                                </span>
+                                                                            </li>
+                                                                        );
+                                                                    });
+
+                                                                    return result;
+                                                                })()}
                                                             </ul>
                                                         </div>
                                                     );
