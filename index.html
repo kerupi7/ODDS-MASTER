@@ -1088,11 +1088,24 @@
                         return;
                     }
 
-                    // 「の」で分割して共通パターンを見つける
+                    // 「は」または「の」で分割して共通パターンを見つける
+                    var waIndex = item.indexOf('は');
                     var noIndex = item.indexOf('の');
-                    if (noIndex > 0) {
-                        var prefix = item.substring(0, noIndex);
-                        var suffix = item.substring(noIndex);
+                    var splitIndex = -1;
+                    var particle = '';
+
+                    // 「は」と「の」のうち、先に出現する方を使う
+                    if (waIndex > 0 && (noIndex === -1 || waIndex < noIndex)) {
+                        splitIndex = waIndex;
+                        particle = 'は';
+                    } else if (noIndex > 0) {
+                        splitIndex = noIndex;
+                        particle = 'の';
+                    }
+
+                    if (splitIndex > 0) {
+                        var prefix = item.substring(0, splitIndex);
+                        var suffix = particle + item.substring(splitIndex + 1);
 
                         if (!groups[suffix]) {
                             groups[suffix] = [];
