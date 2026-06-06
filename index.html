@@ -2089,6 +2089,7 @@
             // State Definitions
             const [currentView, setCurrentView] = useState('calculator');
             const [winProbInput, setWinProbInput] = useState(''); // 想定的中率(%)：このレースで買い目群のどれかが当たる見込み
+            const [showCourseTips, setShowCourseTips] = useState(false); // 開催場のコース傾向パネルの開閉
             const [menuOpen, setMenuOpen] = useState(false);
             const [showHelp, setShowHelp] = useState(false);
             
@@ -3904,6 +3905,33 @@
                                     </div>
                                     <div className="col-span-2 sm:col-span-3"><label className="flex items-center gap-1 text-xs text-gray-500 font-bold mb-1"><Icons.FileText size={12} /> メモ</label><input type="text" placeholder="レース名など" value={raceMeta.note} onChange={(e) => setRaceMeta(prev => ({ ...prev, note: e.target.value }))} className="w-full text-sm border-gray-300 rounded border p-1.5" /></div>
                                 </div>
+                            </section>
+
+                            <section className="w-full bg-white border-b border-slate-200 relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCourseTips((v) => !v)}
+                                    className="w-full px-3 sm:px-4 py-3 bg-gray-50 border-b flex justify-between items-center text-left"
+                                >
+                                    <h2 className="font-bold text-gray-700 section-title flex items-center gap-2">
+                                        <Icons.BookOpen size={18} /> {selectedCourse} のコース傾向
+                                    </h2>
+                                    <span className="flex items-center gap-2 text-xs text-gray-400">
+                                        <span className="hidden sm:inline">軸・消し・特徴</span>
+                                        {showCourseTips ? <Icons.ChevronUp size={18} /> : <Icons.ChevronDown size={18} />}
+                                    </span>
+                                </button>
+                                {showCourseTips && (
+                                    <div className="p-3 sm:p-4 space-y-3 bg-gray-50/50">
+                                        {courseData[selectedCourse] && Object.keys(courseData[selectedCourse]).length > 0 ? (
+                                            Object.entries(courseData[selectedCourse]).map(([courseName, data]) => (
+                                                <CourseAccordion key={selectedCourse + '-' + courseName} courseName={courseName} data={data} />
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-gray-400 text-center py-6">{selectedCourse} のコースデータは未収録です。</p>
+                                        )}
+                                    </div>
+                                )}
                             </section>
 
                             <section className="w-full bg-white border-b border-slate-200 relative">
