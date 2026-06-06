@@ -1896,7 +1896,7 @@
             // 外部ファイル読み込み（4場の course-data.json と京都の詳細データを両方マージ）
             useEffect(() => {
                 function loadJson(url) {
-                    return fetch(url)
+                    return fetch(url + '?v=' + Date.now())
                         .then(function(res) {
                             if (!res.ok) throw new Error(url + ' not found');
                             return res.json();
