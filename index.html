@@ -640,6 +640,38 @@
             };
         }
 
+        // ポートフォリオの期待値（EV）とケリー基準の推奨ベット額を算出する。
+        // 買い目群を「合成オッズ B の1点」とみなし、想定的中率 p で評価する。
+        //   損益分岐の的中率 = 1/B（これを超えれば期待値プラス）
+        //   期待回収率 = p × B / ケリー比率 f = (pB - 1)/(B - 1)（推奨はハーフケリー）
+        function calculatePortfolioMetrics(bets, winProbPercent, bankroll) {
+            const base = calculateEffectiveOdds(bets || []);
+            const synthOdds = base.effectiveOdds;      // 合成オッズ B
+            const totalAmount = base.totalAmount;
+            const breakEvenRate = synthOdds > 0 ? (1 / synthOdds) * 100 : null;
+
+            const pNum = Number(winProbPercent);
+            const hasProb = winProbPercent !== '' && winProbPercent != null && Number.isFinite(pNum) && pNum > 0;
+            const winPercent = hasProb ? Math.min(pNum, 100) : null;
+            const p = hasProb ? winPercent / 100 : null;
+
+            let expReturnRate = null, expProfit = null, edge = null, kellyFraction = null, kellyStake = null;
+            if (p != null && synthOdds > 0) {
+                expReturnRate = p * synthOdds * 100;
+                edge = p * synthOdds - 1;
+                expProfit = totalAmount > 0 ? Math.round(totalAmount * edge) : null;
+                if (synthOdds > 1) {
+                    kellyFraction = (p * synthOdds - 1) / (synthOdds - 1);
+                    const bk = Number(bankroll) || 0;
+                    kellyStake = (kellyFraction > 0 && bk > 0)
+                        ? Math.floor((bk * kellyFraction * 0.5) / 100) * 100
+                        : 0;
+                }
+            }
+            return { synthOdds, totalAmount, breakEvenRate, hasProb, winPercent,
+                     expReturnRate, expProfit, edge, kellyFraction, kellyStake };
+        }
+
         const mapEffectiveOddsToPercent = (effectiveOdds) => {
             const value = Number(effectiveOdds);
             if (!Number.isFinite(value) || value <= 0) return 0;
@@ -709,8 +741,12 @@
             );
         };
 
-        const EffectiveOddsPanel = ({ bets }) => {
+        const EffectiveOddsPanel = ({ bets, winProbInput, setWinProbInput, bankroll }) => {
             const info = useMemo(() => calculateEffectiveOdds(bets || []), [bets]);
+            const metrics = useMemo(
+                () => calculatePortfolioMetrics(bets || [], winProbInput, bankroll),
+                [bets, winProbInput, bankroll]
+            );
 
             if (!bets || bets.length === 0 || info.totalAmount === 0) return null;
 
@@ -722,6 +758,9 @@
                 normal: 'bg-emerald-50 border-emerald-200 text-emerald-700',
                 attack: 'bg-yellow-50 border-yellow-200 text-yellow-700'
             }[zone] || 'bg-gray-50 border-gray-200 text-gray-700';
+
+            const hasProb = metrics.hasProb;
+            const isPlus = hasProb && metrics.edge != null && metrics.edge > 0;
 
             return (
                 <div className={`mt-4 p-4 rounded-xl border ${zoneStyle} shadow-sm`}>
@@ -748,6 +787,71 @@
                         </div>
                     </div>
                     <RiskZoneMeter effectiveOdds={effectiveOdds} zone={zone} />
+
+                    <div className="mt-4 pt-3 border-t border-current/20">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="text-xs font-bold flex items-center gap-1">
+                                <Icons.TrendingUp size={13} /> 期待値（EV）と推奨ベット
+                            </div>
+                            <div className="text-[11px] font-semibold bg-white/70 px-2 py-0.5 rounded-full border border-current">
+                                損益分岐の的中率 {metrics.breakEvenRate != null ? metrics.breakEvenRate.toFixed(1) + '%' : '—'}
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-1">
+                            この買い目群で負けないために必要な「どれか1点が当たる確率」です（＝1÷合成オッズ）。
+                        </p>
+
+                        <div className="mt-2 flex items-center gap-2">
+                            <label className="text-xs text-gray-700 font-semibold whitespace-nowrap">想定的中率</label>
+                            <input
+                                type="number"
+                                inputMode="decimal"
+                                step="1"
+                                min="0"
+                                max="100"
+                                value={winProbInput == null ? '' : winProbInput}
+                                onChange={(e) => setWinProbInput && setWinProbInput(e.target.value)}
+                                placeholder="例: 45"
+                                className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                            />
+                            <span className="text-xs text-gray-500">%</span>
+                        </div>
+
+                        {hasProb ? (
+                            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                                <div className="bg-white/70 rounded-lg p-2 border border-current/20">
+                                    <div className="text-[10px] text-gray-500">期待回収率</div>
+                                    <div className={`text-sm font-extrabold ${isPlus ? 'text-emerald-700' : 'text-red-600'}`}>
+                                        {metrics.expReturnRate != null ? metrics.expReturnRate.toFixed(0) + '%' : '—'}
+                                    </div>
+                                </div>
+                                <div className="bg-white/70 rounded-lg p-2 border border-current/20">
+                                    <div className="text-[10px] text-gray-500">期待損益</div>
+                                    <div className={`text-sm font-extrabold ${isPlus ? 'text-emerald-700' : 'text-red-600'}`}>
+                                        {metrics.expProfit != null ? (metrics.expProfit >= 0 ? '+' : '') + metrics.expProfit.toLocaleString() : '—'}
+                                    </div>
+                                </div>
+                                <div className="bg-white/70 rounded-lg p-2 border border-current/20">
+                                    <div className="text-[10px] text-gray-500">推奨額(½ケリー)</div>
+                                    <div className="text-sm font-extrabold text-gray-800">
+                                        {metrics.kellyStake != null ? metrics.kellyStake.toLocaleString() : '—'}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-[11px] text-gray-500 mt-2">
+                                想定的中率を入力すると、期待回収率・期待損益・推奨ベット額（ハーフケリー）が表示されます。
+                            </p>
+                        )}
+
+                        {hasProb && (
+                            <p className={`text-[11px] mt-2 font-semibold ${isPlus ? 'text-emerald-700' : 'text-red-600'}`}>
+                                {isPlus
+                                    ? `想定的中率が損益分岐（${metrics.breakEvenRate.toFixed(1)}%）を上回り、期待値プラスです。`
+                                    : `想定的中率が損益分岐（${metrics.breakEvenRate.toFixed(1)}%）以下のため期待値マイナス。見送りも検討を。`}
+                            </p>
+                        )}
+                    </div>
                 </div>
             );
         };
@@ -1793,9 +1897,198 @@
             );
         };
 
+        // ===== ダッシュボード（振り返り）=====
+        // 保存済みの結果記録から、収支・回収率・券種別/自信度別ROI・資金推移を集計する。
+        function computeDashboardStats(records, bankrollStart) {
+            const safe = Array.isArray(records) ? records : [];
+            const overall = { count: safe.length, invested: 0, ret: 0, profit: 0, hitRaces: 0, roi: 0, hitRate: 0 };
+            const ticket = {};
+            const conf = {};
+
+            safe.forEach(function(r) {
+                const inv = r.totalInvested || 0;
+                const ret = r.totalReturn != null ? r.totalReturn : (inv + (r.profit || 0));
+                overall.invested += inv;
+                overall.ret += ret;
+                if ((r.winCount || 0) > 0) overall.hitRaces += 1;
+
+                const c = r.confidence || '—';
+                if (!conf[c]) conf[c] = { invested: 0, ret: 0, count: 0, hit: 0 };
+                conf[c].invested += inv;
+                conf[c].ret += ret;
+                conf[c].count += 1;
+                if ((r.winCount || 0) > 0) conf[c].hit += 1;
+
+                (r.bets || []).forEach(function(b) {
+                    const t = b.type || 'other';
+                    if (!ticket[t]) ticket[t] = { invested: 0, ret: 0, count: 0, hit: 0 };
+                    const stake = b.stake || 0;
+                    const odds = b.resultOdds != null ? b.resultOdds : (b.odds || 0);
+                    ticket[t].invested += stake;
+                    ticket[t].ret += b.isWin ? Math.floor(stake * odds) : 0;
+                    ticket[t].count += 1;
+                    if (b.isWin) ticket[t].hit += 1;
+                });
+            });
+
+            overall.profit = overall.ret - overall.invested;
+            overall.roi = overall.invested > 0 ? (overall.ret / overall.invested) * 100 : 0;
+            overall.hitRate = overall.count > 0 ? (overall.hitRaces / overall.count) * 100 : 0;
+
+            const ordered = safe.slice().sort(function(a, b) { return (a.id || 0) - (b.id || 0); });
+            const start = Number(bankrollStart) || 0;
+            let cum = start;
+            const equity = [{ value: start }];
+            ordered.forEach(function(r) { cum += (r.profit || 0); equity.push({ value: cum }); });
+
+            return { overall, ticket, conf, equity };
+        }
+
+        const DashboardRoiBar = ({ label, sub, roi, count }) => {
+            const scale = 200; // 回収率0〜200%を満幅にマップ
+            const pct = Math.max(0, Math.min(roi, scale)) / scale * 100;
+            const color = roi >= 100 ? 'bg-emerald-500' : roi >= 80 ? 'bg-yellow-500' : 'bg-red-400';
+            const textColor = roi >= 100 ? 'text-emerald-700' : roi >= 80 ? 'text-yellow-700' : 'text-red-600';
+            return (
+                <div className="mb-2">
+                    <div className="flex justify-between text-xs mb-0.5">
+                        <span className="font-semibold text-gray-700">{label}{sub ? <span className="text-gray-400 font-normal ml-1">{sub}</span> : null}</span>
+                        <span className={'font-bold ' + textColor}>{roi.toFixed(0)}%{count != null ? ' (' + count + '点)' : ''}</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={'h-full rounded-full transition-all ' + color} style={{ width: pct + '%' }} />
+                    </div>
+                </div>
+            );
+        };
+
+        const DashboardView = ({ records, bankrollStart, onExport, onImport, onBack }) => {
+            const stats = useMemo(() => computeDashboardStats(records, bankrollStart), [records, bankrollStart]);
+            const zoneStats = useMemo(() => calculateZoneStats(records), [records]);
+            const hasData = stats.overall.count > 0;
+
+            const eq = stats.equity;
+            const W = 320, H = 120, P = 10;
+            const vals = eq.map((p) => p.value);
+            const minV = Math.min.apply(null, vals);
+            const maxV = Math.max.apply(null, vals);
+            const range = (maxV - minV) || 1;
+            const xAt = (i) => P + (eq.length > 1 ? i / (eq.length - 1) : 0) * (W - 2 * P);
+            const yAt = (v) => (H - P) - ((v - minV) / range) * (H - 2 * P);
+            const linePts = eq.map((p, i) => xAt(i).toFixed(1) + ',' + yAt(p.value).toFixed(1)).join(' ');
+            const lastUp = eq[eq.length - 1].value >= eq[0].value;
+
+            const ticketRows = TICKET_TYPES
+                .map((t) => ({ t: t, s: stats.ticket[t.value] }))
+                .filter((o) => o.s && o.s.invested > 0)
+                .map((o) => ({ label: o.t.label, count: o.s.count, roi: o.s.ret / o.s.invested * 100 }));
+
+            const confRows = ['A', 'B', 'C', 'D']
+                .map((k) => ({ k: k, s: stats.conf[k] }))
+                .filter((o) => o.s && o.s.invested > 0)
+                .map((o) => ({ label: CONFIDENCES[o.k] ? CONFIDENCES[o.k].fullLabel : o.k, count: o.s.count, roi: o.s.ret / o.s.invested * 100 }));
+
+            const zoneRows = ['danger', 'fair', 'attack']
+                .map((k) => zoneStats[k])
+                .filter((z) => z && z.count > 0)
+                .map((z) => ({ label: z.label, sub: z.range, count: z.count, roi: z.roi }));
+
+            return (
+                <main className="w-full px-3 sm:px-4 pt-4 pb-10 app-main">
+                    <div className="flex items-center gap-2 mb-4">
+                        <button onClick={onBack} className="p-2 bg-white rounded-full shadow hover:bg-gray-100"><Icons.ArrowLeft size={20} className="text-gray-600" /></button>
+                        <h2 className="text-xl font-bold text-gray-700">ダッシュボード</h2>
+                    </div>
+
+                    {!hasData ? (
+                        <div className="text-center py-12 text-gray-400">
+                            <p>まだ結果の記録がありません。</p>
+                            <p className="text-xs mt-1">レースの的中判定を行うと、ここに集計が表示されます。</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <div className="bg-white rounded-lg shadow p-3 border border-gray-100">
+                                    <div className="text-[10px] text-gray-500">収支</div>
+                                    <div className={'text-lg font-extrabold ' + (stats.overall.profit >= 0 ? 'text-emerald-700' : 'text-red-600')}>
+                                        {(stats.overall.profit >= 0 ? '+' : '') + stats.overall.profit.toLocaleString()}
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-lg shadow p-3 border border-gray-100">
+                                    <div className="text-[10px] text-gray-500">回収率</div>
+                                    <div className={'text-lg font-extrabold ' + (stats.overall.roi >= 100 ? 'text-emerald-700' : 'text-red-600')}>{stats.overall.roi.toFixed(0)}%</div>
+                                </div>
+                                <div className="bg-white rounded-lg shadow p-3 border border-gray-100">
+                                    <div className="text-[10px] text-gray-500">的中レース率</div>
+                                    <div className="text-lg font-extrabold text-gray-800">{stats.overall.hitRate.toFixed(0)}%</div>
+                                </div>
+                                <div className="bg-white rounded-lg shadow p-3 border border-gray-100">
+                                    <div className="text-[10px] text-gray-500">レース数</div>
+                                    <div className="text-lg font-extrabold text-gray-800">{stats.overall.count}</div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow p-3 border border-gray-100 text-xs text-gray-600 flex justify-between">
+                                <span>総投資 {stats.overall.invested.toLocaleString()}円</span>
+                                <span>総回収 {stats.overall.ret.toLocaleString()}円</span>
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
+                                <h3 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2"><Icons.TrendingUp size={16} /> 資金推移</h3>
+                                <svg viewBox={'0 0 ' + W + ' ' + H} className="w-full" style={{ height: '140px' }} preserveAspectRatio="none">
+                                    <line x1={P} y1={yAt(eq[0].value)} x2={W - P} y2={yAt(eq[0].value)} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3 3" />
+                                    <polyline points={linePts} fill="none" stroke={lastUp ? '#059669' : '#dc2626'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                                </svg>
+                                <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                                    <span>開始 {eq[0].value.toLocaleString()}円</span>
+                                    <span>現在 {eq[eq.length - 1].value.toLocaleString()}円</span>
+                                </div>
+                            </div>
+
+                            {ticketRows.length > 0 && (
+                                <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
+                                    <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Award size={16} /> 券種別 回収率</h3>
+                                    {ticketRows.map((r, i) => <DashboardRoiBar key={i} label={r.label} count={r.count} roi={r.roi} />)}
+                                </div>
+                            )}
+
+                            {confRows.length > 0 && (
+                                <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
+                                    <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Star size={16} /> 自信度別 回収率</h3>
+                                    {confRows.map((r, i) => <DashboardRoiBar key={i} label={r.label} count={r.count} roi={r.roi} />)}
+                                </div>
+                            )}
+
+                            {zoneRows.length > 0 && (
+                                <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
+                                    <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2"><Icons.Calculator size={16} /> リスクゾーン別 回収率</h3>
+                                    {zoneRows.map((r, i) => <DashboardRoiBar key={i} label={r.label} sub={r.sub} count={r.count} roi={r.roi} />)}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="bg-white rounded-lg shadow p-4 border border-gray-100 mt-4">
+                        <h3 className="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2"><Icons.Settings size={16} /> データのバックアップ</h3>
+                        <p className="text-[11px] text-gray-500 mb-3">記録はこの端末内（localStorage）にのみ保存されます。機種変更やキャッシュ削除で消えるため、定期的な書き出しを推奨します。</p>
+                        <div className="flex gap-2 flex-wrap">
+                            <button onClick={onExport} className="flex-1 min-w-[120px] bg-emerald-600 text-white rounded-lg px-3 py-2 text-sm font-bold hover:bg-emerald-700 flex items-center justify-center gap-2">
+                                <Icons.Save size={16} /> エクスポート
+                            </button>
+                            <label className="flex-1 min-w-[120px] bg-white border border-emerald-600 text-emerald-700 rounded-lg px-3 py-2 text-sm font-bold hover:bg-emerald-50 flex items-center justify-center gap-2 cursor-pointer">
+                                <Icons.Upload size={16} /> インポート
+                                <input type="file" accept="application/json,.json" onChange={onImport} className="hidden" />
+                            </label>
+                        </div>
+                    </div>
+                </main>
+            );
+        };
+
         const HorseRacingOddsManager = () => {
             // State Definitions
             const [currentView, setCurrentView] = useState('calculator');
+            const [winProbInput, setWinProbInput] = useState(''); // 想定的中率(%)：このレースで買い目群のどれかが当たる見込み
             const [menuOpen, setMenuOpen] = useState(false);
             const [showHelp, setShowHelp] = useState(false);
             
@@ -1999,6 +2292,49 @@
                 };
                 reader.readAsText(file);
             };
+
+            // ===== バックアップ（エクスポート/インポート）=====
+            const APP_DATA_KEYS = ['bankroll_start', 'bankroll_goal', 'bankroll_current', 'bankroll_history', 'jra_odds_history', 'jra_odds_results'];
+
+            const handleExportAppData = () => {
+                const data = {};
+                APP_DATA_KEYS.forEach((k) => { const v = localStorage.getItem(k); if (v != null) data[k] = v; });
+                const payload = { app: 'ODDS MASTER', version: 1, exportedAt: new Date().toISOString(), data: data };
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'odds-master-backup-' + new Date().toISOString().split('T')[0] + '.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('バックアップを書き出しました', 'success');
+            };
+
+            const handleImportAppData = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        const data = parsed && parsed.data ? parsed.data : parsed;
+                        if (!data || typeof data !== 'object') { showToast('バックアップ形式が正しくありません', 'error'); return; }
+                        const keys = APP_DATA_KEYS.filter((k) => data[k] != null);
+                        if (keys.length === 0) { showToast('復元できるデータがありません', 'error'); return; }
+                        showConfirm('現在の保存データを、読み込んだバックアップで上書きします。よろしいですか？', () => {
+                            keys.forEach((k) => { localStorage.setItem(k, typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k])); });
+                            showToast('復元しました。再読み込みします…', 'success');
+                            setTimeout(() => window.location.reload(), 800);
+                        });
+                    } catch (err) {
+                        showToast('バックアップの読み込みに失敗しました', 'error');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            };
             
             // Show confirmation modal
             const showConfirm = (message, onConfirm) => {
@@ -2183,6 +2519,7 @@
                 setBetList([]);
                 setOddsData({});
                 setCustomStakes({});
+                setWinProbInput('');
                 clearSelection();
 
                 // 編集状態を解除（IDリセット）
@@ -2744,6 +3081,8 @@
                     totalReturn: totalReturn,
                     profit: profit,
                     effectiveOdds: effectiveOddsInfo.effectiveOdds,
+                    winProb: winProbInput === '' ? null : Number(winProbInput),
+                    breakEvenRate: effectiveOddsInfo.effectiveOdds > 0 ? (1 / effectiveOddsInfo.effectiveOdds) * 100 : null,
                     reflectionNote: reflectionNoteInput, // 的中判定時に入力された反省ノート
                     bets: betList.map(bet => {
                         const betData = calculatedData.find(row => row.key === bet.key);
@@ -3276,6 +3615,12 @@
                                         </button>
                                         <button
                                             className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 text-gray-800"
+                                            onClick={() => { setCurrentView('dashboard'); setMenuOpen(false); }}
+                                        >
+                                            <Icons.BarChart size={14} /> ダッシュボード
+                                        </button>
+                                        <button
+                                            className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 text-gray-800"
                                             onClick={() => { setCurrentView('history'); setMenuOpen(false); }}
                                         >
                                             <Icons.History size={14} /> 買い目
@@ -3721,7 +4066,7 @@
                                         </div>
                                     </div>
 
-                                    <EffectiveOddsPanel bets={effectiveOddsBets} />
+                                    <EffectiveOddsPanel bets={effectiveOddsBets} winProbInput={winProbInput} setWinProbInput={setWinProbInput} bankroll={bankrollCurrent} />
 
                                     {/* オッズ下落シミュレーションカード */}
                                     <div className="mt-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-4 border border-amber-300 shadow-sm">
@@ -4398,6 +4743,16 @@
 
                         return <EditResultView />;
                     })()}
+
+                    {currentView === 'dashboard' && (
+                        <DashboardView
+                            records={resultHistory}
+                            bankrollStart={bankrollStart === '' ? 0 : bankrollStart}
+                            onExport={handleExportAppData}
+                            onImport={handleImportAppData}
+                            onBack={() => setCurrentView('calculator')}
+                        />
+                    )}
 
                     {currentView === 'courseData' && (
                         <main className="w-full px-3 sm:px-4 pt-4 pb-10 app-main">
