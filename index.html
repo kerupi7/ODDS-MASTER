@@ -294,6 +294,13 @@
             'umatan', 'sanrenpuku', 'sanrentan'
         ];
 
+        // 購入前チェックリスト（規律づけ用・レースごとにリセット）
+        const PRE_PURCHASE_CHECKS = [
+            { id: 'not_prev_odds', label: '前日オッズを元にした予想で決めていないか' },
+            { id: 'pace', label: '展開を確認したか' },
+            { id: 'ability', label: '馬の能力を確認したか' }
+        ];
+
         const ALL_COURSES = ['札幌', '函館', '福島', '新潟', '東京', '中山', '中京', '京都', '阪神', '小倉'];
         const MAX_RACES_PER_DAY = 12;
         const RACE_NUMBERS = Array.from({ length: MAX_RACES_PER_DAY }, (_, i) => i + 1);
@@ -2202,6 +2209,7 @@
             const [winProbInput, setWinProbInput] = useState(''); // 想定的中率(%)：このレースで買い目群のどれかが当たる見込み
             const [showCourseTips, setShowCourseTips] = useState(false); // 開催場のコース傾向パネルの開閉
             const [winProbByKey, setWinProbByKey] = useState({}); // 各買い目の想定勝率(%)
+            const [checkedItems, setCheckedItems] = useState({}); // 購入前チェックリストの状態
             const [menuOpen, setMenuOpen] = useState(false);
             const [showHelp, setShowHelp] = useState(false);
             
@@ -2634,6 +2642,7 @@
                 setCustomStakes({});
                 setWinProbInput('');
                 setWinProbByKey({});
+                setCheckedItems({});
                 clearSelection();
 
                 // 編集状態を解除（IDリセット）
@@ -3002,6 +3011,12 @@
             const handleWinProbChange = (key, value) => {
                 setWinProbByKey(prev => ({ ...prev, [key]: value }));
             };
+
+            const toggleCheck = (id) => {
+                setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
+            };
+            const preCheckCount = PRE_PURCHASE_CHECKS.filter((c) => checkedItems[c.id]).length;
+            const preCheckDone = preCheckCount === PRE_PURCHASE_CHECKS.length;
 
             const calculateBudgetFromTarget = () => {
                 setTargetError(null);
@@ -4362,6 +4377,33 @@
                                                 })}
                                             </tbody>
                                         </table>
+                                    </div>
+
+                                    <div className="px-3 sm:px-4 pt-4">
+                                        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <h4 className="text-sm font-bold text-amber-800 flex items-center gap-2">
+                                                    <Icons.CheckSquare size={16} /> 購入前チェックリスト
+                                                </h4>
+                                                <span className={'text-xs font-bold ' + (preCheckDone ? 'text-emerald-700' : 'text-amber-700')}>
+                                                    {preCheckCount}/{PRE_PURCHASE_CHECKS.length}{preCheckDone ? ' ✓' : ''}
+                                                </span>
+                                            </div>
+                                            <div className="space-y-1">
+                                                {PRE_PURCHASE_CHECKS.map((item) => {
+                                                    const on = !!checkedItems[item.id];
+                                                    return (
+                                                        <label key={item.id} className="flex items-center gap-2 cursor-pointer select-none rounded-md px-2 py-1.5 hover:bg-amber-100/60">
+                                                            <input type="checkbox" checked={on} onChange={() => toggleCheck(item.id)} className="w-4 h-4 accent-emerald-600" />
+                                                            <span className={'text-sm ' + (on ? 'text-gray-400 line-through' : 'text-gray-700')}>{item.label}</span>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                            {!preCheckDone && (
+                                                <p className="text-[11px] text-amber-700 mt-2">購入前にすべて確認しましょう（前日オッズ依存・展開/能力の未確認は危険です）。</p>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="p-4 bg-gray-50 border-t">
