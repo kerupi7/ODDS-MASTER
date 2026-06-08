@@ -641,34 +641,59 @@
         }
 
         // ポートフォリオの期待値（EV）とケリー基準の推奨ベット額を算出する。
-        // 買い目群を「合成オッズ B の1点」とみなし、想定的中率 p で評価する。
-        //   損益分岐の的中率 = 1/B（これを超えれば期待値プラス）
-        //   期待回収率 = p × B / ケリー比率 f = (pB - 1)/(B - 1)（推奨はハーフケリー）
+        // 各買い目に想定勝率(winProb%)があれば「点ごと」に、無ければ winProbPercent を
+        // レース全体の的中率として「合成オッズ B の1点」とみなして評価する。
+        //   損益分岐の的中率 = 1/B ／ 期待回収率 = Σ(pᵢ・賭金ᵢ・oddsᵢ) ÷ 総賭金
+        //   ケリー比率 f = (P・B_eff - 1)/(B_eff - 1)（P=想定的中率, 推奨はハーフケリー）
         function calculatePortfolioMetrics(bets, winProbPercent, bankroll) {
-            const base = calculateEffectiveOdds(bets || []);
-            const synthOdds = base.effectiveOdds;      // 合成オッズ B
+            const list = Array.isArray(bets) ? bets : [];
+            const base = calculateEffectiveOdds(list);
+            const synthOdds = base.effectiveOdds;
             const totalAmount = base.totalAmount;
             const breakEvenRate = synthOdds > 0 ? (1 / synthOdds) * 100 : null;
 
-            const pNum = Number(winProbPercent);
-            const hasProb = winProbPercent !== '' && winProbPercent != null && Number.isFinite(pNum) && pNum > 0;
-            const winPercent = hasProb ? Math.min(pNum, 100) : null;
-            const p = hasProb ? winPercent / 100 : null;
+            let perBetProvided = false, sumP = 0, expReturn = 0;
+            list.forEach(function(b) {
+                const wp = Number(b.winProb);
+                if (b.winProb !== '' && b.winProb != null && Number.isFinite(wp) && wp > 0) {
+                    perBetProvided = true;
+                    const p = Math.min(wp, 100) / 100;
+                    sumP += p;
+                    expReturn += p * (Number(b.amount) || 0) * (Number(b.odds) || 0);
+                }
+            });
 
-            let expReturnRate = null, expProfit = null, edge = null, kellyFraction = null, kellyStake = null;
-            if (p != null && synthOdds > 0) {
-                expReturnRate = p * synthOdds * 100;
-                edge = p * synthOdds - 1;
-                expProfit = totalAmount > 0 ? Math.round(totalAmount * edge) : null;
-                if (synthOdds > 1) {
-                    kellyFraction = (p * synthOdds - 1) / (synthOdds - 1);
-                    const bk = Number(bankroll) || 0;
-                    kellyStake = (kellyFraction > 0 && bk > 0)
-                        ? Math.floor((bk * kellyFraction * 0.5) / 100) * 100
-                        : 0;
+            let hasProb = false, winPercent = null, expReturnRate = null, expProfit = null,
+                edge = null, kellyFraction = null, kellyStake = null, overCovered = false;
+
+            if (perBetProvided) {
+                hasProb = true;
+                winPercent = sumP * 100;
+                overCovered = sumP > 1;
+            } else {
+                const f = Number(winProbPercent);
+                if (winProbPercent !== '' && winProbPercent != null && Number.isFinite(f) && f > 0 && synthOdds > 0) {
+                    hasProb = true;
+                    winPercent = Math.min(f, 100);
+                    sumP = winPercent / 100;
+                    expReturn = sumP * totalAmount * synthOdds;
                 }
             }
-            return { synthOdds, totalAmount, breakEvenRate, hasProb, winPercent,
+
+            if (hasProb && totalAmount > 0) {
+                expReturnRate = expReturn / totalAmount * 100;
+                edge = expReturn / totalAmount - 1;
+                expProfit = Math.round(expReturn - totalAmount);
+                const P = Math.min(sumP, 1);
+                const bEff = P > 0 ? (expReturn / P) / totalAmount : synthOdds;
+                if (bEff > 1) {
+                    kellyFraction = (P * bEff - 1) / (bEff - 1);
+                    const bk = Number(bankroll) || 0;
+                    kellyStake = (kellyFraction > 0 && bk > 0) ? Math.floor((bk * kellyFraction * 0.5) / 100) * 100 : 0;
+                }
+            }
+
+            return { synthOdds, totalAmount, breakEvenRate, hasProb, perBetProvided, winPercent, overCovered,
                      expReturnRate, expProfit, edge, kellyFraction, kellyStake };
         }
 
@@ -801,21 +826,31 @@
                             この買い目群で負けないために必要な「どれか1点が当たる確率」です（＝1÷合成オッズ）。
                         </p>
 
-                        <div className="mt-2 flex items-center gap-2">
-                            <label className="text-xs text-gray-700 font-semibold whitespace-nowrap">想定的中率</label>
-                            <input
-                                type="number"
-                                inputMode="decimal"
-                                step="1"
-                                min="0"
-                                max="100"
-                                value={winProbInput == null ? '' : winProbInput}
-                                onChange={(e) => setWinProbInput && setWinProbInput(e.target.value)}
-                                placeholder="例: 45"
-                                className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
-                            />
-                            <span className="text-xs text-gray-500">%</span>
-                        </div>
+                        {metrics.perBetProvided ? (
+                            <div className="mt-2 text-xs bg-white/60 rounded-lg p-2 border border-current/20">
+                                <span className="font-semibold text-gray-700">想定的中率（各買い目の合計）：</span>
+                                <span className="font-extrabold">{metrics.winPercent != null ? metrics.winPercent.toFixed(0) + '%' : '—'}</span>
+                                {metrics.overCovered && <span className="text-red-600 ml-2 font-bold">※合計が100%を超えています</span>}
+                                <p className="text-[10px] text-gray-500 mt-1">表の「勝率」列を使用中。レース全体で1つだけ見積もる場合は、表の勝率を空欄にしてください。</p>
+                            </div>
+                        ) : (
+                            <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                <label className="text-xs text-gray-700 font-semibold whitespace-nowrap">想定的中率（レース全体）</label>
+                                <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    step="1"
+                                    min="0"
+                                    max="100"
+                                    value={winProbInput == null ? '' : winProbInput}
+                                    onChange={(e) => setWinProbInput && setWinProbInput(e.target.value)}
+                                    placeholder="例: 45"
+                                    className="w-20 border border-gray-300 rounded px-2 py-1 text-sm text-right bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                />
+                                <span className="text-xs text-gray-500">%</span>
+                                <span className="text-[10px] text-gray-400">または表の各買い目に勝率を入力</span>
+                            </div>
+                        )}
 
                         {hasProb ? (
                             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
@@ -1941,7 +1976,39 @@
             const equity = [{ value: start }];
             ordered.forEach(function(r) { cum += (r.profit || 0); equity.push({ value: cum }); });
 
-            return { overall, ticket, conf, equity };
+            // 想定 vs 実績（的中率のキャリブレーション）
+            const buckets = [
+                { label: '0-20%', lo: 0, hi: 20, n: 0, predSum: 0, hit: 0 },
+                { label: '20-40%', lo: 20, hi: 40, n: 0, predSum: 0, hit: 0 },
+                { label: '40-60%', lo: 40, hi: 60, n: 0, predSum: 0, hit: 0 },
+                { label: '60-80%', lo: 60, hi: 80, n: 0, predSum: 0, hit: 0 },
+                { label: '80-100%', lo: 80, hi: 101, n: 0, predSum: 0, hit: 0 }
+            ];
+            let calCount = 0, predHitSum = 0, actHitSum = 0, predRetSum = 0, predRetN = 0;
+            safe.forEach(function(r) {
+                if (r.winProb != null && Number.isFinite(Number(r.winProb))) {
+                    const wp = Number(r.winProb);
+                    const isHit = (r.winCount || 0) > 0 ? 1 : 0;
+                    calCount += 1; predHitSum += wp; actHitSum += isHit * 100;
+                    for (var i = 0; i < buckets.length; i++) {
+                        if (wp >= buckets[i].lo && wp < buckets[i].hi) { buckets[i].n += 1; buckets[i].predSum += wp; buckets[i].hit += isHit; break; }
+                    }
+                }
+                if (r.expReturnRate != null && Number.isFinite(Number(r.expReturnRate))) {
+                    predRetSum += Number(r.expReturnRate); predRetN += 1;
+                }
+            });
+            const calibration = {
+                count: calCount,
+                avgPredHit: calCount > 0 ? predHitSum / calCount : null,
+                avgActualHit: calCount > 0 ? actHitSum / calCount : null,
+                avgPredReturn: predRetN > 0 ? predRetSum / predRetN : null,
+                buckets: buckets.filter(function(b) { return b.n > 0; }).map(function(b) {
+                    return { label: b.label, n: b.n, pred: b.predSum / b.n, actual: b.hit / b.n * 100 };
+                })
+            };
+
+            return { overall, ticket, conf, equity, calibration };
         }
 
         const DashboardRoiBar = ({ label, sub, roi, count }) => {
@@ -2065,6 +2132,50 @@
                                     {zoneRows.map((r, i) => <DashboardRoiBar key={i} label={r.label} sub={r.sub} count={r.count} roi={r.roi} />)}
                                 </div>
                             )}
+
+                            {stats.calibration.count > 0 && (
+                                <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
+                                    <h3 className="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2"><Icons.CheckCircle size={16} /> 想定 vs 実績</h3>
+                                    <p className="text-[10px] text-gray-500 mb-3">保存時の想定（的中率・回収率）と実際の結果を比較します（{stats.calibration.count}レース）。</p>
+                                    <div className="grid grid-cols-2 gap-2 mb-3 text-center">
+                                        <div className="bg-gray-50 rounded-lg p-2">
+                                            <div className="text-[10px] text-gray-500">的中率（想定→実績）</div>
+                                            <div className="text-sm font-extrabold text-gray-800">
+                                                {stats.calibration.avgPredHit.toFixed(0)}% → <span className={stats.calibration.avgActualHit >= stats.calibration.avgPredHit ? 'text-emerald-700' : 'text-red-600'}>{stats.calibration.avgActualHit.toFixed(0)}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-2">
+                                            <div className="text-[10px] text-gray-500">回収率（想定→実績）</div>
+                                            <div className="text-sm font-extrabold text-gray-800">
+                                                {stats.calibration.avgPredReturn != null ? stats.calibration.avgPredReturn.toFixed(0) + '%' : '—'} → <span className={stats.overall.roi >= (stats.calibration.avgPredReturn || 0) ? 'text-emerald-700' : 'text-red-600'}>{stats.overall.roi.toFixed(0)}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {stats.calibration.buckets.length > 0 && (
+                                        <div>
+                                            <div className="flex justify-between text-[10px] text-gray-400 font-semibold mb-1 px-1">
+                                                <span>想定勝率帯</span><span>想定 / 実績（件数）</span>
+                                            </div>
+                                            {stats.calibration.buckets.map(function(b, i) {
+                                                const over = b.actual >= b.pred;
+                                                return (
+                                                    <div key={i} className="mb-2">
+                                                        <div className="flex justify-between text-xs mb-0.5">
+                                                            <span className="font-semibold text-gray-700">{b.label}</span>
+                                                            <span className="font-bold"><span className="text-gray-500">{b.pred.toFixed(0)}%</span> / <span className={over ? 'text-emerald-700' : 'text-red-600'}>{b.actual.toFixed(0)}%</span> <span className="text-gray-400 font-normal">({b.n})</span></span>
+                                                        </div>
+                                                        <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                            <div className="absolute h-full bg-gray-300" style={{ width: Math.min(b.pred, 100) + '%' }} />
+                                                            <div className={'absolute h-full rounded-r ' + (over ? 'bg-emerald-500/70' : 'bg-red-400/70')} style={{ width: Math.min(b.actual, 100) + '%' }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            <p className="text-[10px] text-gray-400 mt-1">実績が想定を上回る（緑）＝想定が控えめ／下回る（赤）＝想定が強気の傾向。</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -2090,6 +2201,7 @@
             const [currentView, setCurrentView] = useState('calculator');
             const [winProbInput, setWinProbInput] = useState(''); // 想定的中率(%)：このレースで買い目群のどれかが当たる見込み
             const [showCourseTips, setShowCourseTips] = useState(false); // 開催場のコース傾向パネルの開閉
+            const [winProbByKey, setWinProbByKey] = useState({}); // 各買い目の想定勝率(%)
             const [menuOpen, setMenuOpen] = useState(false);
             const [showHelp, setShowHelp] = useState(false);
             
@@ -2521,6 +2633,7 @@
                 setOddsData({});
                 setCustomStakes({});
                 setWinProbInput('');
+                setWinProbByKey({});
                 clearSelection();
 
                 // 編集状態を解除（IDリセット）
@@ -2886,6 +2999,10 @@
                 setCustomStakes(prev => ({ ...prev, [key]: val }));
             };
 
+            const handleWinProbChange = (key, value) => {
+                setWinProbByKey(prev => ({ ...prev, [key]: value }));
+            };
+
             const calculateBudgetFromTarget = () => {
                 setTargetError(null);
                 
@@ -3066,6 +3183,7 @@
                 setBankrollCurrent(newBankroll);
 
                 const effectiveOddsInfo = calculateEffectiveOdds(effectiveOddsBets);
+                const portfolioMetrics = calculatePortfolioMetrics(effectiveOddsBets, winProbInput, bankrollCurrent);
 
                 const resultRecord = {
                     id: Date.now(),
@@ -3082,8 +3200,9 @@
                     totalReturn: totalReturn,
                     profit: profit,
                     effectiveOdds: effectiveOddsInfo.effectiveOdds,
-                    winProb: winProbInput === '' ? null : Number(winProbInput),
-                    breakEvenRate: effectiveOddsInfo.effectiveOdds > 0 ? (1 / effectiveOddsInfo.effectiveOdds) * 100 : null,
+                    winProb: portfolioMetrics.winPercent != null ? portfolioMetrics.winPercent : null,
+                    breakEvenRate: portfolioMetrics.breakEvenRate,
+                    expReturnRate: portfolioMetrics.expReturnRate,
                     reflectionNote: reflectionNoteInput, // 的中判定時に入力された反省ノート
                     bets: betList.map(bet => {
                         const betData = calculatedData.find(row => row.key === bet.key);
@@ -3231,9 +3350,10 @@
             const effectiveOddsBets = useMemo(() => {
                 return calculatedData.map(bet => ({
                     amount: Number(bet.stake) || 0,
-                    odds: Number(bet.odds) || 0
+                    odds: Number(bet.odds) || 0,
+                    winProb: winProbByKey[bet.key]
                 }));
-            }, [calculatedData]);
+            }, [calculatedData, winProbByKey]);
 
             // 着順パターンで買い目が的中するかを判定するヘルパー関数
             const checkWinForPattern = (bet, r1, r2, r3) => {
@@ -4160,6 +4280,7 @@
                                                 <tr>
                                                     <th className="p-1.5 sm:p-3">式別/組合せ</th>
                                                     <th className="p-1.5 sm:p-3 text-center">オッズ</th>
+                                                    <th className="p-1.5 sm:p-3 text-center">勝率%</th>
                                                     <th className="p-1.5 sm:p-3 text-right">投資額</th>
                                                     <th className="p-1.5 sm:p-3 text-right hidden sm:table-cell">予想払戻</th>
                                                     <th className="p-1.5 sm:p-3 w-8 sm:w-10"></th>
@@ -4186,6 +4307,19 @@
                                                                     onChange={(e) => handleOddsChange(bet.key, e.target.value)} 
                                                                     className="w-16 border border-gray-300 rounded px-1 py-1 text-base sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" 
                                                                     inputMode="decimal" 
+                                                                />
+                                                            </td>
+                                                            <td className="p-1.5 sm:p-3 text-center">
+                                                                <input
+                                                                    type="number"
+                                                                    step="5"
+                                                                    min="0"
+                                                                    max="100"
+                                                                    placeholder="—"
+                                                                    value={winProbByKey[bet.key] == null ? '' : winProbByKey[bet.key]}
+                                                                    onChange={(e) => handleWinProbChange(bet.key, e.target.value)}
+                                                                    className="w-12 border border-gray-300 rounded px-1 py-1 text-base sm:text-sm text-right focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                                                    inputMode="decimal"
                                                                 />
                                                             </td>
                                                             <td className="p-1.5 sm:p-3 text-right font-mono">
